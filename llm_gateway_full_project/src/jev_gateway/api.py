@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .config import Settings, from_env
 from .budget import BudgetExceeded, FrontierBudget
 from .transport import BackendTransport
+from .tracing import RequestTrace
 
 
 class Message(BaseModel):
@@ -67,6 +68,7 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
             raise HTTPException(status_code=503, detail="frontier disabled: configure key, model, rates, and positive caps")
         settings = app.state.settings
         backend = settings.backend(request.model)
+        trace = RequestTrace(request.model, backend.model)
         max_tokens = request.max_tokens or settings.max_output_tokens
         if max_tokens > settings.max_output_tokens:
             raise HTTPException(status_code=422, detail="max_tokens exceeds server policy")
@@ -87,17 +89,25 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
                     try:
                         async for part in upstream.aiter_raw():
                             yield part
+                        trace.finish("ok", cost_status="reserved" if request.model == "frontier" else "unpriced")
+                    except BaseException:
+                        trace.finish("stream_interrupted")
+                        raise
                     finally:
                         await upstream.aclose()
 
                 return StreamingResponse(chunks(), media_type="text/event-stream", headers={
                     "x-jev-tier": request.model, "x-jev-backend-model": backend.model,
-                    "cache-control": "no-cache"})
+                    "cache-control": "no-cache", "x-request-id": trace.request_id})
             result = await app.state.transport.complete(backend, payload)
         except httpx.TimeoutException as exc:
+            trace.finish("timeout")
             raise HTTPException(status_code=504, detail="backend deadline exceeded") from exc
         except (httpx.HTTPStatusError, httpx.RequestError, ValueError) as exc:
+            trace.finish("backend_error")
             raise HTTPException(status_code=502, detail="backend request failed") from exc
+        trace.finish("ok", result.get("usage"), "reserved" if request.model == "frontier" else "unpriced")
+        response.headers["x-request-id"] = trace.request_id
         response.headers["x-jev-tier"] = request.model
         response.headers["x-jev-backend-model"] = backend.model
         return result
