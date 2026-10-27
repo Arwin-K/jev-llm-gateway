@@ -2,10 +2,14 @@
 
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from .config import Settings, from_env
+from .budget import BudgetExceeded, FrontierBudget
+from .transport import BackendTransport
 
 
 class Message(BaseModel):
@@ -23,9 +27,19 @@ class ChatRequest(BaseModel):
     temperature: float | None = Field(default=None, ge=0, le=2)
 
 
-def create_app(settings: Settings | None = None):
-    app = FastAPI(title="Jev gateway", version="0.1.0")
+def create_app(settings: Settings | None = None, transport: BackendTransport | None = None):
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        try:
+            yield
+        finally:
+            if transport is None:
+                await app.state.transport.close()
+
+    app = FastAPI(title="Jev gateway", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings or from_env()
+    app.state.transport = transport or BackendTransport(app.state.settings.timeout_seconds)
+    app.state.budget = FrontierBudget(app.state.settings)
 
     @app.get("/healthz")
     async def health():
@@ -46,10 +60,27 @@ def create_app(settings: Settings | None = None):
         ]}
 
     @app.post("/v1/chat/completions")
-    async def chat(request: ChatRequest):
+    async def chat(request: ChatRequest, response: Response):
         if request.model == "frontier" and not app.state.settings.frontier_enabled:
             raise HTTPException(status_code=503, detail="frontier disabled: configure key, model, rates, and positive caps")
-        raise HTTPException(status_code=503, detail="backend transport not yet connected")
+        settings = app.state.settings
+        backend = settings.backend(request.model)
+        max_tokens = request.max_tokens or settings.max_output_tokens
+        if max_tokens > settings.max_output_tokens:
+            raise HTTPException(status_code=422, detail="max_tokens exceeds server policy")
+        payload = {"model": backend.model, "messages": [message.model_dump() for message in request.messages],
+                   "max_tokens": max_tokens, "stream": False}
+        if request.temperature is not None:
+            payload["temperature"] = request.temperature
+        if request.model == "frontier":
+            try:
+                await app.state.budget.reserve(payload["messages"], max_tokens)
+            except BudgetExceeded as exc:
+                raise HTTPException(status_code=429, detail=str(exc)) from exc
+        result = await app.state.transport.complete(backend, payload)
+        response.headers["x-jev-tier"] = request.model
+        response.headers["x-jev-backend-model"] = backend.model
+        return result
 
     return app
 
