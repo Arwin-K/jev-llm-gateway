@@ -8,7 +8,9 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("serve", help="serve the gateway")
     sub.add_parser("doctor", help="check configuration and backends")
-    sub.add_parser("smoke", help="send one bounded chat request")
+    smoke_parser = sub.add_parser("smoke", help="send one bounded chat request")
+    smoke_parser.add_argument("--tier", choices=("small", "medium", "frontier"), default="small")
+    smoke_parser.add_argument("--gateway-url", default="http://127.0.0.1:8080")
     args = parser.parse_args(argv)
     if args.command == "serve":
         import uvicorn
@@ -18,7 +20,7 @@ def main(argv=None):
         return doctor()
     elif args.command == "smoke":
         from .diagnostics import smoke
-        return smoke()
+        return smoke(args.tier, args.gateway_url)
 
 
 if __name__ == "__main__":
