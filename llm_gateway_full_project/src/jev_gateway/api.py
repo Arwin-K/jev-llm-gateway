@@ -5,6 +5,7 @@ from typing import Literal
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from .config import Settings, from_env
@@ -69,7 +70,7 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
         if max_tokens > settings.max_output_tokens:
             raise HTTPException(status_code=422, detail="max_tokens exceeds server policy")
         payload = {"model": backend.model, "messages": [message.model_dump() for message in request.messages],
-                   "max_tokens": max_tokens, "stream": False}
+                   "max_tokens": max_tokens, "stream": request.stream}
         if request.temperature is not None:
             payload["temperature"] = request.temperature
         if request.model == "frontier":
@@ -77,6 +78,15 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
                 await app.state.budget.reserve(payload["messages"], max_tokens)
             except BudgetExceeded as exc:
                 raise HTTPException(status_code=429, detail=str(exc)) from exc
+        if request.stream:
+            async def chunks():
+                async with app.state.transport.stream(backend, payload) as upstream:
+                    async for part in upstream.aiter_raw():
+                        yield part
+
+            return StreamingResponse(chunks(), media_type="text/event-stream", headers={
+                "x-jev-tier": request.model, "x-jev-backend-model": backend.model,
+                "cache-control": "no-cache"})
         result = await app.state.transport.complete(backend, payload)
         response.headers["x-jev-tier"] = request.model
         response.headers["x-jev-backend-model"] = backend.model
