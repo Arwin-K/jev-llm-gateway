@@ -37,3 +37,12 @@ class BackendTransport:
             yield response
         finally:
             await response.aclose()
+
+    async def open_stream(self, backend: Backend, payload: dict):
+        response = await self.client.send(self._request(backend, payload), stream=True)
+        try:
+            response.raise_for_status()
+            return response
+        except BaseException:
+            await response.aclose()
+            raise

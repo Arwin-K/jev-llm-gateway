@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import StreamingResponse
+import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
 from .config import Settings, from_env
@@ -78,16 +79,25 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
                 await app.state.budget.reserve(payload["messages"], max_tokens)
             except BudgetExceeded as exc:
                 raise HTTPException(status_code=429, detail=str(exc)) from exc
-        if request.stream:
-            async def chunks():
-                async with app.state.transport.stream(backend, payload) as upstream:
-                    async for part in upstream.aiter_raw():
-                        yield part
+        try:
+            if request.stream:
+                upstream = await app.state.transport.open_stream(backend, payload)
 
-            return StreamingResponse(chunks(), media_type="text/event-stream", headers={
-                "x-jev-tier": request.model, "x-jev-backend-model": backend.model,
-                "cache-control": "no-cache"})
-        result = await app.state.transport.complete(backend, payload)
+                async def chunks():
+                    try:
+                        async for part in upstream.aiter_raw():
+                            yield part
+                    finally:
+                        await upstream.aclose()
+
+                return StreamingResponse(chunks(), media_type="text/event-stream", headers={
+                    "x-jev-tier": request.model, "x-jev-backend-model": backend.model,
+                    "cache-control": "no-cache"})
+            result = await app.state.transport.complete(backend, payload)
+        except httpx.TimeoutException as exc:
+            raise HTTPException(status_code=504, detail="backend deadline exceeded") from exc
+        except (httpx.HTTPStatusError, httpx.RequestError, ValueError) as exc:
+            raise HTTPException(status_code=502, detail="backend request failed") from exc
         response.headers["x-jev-tier"] = request.model
         response.headers["x-jev-backend-model"] = backend.model
         return result
