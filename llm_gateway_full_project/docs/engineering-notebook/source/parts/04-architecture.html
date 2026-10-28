@@ -1,0 +1,68 @@
+<h1 id="part4"><span class="part-no">Part 4</span>Architecture and diagrams</h1>
+
+<p class="part-intro">Four diagrams carry the architecture: the system as a whole (A), the Day 1 request path (B), how a Jev decision becomes an action (C), and the Day 2 evaluation pipeline (D). Each is followed by the reasoning it summarises.</p>
+
+<h2 id="diagram-a">A · High-level architecture</h2>
+
+<figure data-src="f01-architecture" class="mid" id="fig-architecture"><figcaption><b>Diagram A.</b> Components on the Mac (solid warm boxes), external services (blue dashed), the separate Colab experiment environment (green dashed), and components added on later build days (grey dashed).</figcaption></figure>
+
+<p>The <b>client</b> — <code>curl</code>, <code>jev smoke</code>, or any OpenAI-compatible tool — sends a chat request to the <b>gateway</b> on <code>127.0.0.1:8080</code>. The gateway validates the request, resolves the tier to a backend, and forwards it. For the small and medium tiers on the Mac, the backend is <b>native Ollama</b> on port 11434, which serves both models from one process and decides which ones stay loaded. For the frontier tier, it is a paid provider API reached over HTTPS with a key read only from the environment. Every request produces a <b>trace record</b> with an ID, timings, status and token usage.</p>
+
+<p><b>Jev</b> appears on the diagram from the start because it shapes the architecture, but the gateway does not call it until Day 3. The trained DistilBERT fallback and the embedding cache are drawn as later components on the Mac. <b>Colab</b> is drawn apart on purpose: it receives a source archive and runs its own vLLM server and clients on loopback inside the VM. Nothing on the Mac sends requests to it.</p>
+
+<h2 id="diagram-b">B · Day 1 request sequence</h2>
+
+<figure data-src="f16-day1-sequence" id="fig-day1-sequence"><figcaption><b>Diagram B.</b> One Day 1 request with an explicit tier. Steps 1–8 correspond to code in <code>api.py</code>, <code>config.py</code>, <code>budget.py</code>, <code>transport.py</code> and <code>tracing.py</code>. Dashed return arrows carry response data.</figcaption></figure>
+
+<ol>
+  <li><b>Client request.</b> <code>POST /v1/chat/completions</code> with <code>model</code> set to <code>small</code>, <code>medium</code> or <code>frontier</code>.</li>
+  <li><b>Validation.</b> Pydantic models reject anything outside the contract — unknown fields, non-text content, empty message lists, <code>model: "auto"</code> — with HTTP 422 before any backend is touched.</li>
+  <li><b>Backend resolution.</b> <code>Settings.backend(tier)</code> returns the configured URL and model name. For the frontier tier, the gateway first checks that it is enabled (key, model, prices and positive caps) and returns 503 if not.</li>
+  <li><b>Budget admission</b> (frontier only). <code>FrontierBudget.reserve</code> estimates tokens and dollars and returns 429 if the process caps would be exceeded.</li>
+  <li><b>Forwarding.</b> The shared <code>BackendTransport</code> posts an OpenAI-style payload to <code>{base_url}/chat/completions</code>.</li>
+  <li><b>Backend response.</b> Either a complete JSON body or, when streaming, a stream of SSE bytes.</li>
+  <li><b>Response to the client.</b> The backend's JSON is returned unchanged; routing metadata travels in headers: <code>x-request-id</code>, <code>x-jev-tier</code>, <code>x-jev-backend-model</code>.</li>
+  <li><b>Outcome record.</b> <code>RequestTrace.finish</code> logs one JSON line with status (<code>ok</code>, <code>timeout</code>, <code>backend_error</code>, <code>stream_interrupted</code>), duration, usage and cost status.</li>
+</ol>
+
+<div class="callout"><span class="label">Design decision · keep the backend body intact</span>
+<p>The gateway does not rewrite the backend's completion JSON or add fields to it. Metadata goes in headers, so any OpenAI-compatible client keeps working, and the original usage numbers survive untouched for later cost accounting. The alternative — a gateway-specific envelope — would have broken client compatibility for little gain.</p></div>
+
+<h2 id="diagram-c">C · How a Jev decision becomes an action</h2>
+
+<figure data-src="f06-decision-to-action" class="mid" id="fig-decision-action"><figcaption><b>Diagram C.</b> The request context is turned into a state and a versioned question; Jev returns a typed result; application policy interprets it together with availability and budget; then the gateway calls the selected tier or falls back. Only the Jev box is product behaviour.</figcaption></figure>
+
+<p>Each step to the left and right of Jev belongs to this project. The <b>state builder</b> decides what Jev sees — the user's last message, perhaps a task hint, and plain-language descriptions of each tier — and stamps the question with a version so that results can be traced to wording. <b>Policy</b> combines Jev's answer with facts Jev cannot know: which tiers are enabled, what the remaining budget allows, how long the request has left before its deadline. When Jev is slow, unavailable or unsure, a deterministic <b>fallback</b> takes over (the trained DistilBERT classifier from Day 3, or a fixed tier) — and the fallback never silently promotes a request to the paid tier. The decision, its inputs and its latency go into the trace, so a later report can explain every routed request.</p>
+
+<h2 id="diagram-d">D · Day 2 evaluation pipeline</h2>
+
+<figure data-src="f23-day2-pipeline" class="mid" id="fig-day2-pipeline"><figcaption><b>Diagram D.</b> Versioned datasets are loaded, deduplicated and grouped, frozen into a manifest, and split 60/20/20 by group. Only train and validation reach the runner. Scored results become immutable records from which every report is regenerated. The test split stays sealed until Day 6.</figcaption></figure>
+
+<p>Data moves in one direction. Loaders turn each dataset row into a prompt record with a stable ID, a pinned dataset revision and the reference answer. Deduplication and grouping keep paraphrases and closely related variants together, so that a group can be assigned to exactly one split. The frozen manifest — between 2,000 and 3,000 prompts — is identified by a content hash, so any later report can say exactly which prompts it covers.</p>
+
+<p>The runner sends train and validation prompts to all three tiers within explicit request, token and dollar limits, and checkpoints as it goes. Task-specific scorers turn raw outputs into outcomes. Each outcome is appended to an immutable record file and never edited. Reports, oracle labels, cost tables and audit samples are all derived from those records, which means they can be regenerated — and checked — at any time.</p>
+
+<h2 id="consistency">Architecture and milestones: consistency check</h2>
+
+<p>Each architectural component should appear in exactly one checkpoint where it is introduced, and no Day 1 or Day 2 checkpoint should depend on a component that arrives later. This table was checked against <code>docs/COMMIT_PLAN.md</code> and the Day 1 commits.</p>
+
+<table>
+  <thead><tr><th style="width:25%">Component in diagrams A–D</th><th style="width:22%">Introduced at</th><th>Depends on · notes</th></tr></thead>
+  <tbody>
+    <tr><td>Gateway API, health, model registry</td><td>D1-05 (4d6ba55)</td><td>Config (D1-04). <code>/readyz</code> reports process readiness only.</td></tr>
+    <tr><td>Reusable async transport</td><td>D1-06 (e4406c4)</td><td>Used by every tier from D1-10 on.</td></tr>
+    <tr><td>Ollama small / medium adapters</td><td>D1-07, D1-08</td><td>Live answers pending: Ollama was not installed at preflight.</td></tr>
+    <tr><td>Frontier tier with spending controls</td><td>D1-09 (1ade058)</td><td>Disabled until key, model, prices and caps exist.</td></tr>
+    <tr><td>Explicit-tier dispatch; streaming</td><td>D1-10, D1-11</td><td>Diagram B; <code>model=auto</code> waits for the D3-17 router dispatch.</td></tr>
+    <tr><td>Request records</td><td>D1-13 (2d01a58)</td><td>Extended with decision fields in Day 3.</td></tr>
+    <tr><td>Colab vLLM experiment path</td><td>D1-15 (19bd683)</td><td>Not executed; GPU and wheel compatibility unknown.</td></tr>
+    <tr><td>Versioned datasets, manifest, splits</td><td>D2-01 to D2-06</td><td>No dependency on routers or Jev.</td></tr>
+    <tr><td>Scorers and code sandbox</td><td>D2-05, D2-07 to D2-09</td><td>Sandbox uses Docker on the Mac (already present at preflight).</td></tr>
+    <tr><td>Three-tier runner, oracle labels, costs</td><td>D2-11 to D2-15</td><td>Needs working backends from Day 1; frontier only with caps.</td></tr>
+    <tr><td>Jev decision path (diagram C)</td><td>D3-08 to D3-10, D3-17</td><td>Uses Day 2 labels for thresholds and calibration.</td></tr>
+    <tr><td>DistilBERT fallback</td><td>D3-03 to D3-06</td><td>Trained on Day 2 train-split oracle labels.</td></tr>
+    <tr><td>Embedding cache, verifier</td><td>D4-01 to D4-17</td><td>Outside this notebook's detailed scope.</td></tr>
+  </tbody>
+</table>
+
+<p>One gap is worth recording: Day 2's runner (D2-11) needs at least two live backends to produce meaningful labels, and those live checks are still pending from D1-07 and D1-08. Day 2 can implement and offline-test every component, but its real measurements (D2-18) are blocked until Ollama is installed and the models answer.</p>

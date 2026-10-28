@@ -1,0 +1,128 @@
+<h1 id="part5"><span class="part-no">Part 5</span>Prerequisites and setup notes</h1>
+
+<p class="part-intro">Day 1 touches packaging, HTTP, concurrency, version control and testing all at once. This part collects the practical knowledge each checkpoint assumes, then gives a setup sequence for the Mac and for Colab and a map of the repository.</p>
+
+<h2 id="python-packaging">Python packages, imports, virtual environments and lockfiles</h2>
+
+<p>A <b>module</b> is one <code>.py</code> file; a <b>package</b> is a directory of modules that can be imported by name. The gateway's code lives in <code>src/jev_gateway/</code>, so <code>from jev_gateway.config import from_env</code> works once the package is installed. The <code>src/</code> layout prevents a common trap: without it, Python can import the code straight from the working directory and tests pass even when the package would fail to install.</p>
+
+<p>A <b>virtual environment</b> (<code>.venv/</code>) is a private directory of installed packages for one project, so the gateway's FastAPI version cannot collide with another project's. <b>pyproject.toml</b> declares what the project needs: here, four core dependencies (FastAPI, httpx, Uvicorn, Pydantic) with version ranges, plus optional groups — <code>test</code>, <code>training</code> (transformers, datasets, accelerate, torch) and <code>embeddings</code> (sentence-transformers, faiss-cpu) — and a console script that makes <code>jev</code> run <code>jev_gateway.cli:main</code>.</p>
+
+<p>A <b>lockfile</b> (<code>uv.lock</code>) records the exact version and hash of every package, including indirect ones, that satisfied those ranges when it was created. <code>uv sync --locked</code> installs exactly that set and fails if <code>pyproject.toml</code> and the lock disagree, which is what makes "it worked on my machine" reproducible on a clean checkout.</p>
+
+<div class="callout tech"><span class="label">Technical note · why the lock contains CUDA packages</span>
+<p>The lockfile resolves <em>all</em> optional groups, so it lists torch and NVIDIA wheels for the <code>training</code> extra. They are not installed by a plain <code>uv sync</code>; D1-16 records that the core environment contains no torch, CUDA, NVIDIA or vLLM packages <span class="pill rec">Recorded</span>. vLLM is deliberately not in <code>pyproject.toml</code> at all — it is pinned only in <code>requirements/colab-serving.txt</code> for the notebook.</p></div>
+
+<h2 id="http-basics">HTTP requests, JSON, URLs, ports and authentication</h2>
+
+<p>The gateway, Ollama, vLLM, TypeSafe and the frontier provider all communicate over <b>HTTP</b>: a client sends a <i>request</i> with a method (<code>GET</code>, <code>POST</code>), a path, headers and an optional body; the server returns a <i>status code</i>, headers and a body. Bodies here are <b>JSON</b>. Status codes carry meaning the gateway relies on: 2xx success, 4xx the client's fault (422 invalid input, 429 over limit), 5xx the server's (502 bad upstream, 503 unavailable, 504 upstream timeout).</p>
+
+<p>A <b>URL</b> such as <code>http://127.0.0.1:11434/v1/chat/completions</code> combines a scheme (<code>http</code>), a host (<code>127.0.0.1</code>), a <b>port</b> (11434 — which program on that host), and a path. Each server listens on its own port: gateway 8080, Ollama 11434, notebook vLLM 8000. <code>config.py</code> rejects base URLs that are not absolute HTTP(S) or that embed credentials such as <code>http://user:pass@host</code>.</p>
+
+<p><b>Authentication</b> for the paid APIs uses a bearer token: the header <code>Authorization: Bearer &lt;key&gt;</code>. The gateway reads the frontier key only from the environment variable <code>JEV_FRONTIER_API_KEY</code>, sends it only to that backend, and never logs it. Local Ollama ignores keys.</p>
+
+<h2 id="localhost">Why “localhost” differs across a Mac, a container and Colab</h2>
+
+<figure data-src="f14-localhost" class="mid" id="fig-localhost"><figcaption><code>localhost</code> (or <code>127.0.0.1</code>) always refers to the machine or container where the code is running. It works between the gateway and Ollama on the Mac, fails from inside a container unless the host address is used, and never reaches the Mac from Colab.</figcaption></figure>
+
+<p>The address <code>127.0.0.1</code> is the <i>loopback</i> interface: traffic to it never leaves the current network namespace. On the Mac that means the gateway can reach Ollama at <code>127.0.0.1:11434</code>. Inside a Docker container on the same Mac (Day 5), <code>127.0.0.1</code> is the container itself; Docker Desktop documents <code>host.docker.internal</code> as the name for reaching services on the host. In Colab, <code>127.0.0.1:8000</code> is the vLLM server inside the Colab virtual machine — a different computer in Google's data centre. That is why the notebook runs its server, gateway code and client all in the same VM, and why the project rejects public tunnels as a way to bridge the two.</p>
+
+<h2 id="async">Async I/O and reusable HTTP clients</h2>
+
+<p>Most of a gateway's time is spent <em>waiting</em> — for a model to finish, for bytes to arrive. In synchronous code, a waiting request blocks its thread. In <b>asynchronous</b> code (<code>async def</code>, <code>await</code>), waiting hands control back to an event loop, which runs other requests until the awaited data arrives. One process can therefore hold many slow upstream calls open at once. Async does not make a model generate faster; it stops the gateway from being the bottleneck while models work.</p>
+
+<p>Opening a new TCP (and, for HTTPS, TLS) connection for every request is slow. A <b>reusable client</b> — one <code>httpx.AsyncClient</code> created at startup — keeps a pool of open connections and reuses them. <code>BackendTransport</code> bounds that pool (20 connections, 10 kept alive) so a burst of requests cannot open unlimited sockets, and closes it when the app shuts down via FastAPI's lifespan hook.</p>
+
+<h2 id="timeouts">Timeouts, cancellation and streaming</h2>
+
+<p>A <b>timeout</b> bounds how long one operation may wait. The gateway applies <code>JEV_TIMEOUT_SECONDS</code> (default 60, allowed range up to 300) to backend calls and maps an expiry to HTTP 504. A <b>deadline</b> is the related idea for a whole request: once routing and verification add steps (Days 3–4), each step must use what is left of one shared budget rather than its own fresh timeout.</p>
+
+<p><b>Cancellation</b> is what happens when the caller goes away. In Python's asyncio, the waiting task receives a <code>CancelledError</code>; correct code lets it propagate and releases resources in <code>finally</code> blocks — closing the upstream response so the backend connection is freed. The streaming generator in <code>api.py</code> does exactly this.</p>
+
+<p><b>Streaming</b> sends the answer as it is produced. OpenAI-compatible servers use server-sent events: lines of the form <code>data: {json}</code> separated by blank lines, ending with <code>data: [DONE]</code>. The gateway forwards these bytes without assembling the whole answer first, so the client sees the first words as soon as the backend produces them.</p>
+
+<h2 id="git">Git: working tree, staging, commits and remotes</h2>
+
+<p>The <b>working tree</b> is the files as they are on disk now. The <b>staging area</b> (index) holds the exact changes chosen for the next commit — <code>git add -p</code> lets you stage some hunks of a file and not others. A <b>commit</b> is a permanent snapshot with a message, author and timestamp; its hash (such as <code>4d6ba55</code>) identifies it forever. A <b>remote</b> is another copy of the repository, such as one on GitHub; nothing leaves the Mac until you <code>git push</code>.</p>
+
+<p>The project's rule is one coherent checkpoint per commit, with its tests and docs, labelled by checkpoint ID (<code>D1-05 feat: add gateway API and health endpoints</code>). Two details from this repository: the Git root is the parent folder <code>Research Project 2</code>, so paths in commits begin with <code>llm_gateway_full_project/</code>; and the Colab notebook is fed with <code>git archive</code> of a committed revision, which is why uncommitted edits never reach a Colab run.</p>
+
+<h2 id="testing-ladder">Unit tests, mocks, contract checks, real integrations and benchmarks</h2>
+
+<figure data-src="f20-evidence-ladder" class="narrow" id="fig-evidence-ladder"><figcaption>Kinds of evidence, from weakest to strongest claim about the real system. Day 1 has offline evidence for the bottom three rungs; real integration and benchmarks remain to be done.</figcaption></figure>
+
+<ul>
+  <li><b>Unit test.</b> One function, controlled inputs, no network — for example, an invalid URL raises <code>ConfigError</code> (<code>test_config.py</code>).</li>
+  <li><b>Mock.</b> A stand-in for a dependency. <code>httpx.MockTransport</code> lets tests play the role of Ollama or a provider and return chosen responses, including 500 errors, timeouts and fragmented SSE.</li>
+  <li><b>Contract check.</b> Verifies the public interface: which requests the API accepts, which it rejects and with what code (<code>test_api_contract.py</code>).</li>
+  <li><b>Real integration check.</b> The real gateway talking to a real Ollama or API. Only this proves that model names, URLs and response shapes match reality; a mock cannot. <code>scripts/real_check.sh</code> is the opt-in entry point.</li>
+  <li><b>Benchmark.</b> A controlled, repeated measurement under a defined workload. It answers "how fast" or "how accurate", which none of the above can.</li>
+</ul>
+
+<h2 id="setup-mac">Setup sequence on the Mac</h2>
+
+<p>The commands below are grouped by purpose. Tool checks and installs come from official instructions; commands that run the project's own code are marked as such and exist in the repository as of D1-18.</p>
+
+<p class="code-label">Preflight · read-only checks</p>
+<pre><code>sw_vers                                   <span class="cm"># macOS version (Ollama requires macOS 14 Sonoma or newer)</span>
+system_profiler SPHardwareDataType | grep -E "Chip|Memory"
+df -h .                                   <span class="cm"># free disk before any model download</span>
+git --version; python3 --version; docker --version; kubectl version --client
+uv --version; ollama --version            <span class="cm"># both absent at the 27 Oct preflight</span></code></pre>
+
+<p class="code-label">Install tools · official instructions</p>
+<pre><code>curl -LsSf https://astral.sh/uv/install.sh | sh   <span class="cm"># or: brew install uv   (docs.astral.sh/uv)</span>
+<span class="cm"># Ollama: download the macOS app from ollama.com, drag to Applications, start it once;</span>
+<span class="cm"># it offers to link the `ollama` CLI into /usr/local/bin   (docs.ollama.com/macos)</span></code></pre>
+
+<p class="code-label">Project environment · repository commands</p>
+<pre><code>cd "llm_gateway_full_project"
+uv sync --locked                          <span class="cm"># exact core dependencies from uv.lock</span>
+uv run jev --help
+uv run --extra test pytest -q             <span class="cm"># offline suite (15 tests at D1-18)</span></code></pre>
+
+<p class="code-label">Models and live checks · repository commands, pending first run</p>
+<pre><code>ollama pull qwen2.5:1.5b                  <span class="cm"># ~986 MB download</span>
+ollama list; ollama ps
+uv run jev doctor                         <span class="cm"># reports installed/loaded models, frontier status</span>
+uv run jev serve                          <span class="cm"># terminal 1: gateway on 127.0.0.1:8080</span>
+uv run jev smoke --tier small             <span class="cm"># terminal 2: one bounded request</span>
+ollama pull qwen2.5:7b                    <span class="cm"># only after checking free disk (~4.7 GB)</span>
+uv run jev smoke --tier medium; ollama ps <span class="cm"># then record residency and memory pressure</span></code></pre>
+
+<p>Configuration is read from environment variables; <code>config/mac.env.example</code> lists them with safe defaults. Secrets go in an untracked <code>.env</code> (ignored by Git) and are exported in the shell. The frontier tier stays disabled until <code>JEV_FRONTIER_MODEL</code>, <code>JEV_FRONTIER_API_KEY</code>, both per-million-token prices and positive request, token and USD caps are all set.</p>
+
+<h2 id="setup-colab">Setup sequence for Colab</h2>
+
+<ol>
+  <li>On the Mac, commit the work, then build a source archive from that commit and record its digest. The repository's notebook README gives:
+<pre><code>git archive --format=zip -o jev-source.zip HEAD llm_gateway_full_project
+shasum -a 256 jev-source.zip</code></pre></li>
+  <li>In Colab, choose a GPU runtime explicitly and run <code>notebooks/colab_preflight.py</code> or the notebook's first cell to record Python, platform, <code>nvidia-smi</code> GPU name, memory and driver.</li>
+  <li>Paste the SHA-256 into the notebook, upload the zip, and let the notebook verify the hash and extract safely.</li>
+  <li>Install the package from the extracted source plus the pinned vLLM. Check the pin against the GPU and CUDA reported in step 2 and vLLM's installation page first: the repository pins <code>vllm==0.18.0</code>, while PyPI listed 0.32.0 as the latest release on 28 Oct 2026. If installation fails, record the facts and update the pin in a new checkpoint.</li>
+  <li>Run the serve, readiness, request and export cells; download the JSON result; run the cleanup cell. Results are labelled Colab and kept separate from Mac results.</li>
+</ol>
+
+<h2 id="repo-layout">Proposed and current repository layout</h2>
+
+<table>
+  <thead><tr><th style="width:24%">Path</th><th style="width:12%">State</th><th>Responsibility</th></tr></thead>
+  <tbody>
+    <tr><td><code>src/jev_gateway/</code></td><td>exists</td><td>The installable application package: API, configuration, transport, budget, tracing, diagnostics, Ollama discovery, CLI.</td></tr>
+    <tr><td><code>tests/</code></td><td>exists</td><td>Offline tests (15 at D1-18). Real checks are opt-in and live in <code>scripts/</code>.</td></tr>
+    <tr><td><code>config/</code></td><td>exists</td><td>Example environment profiles for Mac and Colab. No secrets.</td></tr>
+    <tr><td><code>requirements/</code></td><td>exists</td><td>Environment-specific pins that must not enter the core install (vLLM for Colab).</td></tr>
+    <tr><td><code>notebooks/</code></td><td>exists</td><td>Colab preflight script and the serving notebook; README with the archive procedure.</td></tr>
+    <tr><td><code>scripts/</code></td><td>exists</td><td>Opt-in real-path checks (<code>real_check.sh</code>).</td></tr>
+    <tr><td><code>docs/</code></td><td>exists</td><td>Plan, commit plan, status, decisions, environments, experiments, runtime profiles — the engineering evidence ledger. This notebook lives in <code>docs/engineering-notebook/</code>.</td></tr>
+    <tr><td><code>evidence/day1/</code></td><td>exists</td><td>Raw, timestamped outputs that status claims cite.</td></tr>
+    <tr><td><code>prompts/</code></td><td>exists</td><td>Per-day build instructions from the starter.</td></tr>
+    <tr><td><code>src/jev_gateway/eval/</code></td><td><span class="pill plan">Planned</span></td><td>Day 2 record schema, dataset loaders, manifest and split builder, scorers, runner, reports.</td></tr>
+    <tr><td><code>data/manifests/</code></td><td><span class="pill plan">Planned</span></td><td>Frozen manifest files and their hashes (prompt IDs and provenance, not bulk dataset copies).</td></tr>
+    <tr><td><code>results/</code></td><td><span class="pill plan">Planned</span></td><td>Run outputs (already in <code>.gitignore</code>); summaries copied into <code>evidence/</code> when cited.</td></tr>
+    <tr><td><code>sandbox/</code></td><td><span class="pill plan">Planned</span></td><td>Container definition for isolated code scoring.</td></tr>
+  </tbody>
+</table>
+
+<figure data-src="f15-modules" id="fig-modules"><figcaption>Module map of <code>src/jev_gateway</code> at D1-18. Arrows point from a module to what it uses. <code>api.py</code> is the hub for serving; <code>diagnostics.py</code> and <code>ollama.py</code> support the <code>doctor</code> and <code>smoke</code> commands.</figcaption></figure>

@@ -1,0 +1,56 @@
+<section class="cover">
+  <div class="band"></div>
+  <div class="kicker">Engineering notebook · foundations and build days 1–2</div>
+  <h1 class="title">Jev LLM Gateway</h1>
+  <div class="subtitle">A configurable three-tier LLM gateway with decision-model routing — research, architecture, and the plan and record for the serving foundation and the evaluation baseline.</div>
+  <div class="cover-fig"><img src="figures/f01-architecture.svg" alt="High-level architecture"></div>
+  <div class="meta">
+    <div class="rule"></div>
+    <b>Project</b> llm_gateway_full_project · package <code>jev-gateway</code> 0.1.0<br>
+    <b>Environments</b> M3 Pro MacBook (application) · Google Colab (NVIDIA experiments) · external APIs<br>
+    <b>Repository state described</b> Day 1 commits D1-01 to D1-18 (7764899 … 4e6f7e0), 27 Oct 2026 · Day 2 not yet started<br>
+    <b>Sources accessed</b> 28 October 2026
+  </div>
+</section>
+
+<!--TOC-->
+
+<h1 id="reading" class="unnumbered">How to read this notebook</h1>
+
+<p class="part-intro">This notebook explains what the Jev LLM Gateway is, why it is designed the way it is, and how the first two build days turn that design into working software and trustworthy measurements. It is written to be read on its own; the starter guide that accompanies the repository is not required.</p>
+
+<p>The project is larger than two days of work. Six build days are planned, and the later ones add the Jev router, a trained fallback classifier, answer verification, a semantic cache, deployment, load testing and an NVIDIA performance study. Those later features are described here only as far as needed to understand the architecture. The detailed material concentrates on the foundations: background research, the serving gateway (Day 1), and the evaluation and baseline system (Day 2).</p>
+
+<h2 id="conventions">Evidence conventions</h2>
+
+<p>A notebook like this is only useful if it keeps three kinds of statement apart: what someone else has documented, what has actually been observed in this project, and what is still a plan. Each of these is labelled where it matters.</p>
+
+<table class="legend-table">
+  <thead><tr><th>Label</th><th>Meaning in this notebook</th></tr></thead>
+  <tbody>
+    <tr><td><span class="pill doc">Documented</span></td><td>Product behaviour stated in official documentation (TypeSafe, Ollama, vLLM, Docker, Colab, dataset cards). Source list on the final pages; all accessed 28 October 2026.</td></tr>
+    <tr><td><span class="pill rec">Recorded</span></td><td>Something the repository itself records as having happened: a commit, a test run, a raw output file under <code>evidence/</code>, or an entry in <code>docs/STATUS.md</code>. Commit hashes are quoted so each claim can be checked.</td></tr>
+    <tr><td><span class="pill plan">Planned</span></td><td>Work described in <code>docs/COMMIT_PLAN.md</code> that has not been implemented. Everything in Day 2 is planned.</td></tr>
+    <tr><td><span class="pill ours">Our design</span></td><td>A proposal for how this application will use a product or technique — for example, how a Jev answer is turned into a routing action. These are design choices, not product features.</td></tr>
+    <tr><td><span class="pill ill">Illustrative</span></td><td>Numbers invented to explain a calculation or a chart shape. They are never project measurements.</td></tr>
+  </tbody>
+</table>
+
+<p>As of the repository state described here, no model has generated an answer through the gateway, no Colab cell has run, and no paid request has been sent. The Day 1 code exists and its offline test suite passes; the live checks are listed as pending. The notebook says so wherever a reader might otherwise assume more.</p>
+
+<div class="callout tech"><span class="label">Technical note · margin callouts</span>
+<p>Three kinds of callout appear sparingly. <b>Design decision</b> records a choice and the alternative it beat. <b>Working hypothesis</b> states something the project expects but has not shown; each names how it will be tested. <b>Technical note</b> adds a detail needed to read code or numbers correctly.</p></div>
+
+<h2 id="glossary">Short glossary</h2>
+<table class="tight">
+  <tbody>
+    <tr><td class="k">Tier</td><td>One of the three generation choices exposed by the gateway: <code>small</code>, <code>medium</code>, <code>frontier</code>. A tier name is a role, not a guarantee of quality.</td></tr>
+    <tr><td class="k">Backend</td><td>The concrete server behind a tier: a URL, a model identifier, and optionally an API key variable.</td></tr>
+    <tr><td class="k">Gateway</td><td>This project's FastAPI application. It validates requests, resolves a tier to a backend, forwards the call, and records what happened.</td></tr>
+    <tr><td class="k">Jev</td><td>TypeSafe's hosted decision model. It answers typed questions with probabilities; it does not write text.</td></tr>
+    <tr><td class="k">Router</td><td>Code that picks a tier for a request. Jev, DistilBERT, a prompted LLM and fixed or random policies are all routers in the later plan.</td></tr>
+    <tr><td class="k">Oracle label</td><td>For an evaluated prompt, the cheapest tier observed to answer it correctly. Available only after the fact.</td></tr>
+    <tr><td class="k">SSE</td><td>Server-sent events: the <code>data: …</code> line format used to stream chat completions over HTTP.</td></tr>
+    <tr><td class="k">Checkpoint</td><td>One planned unit of work with an ID such as <code>D1-07</code>, normally one commit.</td></tr>
+  </tbody>
+</table>

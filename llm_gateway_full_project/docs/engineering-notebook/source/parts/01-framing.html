@@ -1,0 +1,143 @@
+<h1 id="part1"><span class="part-no">Part 1</span>Project framing and brainstorming</h1>
+
+<p class="part-intro">Before writing code it is worth being precise about the problem, about what would count as success, and about which parts of the plan are still guesses. This part records that thinking.</p>
+
+<h2 id="brief">Project brief</h2>
+
+<p>The Jev LLM Gateway is a single HTTP service that sits in front of several language models and decides, for each request, which one should answer. It exposes one OpenAI-style chat endpoint. Behind it are three generation tiers: a small self-hosted model, a medium self-hosted model, and a paid frontier model reached through a provider's API. On the M3 MacBook, the two self-hosted tiers run in native Ollama; in Google Colab, the same repository code can be pointed at vLLM on an NVIDIA GPU for experiments.</p>
+
+<p>The project is named after Jev, a decision model from TypeSafe AI. Jev does not write answers. It answers narrow, typed questions — "which of these options?", "how far along this scale?", "is this statement true?" — and returns probabilities. The gateway will use those answers to choose a tier, to judge whether a generated answer can be trusted, and to decide whether a cached answer fits a new request. A trained DistilBERT classifier serves as a fallback when Jev is unavailable and as a point of comparison.</p>
+
+<p>Around that core, the full plan adds an evaluation benchmark of 2,000–3,000 prompts, calibration analysis, a verified semantic cache, monitoring, deployment to local Kubernetes, load and failure tests, and an NVIDIA serving experiment. The aim is a system that is useful to run and also a source of honest measurements about when routing pays for itself.</p>
+
+<h2 id="problem">The problem the gateway solves</h2>
+
+<p>An application that calls one model for every request makes an implicit bet: that the model is the right trade-off between quality, speed and cost for <em>every</em> request it will ever see. That bet is rarely right. "What is 12 × 7?" and "Prove that this recursive function terminates" do not need the same model, yet a single-model application pays the same price and waits the same way for both.</p>
+
+<p>A gateway makes the choice explicit and changeable. Clients talk to one stable endpoint; the gateway owns the list of backends, their credentials, their limits, and the policy for choosing among them. That separation is useful even before any automatic routing exists — it is what Day 1 builds — because it gives one place to enforce timeouts and spending caps and one place to record what every request cost and how long it took.</p>
+
+<h2 id="why-choice">Why model choice affects quality, latency and cost</h2>
+
+<p><b>Quality.</b> Larger models usually answer more questions correctly, but "usually" hides a lot. Benchmarks show large average gaps on multi-step maths and code, and much smaller gaps on short factual or classification questions. On any given prompt a smaller model can be right where a larger one is wrong. Which prompts are which is an empirical question for Day 2.</p>
+
+<p><b>Latency.</b> A generating model produces output one token at a time, and each token requires reading the model's weights from memory. More parameters means more bytes to read per token, so on the same hardware a 7-billion-parameter model normally produces tokens more slowly than a 1.5-billion-parameter one. A frontier API adds network time and the provider's queueing, but runs on much larger hardware. On a memory-limited laptop there is a further cost: switching between local models can mean loading several gigabytes from disk.</p>
+
+<p><b>Cost.</b> Frontier APIs charge per input and output token. Self-hosted models have no per-token bill, but they consume hardware that has a cost whether or not it is busy — electricity and wear on a Mac, or hourly rental for a cloud GPU. The two kinds of cost behave differently and must not be added together as if they were the same unit (Part 7 returns to this).</p>
+
+<h2 id="routing-value">When routing is useful — and what erases the benefit</h2>
+
+<p>Routing is useful when three things are true at once: a meaningful share of requests can be answered correctly by a cheaper or faster tier; something can recognise those requests <em>before</em> paying for the expensive answer; and the act of recognising them is cheap relative to what it saves.</p>
+
+<figure data-src="f03-routing-value" id="fig-routing-value"><figcaption>Where time and cost go for a frontier-only request, a correctly routed easy request, and a misjudged request that is escalated after a check. Proportions are illustrative. The misjudged case costs more than not routing at all.</figcaption></figure>
+
+<p>Several overheads can erase the benefit:</p>
+<ul>
+  <li><b>Decision latency.</b> A routing call that adds hundreds of milliseconds to every request may cost more user-visible time than it saves on the subset that goes to a faster tier.</li>
+  <li><b>Misroutes.</b> Sending a hard request to the small tier either returns a wrong answer (a quality loss) or, with verification, triggers a second generation on a bigger tier (paying twice).</li>
+  <li><b>Verification calls.</b> Checking answers improves quality but adds a call per request and turns some single generations into cascades.</li>
+  <li><b>Model switching.</b> On a machine that cannot hold both local models in memory, routing between them can force repeated loading — a cost that a benchmark run sequentially per tier would never see.</li>
+  <li><b>Idle capacity.</b> If the GPU hosting a self-hosted tier is paid for by the hour, sending it fewer requests does not reduce the bill.</li>
+</ul>
+
+<p>The practical consequence is that routing can only be judged on full-path numbers: every decision, verification and rejected attempt has to be included in the cost and latency of the request it served.</p>
+
+<h2 id="app-vs-bench">A useful application versus a benchmark experiment</h2>
+
+<p>The project has two goals that pull in slightly different directions, and confusing them is a common source of bad conclusions.</p>
+
+<p>As an <b>application</b>, the gateway must be dependable: it starts reliably on the Mac, fails clearly when a backend is missing, never leaks a key, never spends beyond a cap, and gives clients a stable API. Its success is measured by whether it behaves correctly under real conditions, including partial failure.</p>
+
+<p>As a <b>benchmark experiment</b>, the project must produce numbers that mean something: accuracy per tier with stated sample counts, routing comparisons on a held-out test set, latency under a defined workload, and costs that include everything. Its success is measured by whether another person could reproduce the numbers and would draw the same conclusion.</p>
+
+<p>The two share code but not evidence. A quality evaluation that runs each tier sequentially over thousands of prompts tells us which tier answered which prompt correctly; it does not tell us how fast a live routed request would be, because it never pays for switching, contention or decision calls on the request path. Conversely, a smooth demo of the application says nothing about accuracy. The repository keeps engineering evidence (<code>docs/STATUS.md</code>, <code>docs/EXPERIMENTS.md</code>, <code>evidence/</code>) separate from the code for exactly this reason.</p>
+
+<h2 id="ml-systems">How the project connects to ML systems engineering</h2>
+
+<p>The long-term goal behind the project is ML systems and AI infrastructure work — inference optimisation, GPU performance, and making models run efficiently on real hardware. The gateway is a deliberately practical way into that field. It forces contact with the questions that matter in production inference: what happens to memory when a model loads, why the first token is slower than the rest, how batching and concurrency trade latency for throughput, how to measure tail latency honestly, and how to tell a real speed-up from noise.</p>
+
+<p>It also separates two layers that are easy to blur: the <em>serving runtime</em> (Ollama, vLLM), which owns memory, batching and kernels; and the <em>application layer</em> (this gateway), which owns policy, routing, budgets and records. Day 6's NVIDIA experiment works at the runtime layer — a vLLM baseline, a profile, one evidence-motivated change, and a repeated comparison — while everything before it builds the measurement discipline that makes such an experiment believable.</p>
+
+<h2 id="questions">Questions worth asking before implementation</h2>
+
+<p>These are the questions that shaped the plan. Some are answered by the design; several can only be answered by measurement.</p>
+<ul>
+  <li>What exactly is the client allowed to send, and what does the gateway refuse? (Day 1 answers: text-only chat; explicit tiers; no images, tools or <code>auto</code> yet.)</li>
+  <li>Can both local models stay loaded on this Mac at once, and what does switching cost? Unknown until measured with Ollama on the real machine.</li>
+  <li>What is a "correct" answer for each task family, and how often does the scorer itself make mistakes?</li>
+  <li>What event should a routing probability refer to — "this tier will be correct", or "this tier is the cheapest correct one"? The answer determines how calibration can be measured.</li>
+  <li>How much does a Jev call add to request latency from this network, at p50 and p95?</li>
+  <li>What is the cheapest possible routing on the measured data (the hindsight oracle), and how close can any real router get?</li>
+  <li>What does a wrong answer cost compared with a slow one? This sets the threshold for escalation and cannot come from the data alone.</li>
+  <li>Which results belong to the Mac, which to Colab, and how is that labelled so they are never mixed?</li>
+</ul>
+
+<h2 id="alternatives">Alternatives considered</h2>
+
+<table>
+  <thead><tr><th style="width:21%">Decision</th><th style="width:34%">Alternative</th><th>Why the proposed option was preferred</th></tr></thead>
+  <tbody>
+    <tr><td>Local runtime on the Mac</td><td>vLLM or llama.cpp server directly</td><td>vLLM's GPU path targets Linux with NVIDIA and other accelerators, not the Mac's GPU. Native Ollama is supported on Apple Silicon, manages model downloads and residency, and exposes an OpenAI-compatible endpoint.</td></tr>
+    <tr><td>API shape</td><td>A custom request format</td><td>An OpenAI-style <code>/v1/chat/completions</code> lets existing clients and tools work, and both Ollama and vLLM speak it, so one transport serves every tier.</td></tr>
+    <tr><td>Tier selection on Day 1</td><td>Start with automatic routing</td><td>Routing cannot be evaluated without a working three-tier path and labelled outcomes. Explicit tiers first give a stable base and a clear test target.</td></tr>
+    <tr><td>Routing signal</td><td>Only a prompted LLM router or only a trained classifier</td><td>The project compares Jev with a trained DistilBERT, a prompted LLM, a self-hosted decision model and fixed/random baselines on the same split — the comparison is the point.</td></tr>
+    <tr><td>Where GPU work happens</td><td>Rent a permanent GPU server</td><td>Colab provides NVIDIA access for bounded experiments without standing infrastructure. Its limits (session lifetime, quota) are acceptable for experiments, not for serving the app.</td></tr>
+    <tr><td>Budget control</td><td>Rely only on the provider dashboard</td><td>A process-local admission check stops runaway loops immediately and makes the cap visible in code; provider limits remain the backstop.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="constraints">Constraints and unresolved assumptions</h2>
+
+<p><b>Hardware.</b> The Mac preflight recorded an Apple M3 Pro with 11 CPU cores, 18 GB of unified memory, macOS 26.5.2, and only 18 GiB free on a 460 GiB data volume <span class="pill rec">Recorded</span>. That memory is shared by macOS, every open application, the CPU and the GPU. The notebook does not assume that both local models, a classifier, an embedding model, Docker and Kubernetes can be resident together; that has to be measured. Disk space is a real constraint for model downloads.</p>
+
+<p><b>Colab.</b> Google states that Colab resources are not guaranteed, that idle virtual machines are deleted, and that free notebooks run for at most 12 hours depending on availability <span class="pill doc">Documented</span>. GPU type and memory are unknown until a session is allocated.</p>
+
+<p><b>External access.</b> Jev requires a TypeSafe API key; the frontier tier requires a provider key, a model name, current prices and positive caps. None are configured in the repository yet.</p>
+
+<p><b>Unresolved assumptions</b> — stated so that they can be checked rather than quietly relied on:</p>
+<ul>
+  <li>The chosen Qwen2.5 tags will run acceptably in Ollama on this Mac.</li>
+  <li>The three task families will show enough per-prompt disagreement between tiers for routing to matter.</li>
+  <li>Jev's probabilities, phrased around this project's events, will carry useful signal about tier success.</li>
+  <li>The network latency to Jev and to the frontier provider will be stable enough to measure meaningfully from a home connection.</li>
+</ul>
+
+<h2 id="hypotheses">Working hypotheses to test</h2>
+
+<div class="callout hypothesis"><span class="label">Working hypothesis H1 · tier disagreement</span>
+<p>On the Day 2 manifest, a substantial share of prompts will be answered correctly by the small tier, and the share will differ sharply between maths, multiple-choice and code. <i>Test:</i> per-task accuracy per tier on train and validation splits, with sample counts.</p></div>
+
+<div class="callout hypothesis"><span class="label">Working hypothesis H2 · routing headroom</span>
+<p>The hindsight oracle will cost much less than always-frontier at similar accuracy, leaving room for a real router to save money. <i>Test:</i> oracle versus fixed-tier cost and accuracy on validation (Day 2), then each router against that bound (Day 3).</p></div>
+
+<div class="callout hypothesis"><span class="label">Working hypothesis H3 · decision overhead</span>
+<p>A Jev decision adds less latency than the generation time it saves on requests routed to the small tier. <i>Test:</i> decision-only p50/p95 and full-path latency on the Mac, with warm-up and model-load state recorded (Day 3).</p></div>
+
+<div class="callout hypothesis"><span class="label">Working hypothesis H4 · memory residency</span>
+<p>Both Qwen2.5 tags can be served from Ollama on this Mac, but switching between them under memory pressure will add load time that a sequential evaluation hides. <i>Test:</i> <code>ollama ps</code>, Activity Monitor memory pressure, and cold/warm/switch timings (D1-08).</p></div>
+
+<h2 id="runtime-options">Three ways to arrange the runtime</h2>
+
+<p>The biggest early decision was where the models run relative to the application. Three arrangements were compared.</p>
+
+<figure data-src="f02-runtime-options" id="fig-runtime-options"><figcaption>Three runtime arrangements. Option 3 is the proposed direction: the Mac application never depends on a notebook, and Colab runs the same committed source as a separate experiment environment.</figcaption></figure>
+
+<p><b>Local only.</b> Everything except the frontier and Jev APIs runs on the Mac. It is private, simple, and works without a notebook, but it produces no NVIDIA or vLLM evidence, and it is bounded by 18 GB of shared memory.</p>
+
+<p><b>Notebook-dependent application.</b> The Mac gateway forwards to a model server running inside a Colab notebook, exposed through a public tunnel. This puts a real GPU behind the app, but the app stops working whenever the session ends; the tunnel exposes a model port to the internet; latency now includes an internet round trip; and results from two machines get mixed into one number.</p>
+
+<p><b>Mac application plus a separate GPU environment.</b> The Mac runs the application with Ollama. Colab runs the same repository at the same commit, with its own vLLM server on loopback and its own clients, and exports its results. The application never depends on the notebook, and every number is labelled with the environment that produced it. The cost is two setups to maintain and the fact that GPU access is not guaranteed.</p>
+
+<div class="callout"><span class="label">Design decision · proposed runtime</span>
+<p>Use option 3. The gateway's configuration takes a URL per tier, so the same code serves the Mac profile (<code>127.0.0.1:11434</code>, Ollama) and the Colab profile (<code>127.0.0.1:8000</code>, vLLM inside the notebook). Colab servers stay notebook-local and are never tunnelled. This is a direction, not a conclusion: whether the Mac can host both tiers well is hypothesis H4.</p></div>
+
+<h2 id="architecture-reasons">Reasons for the proposed architecture</h2>
+
+<ul>
+  <li><b>One contract, many backends.</b> Every tier is "an OpenAI-compatible base URL plus a model name", so adding vLLM, a different provider, or a new local model is configuration rather than code.</li>
+  <li><b>Policy in the application, not the model server.</b> Budgets, deadlines, routing and records live in the gateway, where they can be tested offline.</li>
+  <li><b>Decisions as data.</b> Jev's answers are numbers that application code interprets, so routing policy stays inspectable and versionable.</li>
+  <li><b>Evidence by construction.</b> Each request gets an ID and a trace record; each evaluation row is immutable and fingerprinted. Reports are regenerated from records, never typed in.</li>
+  <li><b>Install without CUDA.</b> The core package depends on FastAPI, httpx, Uvicorn and Pydantic only. Training, embeddings and GPU serving are optional extras or notebook-only requirements.</li>
+</ul>
+
+<figure data-src="f04-roadmap" id="fig-roadmap"><figcaption>The six planned build days. This notebook covers Days 1 and 2 in detail; later days appear only where they explain the architecture.</figcaption></figure>

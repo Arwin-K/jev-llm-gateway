@@ -1,0 +1,205 @@
+<h1 id="part6"><span class="part-no">Part 6</span>Day 1 — the serving foundation</h1>
+
+<p class="part-intro">Day 1 builds a gateway that can serve all three tiers by explicit name, stream, fail clearly, stay within a budget, and leave a record of every request. It deliberately stops short of automatic routing.</p>
+
+<h2 id="day1-overview">Overview and recorded state</h2>
+
+<p>All eighteen Day 1 checkpoints were committed on 27 October 2026 between 13:03 and 13:11 (America/Toronto), as <code>7764899</code> through <code>4e6f7e0</code> <span class="pill rec">Recorded</span>. The final offline run, after <code>uv sync --locked</code>, reported <b>15 passed, 1 warning, 0.16 s</b>; the warning is a third-party Starlette deprecation notice about the test client. The raw output is <code>evidence/day1/mac-offline-20261027-1314.txt</code>.</p>
+
+<p>Everything that needs a live model is still open. Ollama was not installed at the preflight, so <code>jev doctor</code> reported <code>ConnectError</code> for both local tiers; the frontier tier reports <code>configured: false</code>; and no Colab cell has run. In the status figure below, amber marks checkpoints whose code is committed but whose completion evidence requires a live check.</p>
+
+<figure data-src="f22-day1-blocks" id="fig-day1-blocks"><figcaption>The eighteen Day 1 checkpoints in six blocks of three, coloured by recorded status in <code>docs/STATUS.md</code> at commit <code>4e6f7e0</code>.</figcaption></figure>
+
+<p>Each checkpoint below follows the same structure: what to understand first, what the change introduces, why it belongs at that point in the build, what evidence establishes completion, one specific common mistake, and what the repository records.</p>
+
+<!-- ============ BLOCK 1 ============ -->
+<div class="block-head">Block 1 <span>Scope, environments and the package</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-01</span><span class="cp-title">Define full scope and runtime profiles</span><span class="cp-commit">7764899</span></div><dl>
+<dt>Understand</dt><dd>The difference between a scope map (every deliverable and where it runs) and a schedule. Which work belongs to the Mac, to Colab, and to external APIs.</dd>
+<dt>Change</dt><dd>A full-scope contract in <code>AGENTS.md</code> and <code>docs/RUNTIME_PROFILES.md</code>, which maps each original feature to a checkpoint range and environment and states that a running notebook is never a permanent backend.</dd>
+<dt>Why here</dt><dd>Every later checkpoint decides where something runs. Settling that first prevents features from being dropped quietly when they become inconvenient.</dd>
+<dt>Evidence</dt><dd>A table in which every original deliverable has a checkpoint range and an environment, with no "optional" or "stretch" labels.</dd>
+<dt class="mis">Common mistake</dt><dd>Writing "the medium tier runs in Colab" into the application's design. That turns an experiment environment into a production dependency and leads straight to the notebook-dependent architecture rejected in Part 1.</dd>
+<dt class="rec">Recorded</dt><dd>"Full scope mapped." Six feature groups mapped to D1–D6 ranges.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-02</span><span class="cp-title">Record Mac and Colab environment preflights</span><span class="cp-commit">8f69a1c</span></div><dl>
+<dt>Understand</dt><dd>Which machine facts constrain the design: unified memory, free disk, OS version, toolchain. Why a remote environment needs its own report from its own host. What to omit (serial numbers, UUIDs, usernames).</dd>
+<dt>Change</dt><dd>A dated, sanitised Mac report in <code>docs/ENVIRONMENT.md</code>, listing the commands used, and <code>notebooks/colab_preflight.py</code>, which prints Python, platform, <code>nvidia-smi</code> GPU name/memory/driver and <code>nvcc</code> as JSON.</dd>
+<dt>Why here</dt><dd>Model selection (D1-07, D1-08) depends on memory and disk; the vLLM pin (D1-15) depends on the GPU and CUDA driver.</dd>
+<dt>Evidence</dt><dd>A Mac report with values and sources; a Colab report produced on an allocated Colab GPU and labelled separately.</dd>
+<dt class="mis">Common mistake</dt><dd>Writing a GPU type such as "T4" into the plan before a session is allocated. Colab's available GPUs vary over time.</dd>
+<dt class="rec">Recorded</dt><dd>MacBook Pro (Mac15,6), M3 Pro with 11 CPU cores, 18 GB unified memory, macOS 26.5.2, 18 GiB free of 460 GiB. Python 3.14.5, Docker CLI and <code>kubectl</code> present; <code>uv</code>, <code>ollama</code>, <code>kind</code> absent. Colab preflight not yet run.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-03</span><span class="cp-title">Initialize the reproducible package and CLI</span><span class="cp-commit">2448290</span></div><dl>
+<dt>Understand</dt><dd><code>pyproject.toml</code>, the <code>src/</code> layout, console scripts, optional extras, and what a lockfile guarantees.</dd>
+<dt>Change</dt><dd>Package <code>jev-gateway</code> 0.1.0 built with hatchling, requiring Python ≥3.11 and &lt;3.15; four core dependencies; <code>test</code>, <code>training</code> and <code>embeddings</code> extras; a <code>jev</code> command with <code>serve</code>, <code>doctor</code> and <code>smoke</code> subcommands; <code>uv.lock</code>.</dd>
+<dt>Why here</dt><dd>Every later module and test imports the package. A lock from the first commit means any later failure can be reproduced exactly.</dd>
+<dt>Evidence</dt><dd>In a fresh environment: <code>uv sync --locked</code>, <code>import jev_gateway</code>, and <code>jev --help</code> all succeed.</dd>
+<dt class="mis">Common mistake</dt><dd>Adding <code>torch</code> or <code>transformers</code> to the core dependencies "for later". The Mac gateway would then download gigabytes of ML libraries it never uses.</dd>
+<dt class="rec">Recorded</dt><dd>Fresh virtual environment install, import, CLI help, and uv lock.</dd></dl></div>
+
+<!-- ============ BLOCK 2 ============ -->
+<div class="block-head">Block 2 <span>Contracts: configuration, API and transport</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-04</span><span class="cp-title">Validate backend configuration and resource limits</span><span class="cp-commit">10dbdbc</span></div><dl>
+<dt>Understand</dt><dd>Fail-fast validation; immutable settings objects; holding secrets <em>by reference</em> (the name of an environment variable) rather than by value; limits as policy.</dd>
+<dt>Change</dt><dd><code>config.py</code>. <code>Backend(tier, model, base_url, api_key_env)</code> requires an absolute HTTP(S) URL without embedded credentials and a non-empty model. <code>Settings</code> requires a timeout in (0, 300] seconds, <code>max_output_tokens</code> in 1–8192, and non-negative frontier caps. <code>frontier_enabled</code> is true only when a model, a key and positive caps and prices all exist. <code>from_env()</code> parses typed values and reports which variable was malformed.</dd>
+<dt>Why here</dt><dd>The API and transport both rely on settings being valid. A mistyped URL caught at startup is far cheaper than a 502 discovered later.</dd>
+<dt>Evidence</dt><dd>Tests for a <code>file://</code> URL, a non-integer limit, and a frontier configuration that has a key but no caps (must stay disabled).</dd>
+<dt class="mis">Common mistake</dt><dd>Defaults that enable the paid tier, or keeping the key itself in a settings field that appears in logs and error messages. Here the key is read from the environment only when a request is built.</dd>
+<dt class="rec">Recorded</dt><dd>Config invalid and disabled cases pass.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-05</span><span class="cp-title">Add the API contract, health, readiness and model registry</span><span class="cp-commit">4d6ba55</span></div><dl>
+<dt>Understand</dt><dd>Liveness ("the process is up") versus readiness ("it can serve"); schema validation; why unknown fields are rejected rather than ignored.</dd>
+<dt>Change</dt><dd>Pydantic models with <code>extra="forbid"</code>: roles <code>system</code>, <code>developer</code>, <code>user</code>, <code>assistant</code>; text content of at least one character; <code>model</code> limited to <code>small</code>, <code>medium</code>, <code>frontier</code>; <code>max_tokens</code> 1–8192; <code>temperature</code> 0–2. Endpoints <code>/healthz</code>, <code>/readyz</code> and <code>/v1/models</code> (each tier with its backend model and enabled flag).</dd>
+<dt>Why here</dt><dd>The contract is what clients code against and what tests check. Fixing it before the transport avoids reshaping both later.</dd>
+<dt>Evidence</dt><dd>Contract tests: health is OK; three models listed; <code>model="auto"</code> → 422; image content → 422; frontier while unconfigured → 503.</dd>
+<dt class="mis">Common mistake</dt><dd>A readiness endpoint that reports backends healthy without checking them. Here <code>/readyz</code> says <code>"backend_availability": "unchecked"</code>, and live availability is left to <code>jev doctor</code>.</dd>
+<dt class="rec">Recorded</dt><dd>Contract tests pass. A brief real loopback server returned HTTP 200 from <code>/healthz</code>; binding a socket needed elevated sandbox permission (the default sandbox denied it with EPERM).</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-06</span><span class="cp-title">Implement reusable asynchronous backend transport</span><span class="cp-commit">e4406c4</span></div><dl>
+<dt>Understand</dt><dd>Connection pooling and limits; client lifecycle; building a request once and sending it; injecting a fake transport for tests.</dd>
+<dt>Change</dt><dd><code>BackendTransport</code> wraps one <code>httpx.AsyncClient</code> with a timeout and limits (20 connections, 10 keep-alive). <code>complete()</code> posts to <code>{base_url}/chat/completions</code> and raises on non-2xx; <code>open_stream()</code> returns an open streaming response; the bearer header is added only when a key exists. The app closes the client on shutdown.</dd>
+<dt>Why here</dt><dd>All three tiers share one HTTP behaviour. Building it once, before any adapter, keeps timeouts and limits consistent.</dd>
+<dt>Evidence</dt><dd>A <code>MockTransport</code> test checks the path <code>/v1/chat/completions</code>, the forwarded body, and a clean close.</dd>
+<dt class="mis">Common mistake</dt><dd>Creating a new <code>AsyncClient</code> per request. It looks harmless in tests, but under load it discards pooling and can leak sockets.</dd>
+<dt class="rec">Recorded</dt><dd>Mock HTTP forwarding passes.</dd></dl></div>
+
+<!-- ============ BLOCK 3 ============ -->
+<div class="block-head">Block 3 <span>The three generation tiers</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-07</span><span class="cp-title">Connect the small Ollama model</span><span class="cp-commit">ef3b3bc</span></div><dl>
+<dt>Understand</dt><dd>Ollama's two surfaces: the native API (<code>/api/tags</code> for installed models, <code>/api/ps</code> for loaded ones) and the OpenAI-compatible <code>/v1/chat/completions</code>. Model tags and why the name must match exactly.</dd>
+<dt>Change</dt><dd><code>ollama.py</code>: <code>model_status()</code> reads <code>/api/tags</code> and reports whether the configured tag is installed, with runtime label <code>native-ollama-mac</code>. <code>docs/MAC_MODELS.md</code> gives install, pull and check steps. Generation itself goes through the shared transport.</dd>
+<dt>Why here</dt><dd>The smallest model is the cheapest way to prove the whole path end to end before adding memory-heavy or paid tiers.</dd>
+<dt>Evidence</dt><dd>One bounded real answer through the gateway, with the model ID and runtime label recorded.</dd>
+<dt class="mis">Common mistake</dt><dd>Treating "pulled" as "working". A completed download says nothing about whether the model loads and answers within the timeout.</dd>
+<dt class="rec">Recorded</dt><dd>Adapter offline-tested; real answer pending because Ollama was absent at preflight.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-08</span><span class="cp-title">Connect the medium model and inspect memory and residency</span><span class="cp-commit">94d6717</span></div><dl>
+<dt>Understand</dt><dd>Residency, <code>keep_alive</code>, <code>size_vram</code>, memory pressure, and cold versus warm requests (Part 3).</dd>
+<dt>Change</dt><dd><code>loaded_models()</code> reads <code>/api/ps</code> and returns each loaded model's name, <code>size_vram</code> and <code>expires_at</code>; <code>jev doctor</code> includes it. Docs give the observation procedure: one bounded medium request, then <code>ollama ps</code>, Activity Monitor memory pressure, cold and warm load times, and whether both tags stay loaded.</dd>
+<dt>Why here</dt><dd>It tests hypothesis H4. Day 2's evaluation plan depends on whether both tiers can stay loaded or must run one at a time.</dd>
+<dt>Evidence</dt><dd>A real medium answer with explicit residency and switching observations, or a documented hardware blocker.</dd>
+<dt class="mis">Common mistake</dt><dd>Reporting only warm latency as "the medium model's latency", or assuming both models are co-resident because both were downloaded.</dd>
+<dt class="rec">Recorded</dt><dd>Residency adapter offline-tested; live memory and load measurements pending.</dd></dl></div>
+
+<figure data-src="f19-budget" class="mid" id="fig-budget"><figcaption>Frontier admission in <code>budget.py</code> (D1-09). The estimate is deliberately high; the check-and-reserve happens under one lock so that concurrent requests cannot overshoot the caps between them.</figcaption></figure>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-09</span><span class="cp-title">Connect the frontier API with spending controls</span><span class="cp-commit">1ade058</span></div><dl>
+<dt>Understand</dt><dd>Per-token pricing; admission control (deciding before the call) versus accounting (measuring after); process-local versus account-level limits; why counters need a lock under async concurrency.</dd>
+<dt>Change</dt><dd><code>FrontierBudget.reserve()</code> estimates input as four units per character plus 32 per message, adds <code>max_tokens</code>, prices both with the configured per-million rates, then — under an <code>asyncio.Lock</code> — admits only if requests, tokens and dollars all stay within caps. Over the cap: HTTP 429. Not configured: 503.</dd>
+<dt>Why here</dt><dd>The paid path must be safe before D1-10 wires dispatch and makes it reachable.</dd>
+<dt>Evidence</dt><dd>Offline: with a cap of one request, a second reservation is refused. Real: a single request only once a key, model, current prices and positive caps are configured.</dd>
+<dt class="mis">Common mistake</dt><dd>Recording spend after the response returns. Twenty concurrent requests would all pass the check before any was counted.</dd>
+<dt class="rec">Recorded</dt><dd>Admission tested; paid calls disabled. Reservations are never released, so counters only rise within a process, and the estimate is not provider billing (noted in <code>docs/DECISIONS.md</code>).</dd></dl></div>
+
+<!-- ============ BLOCK 4 ============ -->
+<div class="block-head">Block 4 <span>The request path: responses, streaming, failures</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-10</span><span class="cp-title">Implement explicit-tier nonstreaming responses</span><span class="cp-commit">27a16e0</span></div><dl>
+<dt>Understand</dt><dd>Translating a client request into a backend payload; why the backend body is preserved; carrying metadata in headers; the output-token policy.</dd>
+<dt>Change</dt><dd>The chat handler resolves the tier, builds <code>{model: backend.model, messages, max_tokens, stream}</code> (with <code>temperature</code> only if given), defaults <code>max_tokens</code> to the server policy and rejects larger values with 422, sends via the transport, and returns the backend JSON with <code>x-request-id</code>, <code>x-jev-tier</code> and <code>x-jev-backend-model</code>.</dd>
+<dt>Why here</dt><dd>It is the first complete path. Streaming and error handling both build on it.</dd>
+<dt>Evidence</dt><dd>A <code>medium</code> request reaches the backend with <code>"model":"qwen2.5:7b"</code>, the answer arrives unchanged, and the tier header is set.</dd>
+<dt class="mis">Common mistake</dt><dd>Forwarding the tier name (<code>"medium"</code>) as the backend's model name. Ollama would answer 404 because no model has that name.</dd>
+<dt class="rec">Recorded</dt><dd>Explicit dispatch mock-tested; live backend pending.</dd></dl></div>
+
+<figure data-src="f17-streaming" id="fig-streaming"><figcaption>The streaming failure boundary (D1-11, D1-12). Before the first byte reaches the client, an upstream error can still become a clean 502 or 504. After headers are sent, the status is fixed at 200, so a failure can only cut the stream; the trace records it as <code>stream_interrupted</code>.</figcaption></figure>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-11</span><span class="cp-title">Implement streaming response forwarding</span><span class="cp-commit">a95c350</span></div><dl>
+<dt>Understand</dt><dd>SSE framing; network chunks that split or merge events arbitrarily; HTTP headers committing at the first byte.</dd>
+<dt>Change</dt><dd>Streaming requests open the upstream with <code>open_stream()</code> and return a <code>StreamingResponse</code> that yields the upstream's raw bytes as they arrive, with <code>text/event-stream</code> and <code>cache-control: no-cache</code>. The generator finishes the trace on completion or interruption and always closes the upstream.</dd>
+<dt>Why here</dt><dd>It reuses the D1-10 path and fixes the boundary that D1-12's error policy must respect.</dd>
+<dt>Evidence</dt><dd>A test sends three events across arbitrary chunk boundaries and checks that both content pieces and the final <code>data: [DONE]</code> arrive intact, with the tier header present.</dd>
+<dt class="mis">Common mistake</dt><dd>Parsing and re-serialising each event in the gateway. It adds latency and breaks when a network chunk ends mid-event; forwarding bytes avoids both.</dd>
+<dt class="rec">Recorded</dt><dd>Fragmented SSE and completion tested; live streaming pending.</dd></dl></div>
+
+<figure data-src="f18-error-map" id="fig-error-map"><figcaption>How the Day 1 gateway maps each failure to a status code, in the order the checks run. Provider error text never reaches the client.</figcaption></figure>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-12</span><span class="cp-title">Handle deadlines, cancellation and backend errors</span><span class="cp-commit">6d438ec</span></div><dl>
+<dt>Understand</dt><dd>Mapping failure types to status codes; why error bodies are sanitised; what is possible before versus after headers; letting cancellation propagate.</dd>
+<dt>Change</dt><dd><code>httpx.TimeoutException</code> → 504 "backend deadline exceeded"; HTTP status errors, connection errors and invalid JSON → 502 "backend request failed". For streams, <code>open_stream()</code> checks status before any byte is forwarded, so an upstream 500 still becomes a clean 502. Any exception during the stream, including cancellation, is traced as <code>stream_interrupted</code>, re-raised, and the upstream is closed.</dd>
+<dt>Why here</dt><dd>Only once both paths exist can failure behaviour be specified for both.</dd>
+<dt>Evidence</dt><dd>Tests: an upstream 500 containing "secret provider detail" becomes a 502 without that text, streaming and non-streaming; a read timeout becomes 504.</dd>
+<dt class="mis">Common mistake</dt><dd>Catching <code>CancelledError</code> with a broad <code>except</code> and carrying on. The backend keeps generating for a client that has already left.</dd>
+<dt class="rec">Recorded</dt><dd>Timeout and sanitised-error tests pass. No test yet simulates a client disconnecting mid-stream; cancellation handling rests on code structure (<code>except BaseException … raise</code>, <code>finally: aclose()</code>).</dd></dl></div>
+
+<!-- ============ BLOCK 5 ============ -->
+<div class="block-head">Block 5 <span>Evidence: traces, diagnostics and the notebook</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-13</span><span class="cp-title">Record request traces, usage and timings</span><span class="cp-commit">2d01a58</span></div><dl>
+<dt>Understand</dt><dd>Request IDs; monotonic versus wall-clock time; allowlisting fields rather than blocklisting; one structured line per event.</dd>
+<dt>Change</dt><dd><code>RequestTrace</code> assigns a <code>uuid4</code> hex ID and a UTC start time, measures <code>duration_ms</code> with a monotonic clock, and logs one JSON line with tier, backend model, status, usage restricted to <code>prompt_tokens</code>, <code>completion_tokens</code> and <code>total_tokens</code>, and <code>cost_status</code> (<code>reserved</code> for frontier, <code>unpriced</code> for local). The ID is returned in <code>x-request-id</code>.</dd>
+<dt>Why here</dt><dd>Diagnostics, the notebook and Day 2 all need comparable records, so the record format comes first.</dd>
+<dt>Evidence</dt><dd>A test passes a usage dict containing an extra <code>secret</code> key and checks that it never appears in the log, and that the logged ID matches.</dd>
+<dt class="mis">Common mistake</dt><dd>Timing with <code>time.time()</code>. The wall clock can jump (NTP adjustment), producing negative or inflated durations; <code>time.monotonic()</code> cannot.</dd>
+<dt class="rec">Recorded</dt><dd>Secret-free trace structure tested. The record currently holds one total duration; per-stage timestamps (for example, first upstream byte), named in the commit plan, are not yet captured.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-14</span><span class="cp-title">Add doctor and bounded smoke commands</span><span class="cp-commit">cb90aa4</span></div><dl>
+<dt>Understand</dt><dd>Diagnostics should touch real systems, be bounded in time and cost, and explain failure in words — never silently substitute test doubles.</dd>
+<dt>Change</dt><dd><code>jev doctor</code> reports whether the frontier tier is configured and, for each local tier, queries <code>/api/tags</code> and <code>/api/ps</code> with a 3-second timeout, reporting the reason on failure; it exits 0 only if both local models are installed. <code>jev smoke --tier T</code> sends one request with <code>max_tokens: 16</code> and a 15-second timeout, then prints the tier, request ID, backend model and answer.</dd>
+<dt>Why here</dt><dd>These commands collect the live evidence that D1-07, D1-08 and the handoff require.</dd>
+<dt>Evidence</dt><dd>With Ollama absent, <code>doctor</code> explains the failure; <code>smoke</code> against a closed port prints "smoke failed" and exits 1.</dd>
+<dt class="mis">Common mistake</dt><dd>A smoke command that defaults to the frontier tier or sends a long prompt. A routine check then becomes a paid call.</dd>
+<dt class="rec">Recorded</dt><dd>Doctor reports both models unavailable (<code>ConnectError</code>) and <code>frontier.configured=false</code>; raw JSON in <code>evidence/day1/mac-doctor-20261027-1314.json</code>.</dd></dl></div>
+
+<figure data-src="f21-colab-flow" class="mid" id="fig-colab-flow"><figcaption>The Colab serving notebook (D1-15). Source enters only as a hashed archive of a committed revision; the server binds to loopback inside the VM; results are exported before the session ends.</figcaption></figure>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-15</span><span class="cp-title">Add a source-importing Colab serving notebook</span><span class="cp-commit">19bd683</span></div><dl>
+<dt>Understand</dt><dd>Why notebooks drift from repositories; pinning source by content hash; key <code>vllm serve</code> flags; why export comes before cleanup.</dd>
+<dt>Change</dt><dd><code>day1_vllm.ipynb</code>: GPU preflight; upload and SHA-256 check of <code>jev-source.zip</code> with safe extraction (no absolute or <code>..</code> paths); <code>pip install</code> of the source plus <code>vllm==0.18.0</code>; <code>vllm serve Qwen/Qwen2.5-1.5B-Instruct</code> on <code>127.0.0.1:8000</code> with <code>--max-model-len 2048</code> and <code>--gpu-memory-utilization 0.75</code>; readiness polling for up to 240 s; two prompts at temperature 0 with <code>max_tokens</code> 16; JSON download; termination.</dd>
+<dt>Why here</dt><dd>The gateway contract and the profile split now exist, so the notebook can install and import the same code rather than copy it.</dd>
+<dt>Evidence</dt><dd>The notebook structure validates, plus a record of which cells actually ran, on which GPU, with which archive hash.</dd>
+<dt class="mis">Common mistake</dt><dd>Pasting gateway code into notebook cells "to save time". From then on there are two implementations, and results from one say nothing about the other.</dd>
+<dt class="rec">Recorded</dt><dd>Notebook JSON and cell syntax validate; no Colab cell executed. The vLLM pin is a starting point and predates the current release.</dd></dl></div>
+
+<!-- ============ BLOCK 6 ============ -->
+<div class="block-head">Block 6 <span>Portability, verification and handoff</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-16</span><span class="cp-title">Separate Mac and Colab profiles and dependencies</span><span class="cp-commit">59a5eac</span></div><dl>
+<dt>Understand</dt><dd>Configuration profiles versus code branches; keeping GPU-only packages out of the core install; ignoring local secrets.</dd>
+<dt>Change</dt><dd><code>config/mac.env.example</code> (Ollama on 11434, Qwen tags, timeout, caps commented out) and <code>config/colab.env.example</code> (loopback 8000/8001, Hugging Face model IDs); <code>requirements/colab-serving.txt</code> for vLLM; lock updated for the extras; <code>.env</code> added to <code>.gitignore</code>.</dd>
+<dt>Why here</dt><dd>The notebook (D1-15) made the second environment concrete; the profiles make the difference explicit before integration tests target both.</dd>
+<dt>Evidence</dt><dd>A core environment on the Mac contains no torch, CUDA, NVIDIA or vLLM packages.</dd>
+<dt class="mis">Common mistake</dt><dd>One shared <code>requirements.txt</code> for Mac and Colab. Either the Mac install fails on CUDA wheels, or the notebook's pins leak into the app.</dd>
+<dt class="rec">Recorded</dt><dd>Core venv has no torch/CUDA/NVIDIA/vLLM packages.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-17</span><span class="cp-title">Verify offline contracts and available real integrations</span><span class="cp-commit">3e6320f</span></div><dl>
+<dt>Understand</dt><dd>What an offline integration test can and cannot show; why real checks are opt-in; reporting the scope of each piece of evidence.</dd>
+<dt>Change</dt><dd><code>test_profile_integration.py</code> dispatches through the full app with the small tier pointed at the Mac URL and then the Colab URL, checking URL, model and request ID. <code>scripts/real_check.sh</code> runs <code>doctor</code>, then <code>smoke</code> for small and medium against live services.</dd>
+<dt>Why here</dt><dd>All components exist; this is the first check that they work together under both profiles.</dd>
+<dt>Evidence</dt><dd>The offline suite passes, and whatever real-path evidence is available is recorded with its exact scope.</dd>
+<dt class="mis">Common mistake</dt><dd>Making real checks part of the default <code>pytest</code> run. They become flaky, slow, and potentially paid — and people learn to ignore failures.</dd>
+<dt class="rec">Recorded</dt><dd>15 passed, 1 warning, 0.16 s (<code>mac-day1-offline-20261027-1314</code>). Real models pending.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D1-18</span><span class="cp-title">Write setup documentation and the evidence handoff</span><span class="cp-commit">4e6f7e0</span></div><dl>
+<dt>Understand</dt><dd>Who reads a handoff: someone who must reproduce the result without asking. What a status ledger is for.</dd>
+<dt>Change</dt><dd>README quickstart and API description; <code>docs/STATUS.md</code> with a commit and verification note per checkpoint and a list of unmet gates; <code>docs/DECISIONS.md</code>; run IDs in <code>docs/EXPERIMENTS.md</code>; raw files in <code>evidence/day1/</code>.</dd>
+<dt>Why here</dt><dd>It closes the day: the next session, or another person, must know exactly what is proven and what is pending.</dd>
+<dt>Evidence</dt><dd>A clean reader can find the commands, the required model downloads, the evidence files and the next action.</dd>
+<dt class="mis">Common mistake</dt><dd>Marking a checkpoint "done" when its only evidence is a mocked test. Here the ledger says "mock-tested; live pending".</dd>
+<dt class="rec">Recorded</dt><dd>Quickstart and evidence ledger prepared; clean-reader walkthrough pending. Next action recorded: install Ollama, pull <code>qwen2.5:1.5b</code>, run <code>doctor</code>, <code>serve</code>, <code>smoke --tier small</code>.</dd></dl></div>
+
+<div class="callout evidence"><span class="label">Day 1 gates still open</span>
+<p>(1) Install and start native Ollama, check disk, pull the small then medium model, run bounded answers, and record model IDs, load times, <code>ollama ps</code> and memory pressure. (2) Run the Colab notebook on an allocated GPU and export its JSON. (3) Configure a frontier key, model, current prices and positive caps before any paid call. (4) Do a clean-reader install and real-path smoke test.</p></div>
+
+<section class="journal" id="journal-day1">
+<h2>Journal · Day 1: a gateway before a router</h2>
+<div class="jmeta">Conceptual entry, ready to copy. It explains the Day 1 system as designed and committed; it reports no model output, because none has been observed yet.</div>
+
+<p class="first">The first day's goal was not routing. It was a dependable place to put routing later: a single service that speaks the same chat API as the models behind it, knows exactly which backends exist, and leaves a record of everything it does. The client still chooses the tier by name — small, medium or frontier — and anything else, including a request for automatic routing, is refused at the door. That restriction is deliberate. A router cannot be judged until every tier can be reached reliably and every outcome can be measured.</p>
+
+<p>The gateway has four parts. Configuration describes each tier as a URL and a model name, checks them at startup, and keeps the paid tier switched off until a key, a model, current prices and positive spending caps are all present. The API layer defines what a valid request looks like and rejects everything else with a clear status code. A single asynchronous HTTP client, created once and shared, forwards requests and keeps a bounded pool of connections open, so the gateway can wait on many slow models at once without opening a new connection for each. A trace object gives every request an ID and records its tier, backend model, status, token usage and duration.</p>
+
+<p>The most useful idea of the day was the boundary that streaming creates. Before the first byte goes back to the client, a failing backend can still be turned into an honest error: 504 if it ran out of time, 502 if it failed. After the first byte, the HTTP status is already 200, and the only honest thing left is to stop the stream and record that it was interrupted. That is why the gateway checks the backend's status before forwarding anything, forwards raw bytes rather than re-parsing events, and closes the upstream connection in a finally block whether the stream ended normally, failed, or was cancelled because the client left.</p>
+
+<p>The paid tier needed a different kind of care. A budget that is counted after each response returns can be overrun by concurrent requests that all pass the check before any is recorded. The gateway therefore reserves an overestimate of tokens and dollars before calling the provider, under a lock, and refuses the request if the reservation would cross a cap. It is a guard against runaway loops inside one process, not a bill, and it complements rather than replaces limits set in the provider's account.</p>
+
+<p>Two environments are kept apart on purpose. The Mac runs the application and, through Ollama, the local models. Colab is a laboratory: it receives a hashed archive of a committed revision, installs that exact code, serves a model on its own loopback address, sends two small requests, exports the result and shuts the server down. The Mac never sends traffic to Colab, so a notebook session ending can never break the application, and every number carries the name of the environment that produced it.</p>
+
+<p>The evidence so far is honest but limited. The offline suite passes, and it covers configuration errors, the request contract, forwarding, fragmented streams, sanitised errors, timeouts, budget refusal and secret-free traces. Each of those tests replaces the model server with a controlled fake, which proves the gateway's logic and nothing about the real servers. The diagnostic command reached for Ollama and found nothing listening, because Ollama was not yet installed. No model has answered through the gateway.</p>
+
+<p>The next technical question is physical rather than logical: on an 18 GB Mac, can the 1.5B and 7B models both stay loaded, and if not, what does switching between them cost? The answer decides how Day 2's evaluation is scheduled, and it is the first measurement that will be taken from the real machine.</p>
+</section>
