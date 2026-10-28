@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Jev LLM Gateway — Engineering Notebook</title><link rel="stylesheet" href="source/notebook.css"></head>
+<body>
+<section class="cover">
+  <div class="band"></div>
+  <div class="kicker">Engineering notebook · foundations and build days 1–2</div>
+  <h1 class="title">Jev LLM Gateway</h1>
+  <div class="subtitle">A configurable three-tier LLM gateway with decision-model routing — research, architecture, and the plan and record for the serving foundation and the evaluation baseline.</div>
+  <div class="cover-fig"><img src="figures/f01-architecture.svg" alt="High-level architecture"></div>
+  <div class="meta">
+    <div class="rule"></div>
+    <b>Project</b> llm_gateway_full_project · package <code>jev-gateway</code> 0.1.0<br>
+    <b>Environments</b> M3 Pro MacBook (application) · Google Colab (NVIDIA experiments) · external APIs<br>
+    <b>Repository state described</b> Day 1 commits D1-01 to D1-18 (7764899 … 4e6f7e0), 27 Oct 2026 · Day 2 not yet started<br>
+    <b>Sources accessed</b> 28 October 2026
+  </div>
+</section>
+
+<section class="toc"><h1 id="contents" class="unnumbered">Contents</h1><ol><li class="t1"><span class="num"></span><a href="#reading">How to read this notebook</a><span class="dots"></span><span class="pg">4</span></li><li class="t2"><a href="#conventions">Evidence conventions</a><span class="dots"></span><span class="pg">4</span></li><li class="t2"><a href="#glossary">Short glossary</a><span class="dots"></span><span class="pg">4</span></li><li class="t1"><span class="num">1</span><a href="#part1">Project framing and brainstorming</a><span class="dots"></span><span class="pg">6</span></li><li class="t2"><a href="#brief">Project brief</a><span class="dots"></span><span class="pg">6</span></li><li class="t2"><a href="#problem">The problem the gateway solves</a><span class="dots"></span><span class="pg">6</span></li><li class="t2"><a href="#why-choice">Why model choice affects quality, latency and cost</a><span class="dots"></span><span class="pg">6</span></li><li class="t2"><a href="#routing-value">When routing is useful — and what erases the benefit</a><span class="dots"></span><span class="pg">7</span></li><li class="t2"><a href="#app-vs-bench">A useful application versus a benchmark experiment</a><span class="dots"></span><span class="pg">8</span></li><li class="t2"><a href="#ml-systems">How the project connects to ML systems engineering</a><span class="dots"></span><span class="pg">8</span></li><li class="t2"><a href="#questions">Questions worth asking before implementation</a><span class="dots"></span><span class="pg">8</span></li><li class="t2"><a href="#alternatives">Alternatives considered</a><span class="dots"></span><span class="pg">9</span></li><li class="t2"><a href="#constraints">Constraints and unresolved assumptions</a><span class="dots"></span><span class="pg">9</span></li><li class="t2"><a href="#hypotheses">Working hypotheses to test</a><span class="dots"></span><span class="pg">10</span></li><li class="t2"><a href="#runtime-options">Three ways to arrange the runtime</a><span class="dots"></span><span class="pg">10</span></li><li class="t2"><a href="#architecture-reasons">Reasons for the proposed architecture</a><span class="dots"></span><span class="pg">11</span></li><li class="t1"><span class="num">2</span><a href="#part2">Background research: how Jev works and how this project uses it</a><span class="dots"></span><span class="pg">13</span></li><li class="t2"><a href="#jev-sources">Sources and scope</a><span class="dots"></span><span class="pg">13</span></li><li class="t2"><a href="#jev-what">What Jev is</a><span class="dots"></span><span class="pg">13</span></li><li class="t2"><a href="#gen-vs-decision">Generation models and decision models</a><span class="dots"></span><span class="pg">13</span></li><li class="t2"><a href="#state-questions">State and typed questions</a><span class="dots"></span><span class="pg">14</span></li><li class="t2"><a href="#primitives">The decision primitives</a><span class="dots"></span><span class="pg">14</span></li><li class="t2"><a href="#returned-values">What the returned values actually mean</a><span class="dots"></span><span class="pg">15</span></li><li class="t2"><a href="#decision-to-action">How application code turns a decision into an action</a><span class="dots"></span><span class="pg">16</span></li><li class="t2"><a href="#four-roles">Four roles for Jev in this project</a><span class="dots"></span><span class="pg">16</span></li><li class="t2"><a href="#two-probabilities">Tier-choice confidence is not the probability of a correct answer</a><span class="dots"></span><span class="pg">17</span></li><li class="t2"><a href="#routing-pseudocode">Routing in pseudocode</a><span class="dots"></span><span class="pg">18</span></li><li class="t2"><a href="#sdk-example">An SDK example checked against current documentation</a><span class="dots"></span><span class="pg">18</span></li><li class="t2"><a href="#jev-known-unknown">Documented facts and open questions</a><span class="dots"></span><span class="pg">19</span></li><li class="t1"><span class="num">3</span><a href="#part3">What the models and programs are doing</a><span class="dots"></span><span class="pg">21</span></li><li class="t2"><a href="#component-table">The components at a glance</a><span class="dots"></span><span class="pg">21</span></li><li class="t2"><a href="#weights-tokens">Weights, tokens and inference</a><span class="dots"></span><span class="pg">22</span></li><li class="t2"><a href="#prefill-decode">Prefill and decode</a><span class="dots"></span><span class="pg">22</span></li><li class="t2"><a href="#context-kv">Context windows and the KV cache</a><span class="dots"></span><span class="pg">23</span></li><li class="t2"><a href="#quantization">Quantization and approximate weight memory</a><span class="dots"></span><span class="pg">24</span></li><li class="t2"><a href="#disk-vs-runtime">Why fitting on disk does not establish runtime feasibility</a><span class="dots"></span><span class="pg">25</span></li><li class="t2"><a href="#cold-warm">Cold loading, warm execution and model switching</a><span class="dots"></span><span class="pg">25</span></li><li class="t2"><a href="#bigger">Why a larger model is not automatically better on every question</a><span class="dots"></span><span class="pg">25</span></li><li class="t2"><a href="#model-choice">Choosing model families: criteria, not conclusions</a><span class="dots"></span><span class="pg">26</span></li><li class="t1"><span class="num">4</span><a href="#part4">Architecture and diagrams</a><span class="dots"></span><span class="pg">27</span></li><li class="t2"><a href="#diagram-a">A · High-level architecture</a><span class="dots"></span><span class="pg">27</span></li><li class="t2"><a href="#diagram-b">B · Day 1 request sequence</a><span class="dots"></span><span class="pg">28</span></li><li class="t2"><a href="#diagram-c">C · How a Jev decision becomes an action</a><span class="dots"></span><span class="pg">29</span></li><li class="t2"><a href="#diagram-d">D · Day 2 evaluation pipeline</a><span class="dots"></span><span class="pg">30</span></li><li class="t2"><a href="#consistency">Architecture and milestones: consistency check</a><span class="dots"></span><span class="pg">30</span></li><li class="t1"><span class="num">5</span><a href="#part5">Prerequisites and setup notes</a><span class="dots"></span><span class="pg">32</span></li><li class="t2"><a href="#python-packaging">Python packages, imports, virtual environments and lockfiles</a><span class="dots"></span><span class="pg">32</span></li><li class="t2"><a href="#http-basics">HTTP requests, JSON, URLs, ports and authentication</a><span class="dots"></span><span class="pg">32</span></li><li class="t2"><a href="#localhost">Why “localhost” differs across a Mac, a container and Colab</a><span class="dots"></span><span class="pg">33</span></li><li class="t2"><a href="#async">Async I/O and reusable HTTP clients</a><span class="dots"></span><span class="pg">33</span></li><li class="t2"><a href="#timeouts">Timeouts, cancellation and streaming</a><span class="dots"></span><span class="pg">33</span></li><li class="t2"><a href="#git">Git: working tree, staging, commits and remotes</a><span class="dots"></span><span class="pg">34</span></li><li class="t2"><a href="#testing-ladder">Unit tests, mocks, contract checks, real integrations and benchmarks</a><span class="dots"></span><span class="pg">34</span></li><li class="t2"><a href="#setup-mac">Setup sequence on the Mac</a><span class="dots"></span><span class="pg">35</span></li><li class="t2"><a href="#setup-colab">Setup sequence for Colab</a><span class="dots"></span><span class="pg">35</span></li><li class="t2"><a href="#repo-layout">Proposed and current repository layout</a><span class="dots"></span><span class="pg">36</span></li><li class="t1"><span class="num">6</span><a href="#part6">Day 1 — the serving foundation</a><span class="dots"></span><span class="pg">38</span></li><li class="t2"><a href="#day1-overview">Overview and recorded state</a><span class="dots"></span><span class="pg">38</span></li><li class="t1"><span class="num">7</span><a href="#part7">Day 2 — evaluation and baselines</a><span class="dots"></span><span class="pg">50</span></li><li class="t2"><a href="#day2-concepts">The ideas Day 2 depends on</a><span class="dots"></span><span class="pg">50</span></li><li class="t2"><a href="#day2-checkpoints">The eighteen Day 2 checkpoints</a><span class="dots"></span><span class="pg">54</span></li><li class="t1"><span class="num">8</span><a href="#part8">Essential measurement notes</a><span class="dots"></span><span class="pg">62</span></li><li class="t2"><a href="#m-latency">Latency: end to end, first output, and what happens between</a><span class="dots"></span><span class="pg">62</span></li><li class="t2"><a href="#m-percentiles">p50 and p95</a><span class="dots"></span><span class="pg">63</span></li><li class="t2"><a href="#m-throughput">Request and output-token throughput</a><span class="dots"></span><span class="pg">63</span></li><li class="t2"><a href="#m-quality">Accuracy, completion rate and error rate</a><span class="dots"></span><span class="pg">63</span></li><li class="t2"><a href="#m-cost">Actual versus modelled cost</a><span class="dots"></span><span class="pg">64</span></li><li class="t2"><a href="#m-cold-warm">Cold versus warm runs</a><span class="dots"></span><span class="pg">64</span></li><li class="t2"><a href="#m-mock-real">Mocked versus real evidence</a><span class="dots"></span><span class="pg">64</span></li><li class="t1"><span class="num"></span><a href="#sources">Sources</a><span class="dots"></span><span class="pg">65</span></li></ol></section>
+
+<h1 id="reading" class="unnumbered">How to read this notebook</h1>
+
+<p class="part-intro">This notebook explains what the Jev LLM Gateway is, why it is designed the way it is, and how the first two build days turn that design into working software and trustworthy measurements. It is written to be read on its own; the starter guide that accompanies the repository is not required.</p>
+
+<p>The project is larger than two days of work. Six build days are planned, and the later ones add the Jev router, a trained fallback classifier, answer verification, a semantic cache, deployment, load testing and an NVIDIA performance study. Those later features are described here only as far as needed to understand the architecture. The detailed material concentrates on the foundations: background research, the serving gateway (Day 1), and the evaluation and baseline system (Day 2).</p>
+
+<h2 id="conventions">Evidence conventions</h2>
+
+<p>A notebook like this is only useful if it keeps three kinds of statement apart: what someone else has documented, what has actually been observed in this project, and what is still a plan. Each of these is labelled where it matters.</p>
+
+<table class="legend-table">
+  <thead><tr><th>Label</th><th>Meaning in this notebook</th></tr></thead>
+  <tbody>
+    <tr><td><span class="pill doc">Documented</span></td><td>Product behaviour stated in official documentation (TypeSafe, Ollama, vLLM, Docker, Colab, dataset cards). Source list on the final pages; all accessed 28 October 2026.</td></tr>
+    <tr><td><span class="pill rec">Recorded</span></td><td>Something the repository itself records as having happened: a commit, a test run, a raw output file under <code>evidence/</code>, or an entry in <code>docs/STATUS.md</code>. Commit hashes are quoted so each claim can be checked.</td></tr>
+    <tr><td><span class="pill plan">Planned</span></td><td>Work described in <code>docs/COMMIT_PLAN.md</code> that has not been implemented. Everything in Day 2 is planned.</td></tr>
+    <tr><td><span class="pill ours">Our design</span></td><td>A proposal for how this application will use a product or technique — for example, how a Jev answer is turned into a routing action. These are design choices, not product features.</td></tr>
+    <tr><td><span class="pill ill">Illustrative</span></td><td>Numbers invented to explain a calculation or a chart shape. They are never project measurements.</td></tr>
+  </tbody>
+</table>
+
+<p>As of the repository state described here, no model has generated an answer through the gateway, no Colab cell has run, and no paid request has been sent. The Day 1 code exists and its offline test suite passes; the live checks are listed as pending. The notebook says so wherever a reader might otherwise assume more.</p>
+
+<div class="callout tech"><span class="label">Technical note · margin callouts</span>
+<p>Three kinds of callout appear sparingly. <b>Design decision</b> records a choice and the alternative it beat. <b>Working hypothesis</b> states something the project expects but has not shown; each names how it will be tested. <b>Technical note</b> adds a detail needed to read code or numbers correctly.</p></div>
+
+<h2 id="glossary">Short glossary</h2>
+<table class="tight">
+  <tbody>
+    <tr><td class="k">Tier</td><td>One of the three generation choices exposed by the gateway: <code>small</code>, <code>medium</code>, <code>frontier</code>. A tier name is a role, not a guarantee of quality.</td></tr>
+    <tr><td class="k">Backend</td><td>The concrete server behind a tier: a URL, a model identifier, and optionally an API key variable.</td></tr>
+    <tr><td class="k">Gateway</td><td>This project's FastAPI application. It validates requests, resolves a tier to a backend, forwards the call, and records what happened.</td></tr>
+    <tr><td class="k">Jev</td><td>TypeSafe's hosted decision model. It answers typed questions with probabilities; it does not write text.</td></tr>
+    <tr><td class="k">Router</td><td>Code that picks a tier for a request. Jev, DistilBERT, a prompted LLM and fixed or random policies are all routers in the later plan.</td></tr>
+    <tr><td class="k">Oracle label</td><td>For an evaluated prompt, the cheapest tier observed to answer it correctly. Available only after the fact.</td></tr>
+    <tr><td class="k">SSE</td><td>Server-sent events: the <code>data: …</code> line format used to stream chat completions over HTTP.</td></tr>
+    <tr><td class="k">Checkpoint</td><td>One planned unit of work with an ID such as <code>D1-07</code>, normally one commit.</td></tr>
+  </tbody>
+</table>
+
+<h1 id="part1"><span class="part-no">Part 1</span>Project framing and brainstorming</h1>
+
+<p class="part-intro">Before writing code it is worth being precise about the problem, about what would count as success, and about which parts of the plan are still guesses. This part records that thinking.</p>
+
+<h2 id="brief">Project brief</h2>
+
+<p>The Jev LLM Gateway is a single HTTP service that sits in front of several language models and decides, for each request, which one should answer. It exposes one OpenAI-style chat endpoint. Behind it are three generation tiers: a small self-hosted model, a medium self-hosted model, and a paid frontier model reached through a provider's API. On the M3 MacBook, the two self-hosted tiers run in native Ollama; in Google Colab, the same repository code can be pointed at vLLM on an NVIDIA GPU for experiments.</p>
+
+<p>The project is named after Jev, a decision model from TypeSafe AI. Jev does not write answers. It answers narrow, typed questions — "which of these options?", "how far along this scale?", "is this statement true?" — and returns probabilities. The gateway will use those answers to choose a tier, to judge whether a generated answer can be trusted, and to decide whether a cached answer fits a new request. A trained DistilBERT classifier serves as a fallback when Jev is unavailable and as a point of comparison.</p>
+
+<p>Around that core, the full plan adds an evaluation benchmark of 2,000–3,000 prompts, calibration analysis, a verified semantic cache, monitoring, deployment to local Kubernetes, load and failure tests, and an NVIDIA serving experiment. The aim is a system that is useful to run and also a source of honest measurements about when routing pays for itself.</p>
+
+<h2 id="problem">The problem the gateway solves</h2>
+
+<p>An application that calls one model for every request makes an implicit bet: that the model is the right trade-off between quality, speed and cost for <em>every</em> request it will ever see. That bet is rarely right. "What is 12 × 7?" and "Prove that this recursive function terminates" do not need the same model, yet a single-model application pays the same price and waits the same way for both.</p>
+
+<p>A gateway makes the choice explicit and changeable. Clients talk to one stable endpoint; the gateway owns the list of backends, their credentials, their limits, and the policy for choosing among them. That separation is useful even before any automatic routing exists — it is what Day 1 builds — because it gives one place to enforce timeouts and spending caps and one place to record what every request cost and how long it took.</p>
+
+<h2 id="why-choice">Why model choice affects quality, latency and cost</h2>
+
+<p><b>Quality.</b> Larger models usually answer more questions correctly, but "usually" hides a lot. Benchmarks show large average gaps on multi-step maths and code, and much smaller gaps on short factual or classification questions. On any given prompt a smaller model can be right where a larger one is wrong. Which prompts are which is an empirical question for Day 2.</p>
+
+<p><b>Latency.</b> A generating model produces output one token at a time, and each token requires reading the model's weights from memory. More parameters means more bytes to read per token, so on the same hardware a 7-billion-parameter model normally produces tokens more slowly than a 1.5-billion-parameter one. A frontier API adds network time and the provider's queueing, but runs on much larger hardware. On a memory-limited laptop there is a further cost: switching between local models can mean loading several gigabytes from disk.</p>
+
+<p><b>Cost.</b> Frontier APIs charge per input and output token. Self-hosted models have no per-token bill, but they consume hardware that has a cost whether or not it is busy — electricity and wear on a Mac, or hourly rental for a cloud GPU. The two kinds of cost behave differently and must not be added together as if they were the same unit (Part 7 returns to this).</p>
+
+<h2 id="routing-value">When routing is useful — and what erases the benefit</h2>
+
+<p>Routing is useful when three things are true at once: a meaningful share of requests can be answered correctly by a cheaper or faster tier; something can recognise those requests <em>before</em> paying for the expensive answer; and the act of recognising them is cheap relative to what it saves.</p>
+
+<figure data-src="f03-routing-value" id="fig-routing-value"><img src="figures/f03-routing-value.svg" alt="Figure 1"><figcaption><span class="fig-no">Figure 1.</span> Where time and cost go for a frontier-only request, a correctly routed easy request, and a misjudged request that is escalated after a check. Proportions are illustrative. The misjudged case costs more than not routing at all.</figcaption></figure>
+
+<p>Several overheads can erase the benefit:</p>
+<ul>
+  <li><b>Decision latency.</b> A routing call that adds hundreds of milliseconds to every request may cost more user-visible time than it saves on the subset that goes to a faster tier.</li>
+  <li><b>Misroutes.</b> Sending a hard request to the small tier either returns a wrong answer (a quality loss) or, with verification, triggers a second generation on a bigger tier (paying twice).</li>
+  <li><b>Verification calls.</b> Checking answers improves quality but adds a call per request and turns some single generations into cascades.</li>
+  <li><b>Model switching.</b> On a machine that cannot hold both local models in memory, routing between them can force repeated loading — a cost that a benchmark run sequentially per tier would never see.</li>
+  <li><b>Idle capacity.</b> If the GPU hosting a self-hosted tier is paid for by the hour, sending it fewer requests does not reduce the bill.</li>
+</ul>
+
+<p>The practical consequence is that routing can only be judged on full-path numbers: every decision, verification and rejected attempt has to be included in the cost and latency of the request it served.</p>
+
+<h2 id="app-vs-bench">A useful application versus a benchmark experiment</h2>
+
+<p>The project has two goals that pull in slightly different directions, and confusing them is a common source of bad conclusions.</p>
+
+<p>As an <b>application</b>, the gateway must be dependable: it starts reliably on the Mac, fails clearly when a backend is missing, never leaks a key, never spends beyond a cap, and gives clients a stable API. Its success is measured by whether it behaves correctly under real conditions, including partial failure.</p>
+
+<p>As a <b>benchmark experiment</b>, the project must produce numbers that mean something: accuracy per tier with stated sample counts, routing comparisons on a held-out test set, latency under a defined workload, and costs that include everything. Its success is measured by whether another person could reproduce the numbers and would draw the same conclusion.</p>
+
+<p>The two share code but not evidence. A quality evaluation that runs each tier sequentially over thousands of prompts tells us which tier answered which prompt correctly; it does not tell us how fast a live routed request would be, because it never pays for switching, contention or decision calls on the request path. Conversely, a smooth demo of the application says nothing about accuracy. The repository keeps engineering evidence (<code>docs/STATUS.md</code>, <code>docs/EXPERIMENTS.md</code>, <code>evidence/</code>) separate from the code for exactly this reason.</p>
+
+<h2 id="ml-systems">How the project connects to ML systems engineering</h2>
+
+<p>The long-term goal behind the project is ML systems and AI infrastructure work — inference optimisation, GPU performance, and making models run efficiently on real hardware. The gateway is a deliberately practical way into that field. It forces contact with the questions that matter in production inference: what happens to memory when a model loads, why the first token is slower than the rest, how batching and concurrency trade latency for throughput, how to measure tail latency honestly, and how to tell a real speed-up from noise.</p>
+
+<p>It also separates two layers that are easy to blur: the <em>serving runtime</em> (Ollama, vLLM), which owns memory, batching and kernels; and the <em>application layer</em> (this gateway), which owns policy, routing, budgets and records. Day 6's NVIDIA experiment works at the runtime layer — a vLLM baseline, a profile, one evidence-motivated change, and a repeated comparison — while everything before it builds the measurement discipline that makes such an experiment believable.</p>
+
+<h2 id="questions">Questions worth asking before implementation</h2>
+
+<p>These are the questions that shaped the plan. Some are answered by the design; several can only be answered by measurement.</p>
+<ul>
+  <li>What exactly is the client allowed to send, and what does the gateway refuse? (Day 1 answers: text-only chat; explicit tiers; no images, tools or <code>auto</code> yet.)</li>
+  <li>Can both local models stay loaded on this Mac at once, and what does switching cost? Unknown until measured with Ollama on the real machine.</li>
+  <li>What is a "correct" answer for each task family, and how often does the scorer itself make mistakes?</li>
+  <li>What event should a routing probability refer to — "this tier will be correct", or "this tier is the cheapest correct one"? The answer determines how calibration can be measured.</li>
+  <li>How much does a Jev call add to request latency from this network, at p50 and p95?</li>
+  <li>What is the cheapest possible routing on the measured data (the hindsight oracle), and how close can any real router get?</li>
+  <li>What does a wrong answer cost compared with a slow one? This sets the threshold for escalation and cannot come from the data alone.</li>
+  <li>Which results belong to the Mac, which to Colab, and how is that labelled so they are never mixed?</li>
+</ul>
+
+<h2 id="alternatives">Alternatives considered</h2>
+
+<table>
+  <thead><tr><th style="width:21%">Decision</th><th style="width:34%">Alternative</th><th>Why the proposed option was preferred</th></tr></thead>
+  <tbody>
+    <tr><td>Local runtime on the Mac</td><td>vLLM or llama.cpp server directly</td><td>vLLM's GPU path targets Linux with NVIDIA and other accelerators, not the Mac's GPU. Native Ollama is supported on Apple Silicon, manages model downloads and residency, and exposes an OpenAI-compatible endpoint.</td></tr>
+    <tr><td>API shape</td><td>A custom request format</td><td>An OpenAI-style <code>/v1/chat/completions</code> lets existing clients and tools work, and both Ollama and vLLM speak it, so one transport serves every tier.</td></tr>
+    <tr><td>Tier selection on Day 1</td><td>Start with automatic routing</td><td>Routing cannot be evaluated without a working three-tier path and labelled outcomes. Explicit tiers first give a stable base and a clear test target.</td></tr>
+    <tr><td>Routing signal</td><td>Only a prompted LLM router or only a trained classifier</td><td>The project compares Jev with a trained DistilBERT, a prompted LLM, a self-hosted decision model and fixed/random baselines on the same split — the comparison is the point.</td></tr>
+    <tr><td>Where GPU work happens</td><td>Rent a permanent GPU server</td><td>Colab provides NVIDIA access for bounded experiments without standing infrastructure. Its limits (session lifetime, quota) are acceptable for experiments, not for serving the app.</td></tr>
+    <tr><td>Budget control</td><td>Rely only on the provider dashboard</td><td>A process-local admission check stops runaway loops immediately and makes the cap visible in code; provider limits remain the backstop.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="constraints">Constraints and unresolved assumptions</h2>
+
+<p><b>Hardware.</b> The Mac preflight recorded an Apple M3 Pro with 11 CPU cores, 18 GB of unified memory, macOS 26.5.2, and only 18 GiB free on a 460 GiB data volume <span class="pill rec">Recorded</span>. That memory is shared by macOS, every open application, the CPU and the GPU. The notebook does not assume that both local models, a classifier, an embedding model, Docker and Kubernetes can be resident together; that has to be measured. Disk space is a real constraint for model downloads.</p>
+
+<p><b>Colab.</b> Google states that Colab resources are not guaranteed, that idle virtual machines are deleted, and that free notebooks run for at most 12 hours depending on availability <span class="pill doc">Documented</span>. GPU type and memory are unknown until a session is allocated.</p>
+
+<p><b>External access.</b> Jev requires a TypeSafe API key; the frontier tier requires a provider key, a model name, current prices and positive caps. None are configured in the repository yet.</p>
+
+<p><b>Unresolved assumptions</b> — stated so that they can be checked rather than quietly relied on:</p>
+<ul>
+  <li>The chosen Qwen2.5 tags will run acceptably in Ollama on this Mac.</li>
+  <li>The three task families will show enough per-prompt disagreement between tiers for routing to matter.</li>
+  <li>Jev's probabilities, phrased around this project's events, will carry useful signal about tier success.</li>
+  <li>The network latency to Jev and to the frontier provider will be stable enough to measure meaningfully from a home connection.</li>
+</ul>
+
+<h2 id="hypotheses">Working hypotheses to test</h2>
+
+<div class="callout hypothesis"><span class="label">Working hypothesis H1 · tier disagreement</span>
+<p>On the Day 2 manifest, a substantial share of prompts will be answered correctly by the small tier, and the share will differ sharply between maths, multiple-choice and code. <i>Test:</i> per-task accuracy per tier on train and validation splits, with sample counts.</p></div>
+
+<div class="callout hypothesis"><span class="label">Working hypothesis H2 · routing headroom</span>
+<p>The hindsight oracle will cost much less than always-frontier at similar accuracy, leaving room for a real router to save money. <i>Test:</i> oracle versus fixed-tier cost and accuracy on validation (Day 2), then each router against that bound (Day 3).</p></div>
+
+<div class="callout hypothesis"><span class="label">Working hypothesis H3 · decision overhead</span>
+<p>A Jev decision adds less latency than the generation time it saves on requests routed to the small tier. <i>Test:</i> decision-only p50/p95 and full-path latency on the Mac, with warm-up and model-load state recorded (Day 3).</p></div>
+
+<div class="callout hypothesis"><span class="label">Working hypothesis H4 · memory residency</span>
+<p>Both Qwen2.5 tags can be served from Ollama on this Mac, but switching between them under memory pressure will add load time that a sequential evaluation hides. <i>Test:</i> <code>ollama ps</code>, Activity Monitor memory pressure, and cold/warm/switch timings (D1-08).</p></div>
+
+<h2 id="runtime-options">Three ways to arrange the runtime</h2>
+
+<p>The biggest early decision was where the models run relative to the application. Three arrangements were compared.</p>
+
+<figure data-src="f02-runtime-options" id="fig-runtime-options"><img src="figures/f02-runtime-options.svg" alt="Figure 2"><figcaption><span class="fig-no">Figure 2.</span> Three runtime arrangements. Option 3 is the proposed direction: the Mac application never depends on a notebook, and Colab runs the same committed source as a separate experiment environment.</figcaption></figure>
+
+<p><b>Local only.</b> Everything except the frontier and Jev APIs runs on the Mac. It is private, simple, and works without a notebook, but it produces no NVIDIA or vLLM evidence, and it is bounded by 18 GB of shared memory.</p>
+
+<p><b>Notebook-dependent application.</b> The Mac gateway forwards to a model server running inside a Colab notebook, exposed through a public tunnel. This puts a real GPU behind the app, but the app stops working whenever the session ends; the tunnel exposes a model port to the internet; latency now includes an internet round trip; and results from two machines get mixed into one number.</p>
+
+<p><b>Mac application plus a separate GPU environment.</b> The Mac runs the application with Ollama. Colab runs the same repository at the same commit, with its own vLLM server on loopback and its own clients, and exports its results. The application never depends on the notebook, and every number is labelled with the environment that produced it. The cost is two setups to maintain and the fact that GPU access is not guaranteed.</p>
+
+<div class="callout"><span class="label">Design decision · proposed runtime</span>
+<p>Use option 3. The gateway's configuration takes a URL per tier, so the same code serves the Mac profile (<code>127.0.0.1:11434</code>, Ollama) and the Colab profile (<code>127.0.0.1:8000</code>, vLLM inside the notebook). Colab servers stay notebook-local and are never tunnelled. This is a direction, not a conclusion: whether the Mac can host both tiers well is hypothesis H4.</p></div>
+
+<h2 id="architecture-reasons">Reasons for the proposed architecture</h2>
+
+<ul>
+  <li><b>One contract, many backends.</b> Every tier is "an OpenAI-compatible base URL plus a model name", so adding vLLM, a different provider, or a new local model is configuration rather than code.</li>
+  <li><b>Policy in the application, not the model server.</b> Budgets, deadlines, routing and records live in the gateway, where they can be tested offline.</li>
+  <li><b>Decisions as data.</b> Jev's answers are numbers that application code interprets, so routing policy stays inspectable and versionable.</li>
+  <li><b>Evidence by construction.</b> Each request gets an ID and a trace record; each evaluation row is immutable and fingerprinted. Reports are regenerated from records, never typed in.</li>
+  <li><b>Install without CUDA.</b> The core package depends on FastAPI, httpx, Uvicorn and Pydantic only. Training, embeddings and GPU serving are optional extras or notebook-only requirements.</li>
+</ul>
+
+<figure data-src="f04-roadmap" id="fig-roadmap"><img src="figures/f04-roadmap.svg" alt="Figure 3"><figcaption><span class="fig-no">Figure 3.</span> The six planned build days. This notebook covers Days 1 and 2 in detail; later days appear only where they explain the architecture.</figcaption></figure>
+
+<h1 id="part2"><span class="part-no">Part 2</span>Background research: how Jev works and how this project uses it</h1>
+
+<p class="part-intro">Jev is the component the project is named after, and the one most likely to be misunderstood. This part separates what TypeSafe's official documentation says from the ways this project proposes to use it.</p>
+
+<h2 id="jev-sources">Sources and scope</h2>
+
+<p>Everything marked <span class="pill doc">Documented</span> in this part comes from TypeSafe's official documentation at <code>docs.typesafe.ai</code>, accessed on <b>28 October 2026</b>: the Introduction, Quick start, System One, State, Choice, Score, Noul, Confidence, Models, AI primer, Request rules and errors, and Python SDK pages (full list in Sources). Earlier project notes drew on press coverage and used names such as "yes/no" and "scale" questions and a 32K context window; the current official pages name the primitives <b>Noul</b> and <b>Score</b> and give a 64k per-request and 32k per-question context limit. Where the two disagree, this notebook follows the official documentation and does not repeat unverified press figures for speed or funding.</p>
+
+<h2 id="jev-what">What Jev is</h2>
+
+<p>TypeSafe describes Jev as its flagship model and the first "System One" model: a model built to make fast, structured decisions that software can consume directly <span class="pill doc">Documented</span>. The name borrows Daniel Kahneman's distinction between fast, intuitive "System 1" judgement and slow, deliberate "System 2" reasoning. You send Jev a <b>state</b> — the material to judge — and a set of <b>typed questions</b> about it. It returns one typed answer per question, with probabilities, and no generated prose.</p>
+
+<p>Three documented properties matter most for this project:</p>
+<ul>
+  <li><b>Constrained answers.</b> You define the answer space (the options of a Choice, the levels of a Score, yes/no for a Noul). Jev's answer always lies inside that space, so there is no free text to parse.</li>
+  <li><b>Parallel, isolated questions.</b> All questions in a request are evaluated in parallel and independently against the same state. TypeSafe states that adding questions barely changes response time, though each adds input tokens.</li>
+  <li><b>Calibration as a training goal.</b> TypeSafe says System One models are trained with "reinforcement learning for calibrated decisions" (RLCD) so that probabilities reflect uncertainty, and that calibration "is measured across groups of predictions; it does not guarantee that an individual answer is correct."</li>
+</ul>
+
+<h2 id="gen-vs-decision">Generation models and decision models</h2>
+
+<p>A <b>generation model</b> — Qwen2.5, a frontier model — takes text and produces new text one token at a time. Its output is open-ended: an explanation, a program, a number embedded in a sentence. To use it for a decision, the application has to coax it into a format and then parse what it wrote, which can fail.</p>
+
+<p>A <b>decision model</b> such as Jev takes text and returns a value from a set the caller defined, plus a probability distribution over that set. It cannot answer the user's question; it can only judge something <em>about</em> the question or an answer. In this project the two kinds of model have strictly different jobs: Qwen and the frontier model produce answers; Jev helps decide which of them to use and whether to trust what they produced.</p>
+
+<div class="callout tech"><span class="label">Technical note · what Jev never does</span>
+<p>Jev does not call other models, run code, or browse. "Jev routes a request" is shorthand for "the gateway asks Jev a question, then the gateway's own code calls a model". Every action is taken by application code.</p></div>
+
+<h2 id="state-questions">State and typed questions</h2>
+
+<p><b>State</b> is the content being judged. The documentation allows a plain string, a JSON object, or an array of text values; it recommends an object for most requests so that each part has a descriptive name, and it describes state as "the material you would present to a panel of experts before asking them to make a judgment." Jev currently accepts text only; English is its primary training language <span class="pill doc">Documented</span>.</p>
+
+<p>A <b>typed question</b> is a small object with a <code>type</code> (<code>choice</code>, <code>score</code> or <code>noul</code>), <code>instructions</code> (the question itself), and usually <code>criteria</code> (the options, levels, or a description of what "true" and "false" mean). The caller chooses an ID for each question; the answer comes back under that ID, and the model never sees the ID itself. TypeSafe advises keeping each question <em>atomic</em> — one judgement — and combining several answers in code rather than asking one compound question.</p>
+
+<figure data-src="f05-jev-anatomy" id="fig-jev-anatomy"><img src="figures/f05-jev-anatomy.svg" alt="Figure 4"><figcaption><span class="fig-no">Figure 4.</span> Anatomy of one request to <code>POST /v1/systemone</code>. Field names follow the official documentation; the state content, question IDs and answer values are illustrative and were not returned by a real call.</figcaption></figure>
+
+<h2 id="primitives">The decision primitives</h2>
+
+<p>The current introduction lists three primitives, verified on the pages below. A fourth, <b>Box</b>, locates objects in images; it is labelled "dreamer-ready" (not production-ready), requires an opt-in header, and is irrelevant to a text gateway, so it is not used here.</p>
+
+<table>
+  <thead><tr><th style="width:11%">Primitive</th><th style="width:22%">Asks</th><th style="width:22%">Request criteria</th><th>Returned fields</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Choice</td><td>Which one of these options?</td><td>Map of option name → description; up to 255 options</td><td><code>choice</code> (option with highest probability), <code>probabilities</code> (sum to 1 across options), <code>confidence</code> (0–1)</td></tr>
+    <tr><td class="k">Score</td><td>Where on this ordered scale?</td><td>Ordered list of 2–10 level descriptions, low to high</td><td><code>score</code> (probability-weighted average of level numbers, can fall between levels), <code>probabilities</code>, <code>confidence</code>, <code>legend</code></td></tr>
+    <tr><td class="k">Noul</td><td>Is this statement true?</td><td>Optional descriptions of what true and false mean</td><td><code>noul</code>: a single probability that the answer is yes, 0 to 1. No separate confidence field.</td></tr>
+  </tbody>
+</table>
+
+<p>Every response also carries the versioned <code>model</code> that answered (for example <code>jev-1.14.0</code> when the request used the alias <code>jev-latest</code>) and <code>usage</code> with input and output token counts. TypeSafe notes that aliases move when a new release ships, so a project that tunes thresholds should pin a versioned model ID and log the <code>model</code> field of every response <span class="pill doc">Documented</span>.</p>
+
+<h2 id="returned-values">What the returned values actually mean</h2>
+
+<p><b>Probabilities</b> are Jev's distribution over the answer space you defined. For a Choice they are spread over options; for a Score, over levels.</p>
+
+<p><b>Confidence</b> is <em>not</em> a probability of being right. It is a statistic computed from the shape of the distribution: 1 when all probability sits on one outcome, 0 when it is spread evenly. For a Choice with <i>n</i> options, the documented formula is <code>confidence = (p_max − 1/n) / (1 − 1/n)</code>. For a Score, the formula also accounts for how far probability lies from the most likely level, so indecision between neighbouring levels lowers confidence less than indecision between opposite ends.</p>
+
+<div class="calc">Illustrative Choice over three tiers:  probabilities = small 0.15, medium 0.70, frontier 0.15
+confidence = (0.70 − 1/3) / (1 − 1/3) = 0.3667 / 0.6667 = 0.55
+
+Same top probability, different spread:  small 0.30, medium 0.70, frontier 0.00
+confidence = 0.55 as well — the formula only looks at p_max.</div>
+
+<p>The <b>Noul value</b> is itself the probability of "yes". Near 1 is a strong yes, near 0 a strong no, near 0.5 an even split. TypeSafe suggests starting thresholds of 0.7 for yes and 0.3 for no, sending the middle band elsewhere, and tuning on one's own data rather than to a few test cases. If a confidence-style number is wanted, <code>|2p − 1|</code> puts a Noul on the same scale as a Choice.</p>
+
+<div class="callout tech"><span class="label">Technical note · what the documentation does not claim</span>
+<p>The Confidence page makes no calibration claim about <code>confidence</code>; it explicitly says right thresholds "depend on your domain and the performance of the model for your use case." The AI primer states calibration as the training objective for probabilities, measured over groups. Neither page says how well calibrated Jev will be for a question like "will this 1.5B model answer this maths problem correctly?" — that is for this project to measure.</p></div>
+
+<h2 id="decision-to-action">How application code turns a decision into an action</h2>
+
+<p>The documented pattern is to branch on the answer with risk-scaled thresholds: act automatically at high confidence, proceed carefully at medium, and fall back or escalate at low confidence. TypeSafe's own example gates a destructive action at a higher confidence than a read-only one. In this project the "action" is calling a generation tier, and the risky outcomes are a wrong answer (if the tier is too small) or a needlessly expensive one (if too large). The full flow — context in, typed result out, policy, then the model call — is drawn as architecture diagram C in Part 4 (<a class="xref" href="#fig-decision-action">Figure 14</a>).</p>
+
+<p>The application policy has more inputs than Jev's answer. It must also know whether the chosen tier is enabled (the frontier tier is disabled without a key and caps), whether the budget admits the request, whether the Jev call failed or timed out, and what to do then. Those rules are <span class="pill ours">Our design</span>, not product behaviour.</p>
+
+<h2 id="four-roles">Four roles for Jev in this project</h2>
+
+<figure data-src="f07-four-roles" id="fig-four-roles"><img src="figures/f07-four-roles.svg" alt="Figure 5"><figcaption><span class="fig-no">Figure 5.</span> Where each proposed Jev role sits on the request path. Roles 1 and 2 decide before any answer exists; roles 3 and 4 judge an existing answer. All four are application designs to be built and evaluated in Days 3–4.</figcaption></figure>
+
+<table>
+  <thead><tr><th style="width:15%">Role</th><th style="width:21%">Information supplied</th><th style="width:22%">Illustrative question</th><th style="width:13%">Result</th><th>Gateway's next step · limitation to evaluate</th></tr></thead>
+  <tbody>
+    <tr><td class="k">1 · Select a tier before answering</td><td>State: the prompt and short descriptions of each tier's strengths</td><td>Choice: "Which is the cheapest model likely to answer the <code>prompt</code> correctly?" options small / medium / frontier</td><td><code>choice</code>, probabilities, confidence</td><td>Call the chosen tier if confidence clears a threshold and the tier is available; otherwise fall back. <i>Limitation:</i> one fixed operating point; tier descriptions must be tuned on validation; confidence measures spread, not correctness.</td></tr>
+    <tr><td class="k">2 · Estimate whether a named backend will succeed</td><td>State: the prompt and a description of one specific tier</td><td>Noul: "Would a small 1.5-billion-parameter instruction model answer the <code>prompt</code> correctly?"</td><td><code>noul</code> probability</td><td>Use small if <code>noul ≥ t₁</code>; else ask about medium; else frontier. Sweeping t gives a cost–quality curve. <i>Limitation:</i> asking twice adds latency and tokens; calibration must be measured against observed success labels.</td></tr>
+    <tr><td class="k">3 · Check an already generated answer</td><td>State: the prompt and the generated answer</td><td>Noul: "Does the <code>answer</code> correctly and completely respond to the <code>prompt</code>?"</td><td><code>noul</code> probability</td><td>Return the answer if above threshold; else escalate to the next tier (a cascade). <i>Limitation:</i> false accepts return wrong answers; false rejects pay twice; escalation must not replay output already streamed.</td></tr>
+    <tr><td class="k">4 · Check that a cached answer applies</td><td>State: the new prompt, the cached prompt, the cached answer</td><td>Noul: "Does the <code>cached_answer</code> correctly answer the <code>new_prompt</code>?"</td><td><code>noul</code> probability</td><td>Serve the cached answer only on a confident yes; else generate. <i>Limitation:</i> near-miss pairs ("capital of Australia" vs "largest city of Australia") are where similarity search fails and the check must succeed; false-hit rate needs its own benchmark.</td></tr>
+  </tbody>
+</table>
+
+<p>A request can combine roles. Because questions in one request run in parallel, roles 1 and 2 could be asked together in a single call; roles 3 and 4 need the answer or cache candidate first, so they are always separate calls on the request path, and their latency adds to the request.</p>
+
+<h2 id="two-probabilities">Tier-choice confidence is not the probability of a correct answer</h2>
+
+<p>It is tempting to read "Jev chose medium with confidence 0.9" as "there is a 90% chance the medium tier's answer will be correct". That reading is wrong for two separate reasons. First, <code>confidence</code> is a measure of how concentrated the Choice distribution is, not a probability of anything. Second, even the underlying Choice probability refers to the question that was asked — "which is the cheapest model likely to answer correctly?" — which is a different event from "the medium tier will be correct". A prompt every tier answers correctly should, ideally, make Jev choose <em>small</em>; a prompt no tier can answer has no right choice at all.</p>
+
+<figure data-src="f08-two-probabilities" id="fig-two-probabilities"><img src="figures/f08-two-probabilities.svg" alt="Figure 6"><figcaption><span class="fig-no">Figure 6.</span> Left: a Choice over tiers yields a preference distribution and a dispersion-based confidence; no scoreable event is defined. Right: a Noul phrased around a specific, scoreable event can be compared with observed outcomes. Values are illustrative.</figcaption></figure>
+
+<p><b>Calibration needs a defined event and observed labels.</b> To say a probability is calibrated, one needs (a) an event that is precisely defined and objectively decidable — for example, "the small tier's answer to this prompt, generated with these settings, passes the Day 2 scorer" — and (b) the actual outcome of that event for many prompts. Day 2 produces exactly those labels: for every prompt in the manifest and every tier, whether the answer was correct. With them, Day 3 can group Noul predictions into probability bins and compare each bin's average prediction with the fraction of prompts that actually succeeded.</p>
+
+<figure data-src="f09-reliability" id="fig-reliability" class="narrow"><img src="figures/f09-reliability.svg" alt="Figure 7"><figcaption><span class="fig-no">Figure 7.</span> How calibration will be read once labels exist: a reliability diagram plots observed frequency against mean predicted probability for each bin. The points shown are synthetic and say nothing about Jev.</figcaption></figure>
+
+<h2 id="routing-pseudocode">Routing in pseudocode</h2>
+
+<p class="code-label"><span class="tag">Pseudocode</span> · threshold routing with Noul questions (role 2) · <span class="tag">Our design</span>, not implemented</p>
+<pre><code><span class="kw">function</span> route(request, deadline):
+    <span class="kw">if</span> request.model != "auto": <span class="kw">return</span> request.model           <span class="cm"># Day 1 behaviour: explicit tier</span>
+    state = { prompt: last_user_message(request), tiers: TIER_DESCRIPTIONS_V2 }
+    questions = { small_ok:  Noul("Would the small tier answer `prompt` correctly?"),
+                  medium_ok: Noul("Would the medium tier answer `prompt` correctly?") }
+    <span class="kw">try</span>:
+        answers = jev.ask(state, questions, timeout = min(1.0 s, deadline.remaining))
+    <span class="kw">except</span> (Timeout, ApiError):
+        <span class="kw">return</span> fallback_router(request)                         <span class="cm"># DistilBERT, Day 3</span>
+    record(question_version = "v2", answers, latency)
+    <span class="kw">if</span> answers.small_ok  >= T_SMALL  <span class="kw">and</span> enabled("small"):  <span class="kw">return</span> "small"
+    <span class="kw">if</span> answers.medium_ok >= T_MEDIUM <span class="kw">and</span> enabled("medium"): <span class="kw">return</span> "medium"
+    <span class="kw">if</span> enabled("frontier") <span class="kw">and</span> budget.admits(request):      <span class="kw">return</span> "frontier"
+    <span class="kw">return</span> "medium"                                            <span class="cm"># never silently upgrade to paid</span></code></pre>
+
+<p>Both questions are asked in one call because they are independent and parallel. <code>T_SMALL</code> and <code>T_MEDIUM</code> are chosen on the validation split and then frozen before the held-out test.</p>
+
+<h2 id="sdk-example">An SDK example checked against current documentation</h2>
+
+<p>The example below uses only names that appear in the official Python SDK documentation: <code>AsyncTypeSafeClient</code>, <code>Choice</code>, <code>RetryPolicy(max_retries, backoff_max, timeout)</code>, <code>client.system_one(state=…, questions=…, retry=…)</code>, <code>response.model</code>, <code>response.usage</code>, <code>response.answers[id].choice / .probabilities / .confidence</code>, and <code>TypeSafeAPIError</code> with <code>status</code> and <code>request_id</code>. The package is <code>typesafe-sdk</code> (Python 3.10+), and the client reads <code>TYPESAFE_API_KEY</code> from the environment. It has not been run: no TypeSafe key is configured for this project.</p>
+
+<p class="code-label"><span class="tag">Python</span> · verified against docs.typesafe.ai on 28 Oct 2026 · not executed</p>
+<pre><code><span class="kw">from</span> typesafe_sdk <span class="kw">import</span> AsyncTypeSafeClient, Choice, RetryPolicy, TypeSafeAPIError
+
+TIER_QUESTION_V1 = Choice(
+    instructions=<span class="st">"Which is the cheapest model likely to answer the `prompt` correctly?"</span>,
+    criteria={
+        <span class="st">"small"</span>: <span class="st">"1.5B instruction model: short facts and simple arithmetic"</span>,
+        <span class="st">"medium"</span>: <span class="st">"7B instruction model: multi-step reasoning and short programs"</span>,
+        <span class="st">"frontier"</span>: <span class="st">"Large hosted model: hard maths, long or subtle code"</span>,
+    },
+)
+
+<span class="kw">async def</span> choose_tier(client: AsyncTypeSafeClient, prompt: str) -> dict:
+    <span class="kw">try</span>:
+        response = <span class="kw">await</span> client.system_one(
+            state={<span class="st">"prompt"</span>: prompt},
+            questions={<span class="st">"tier"</span>: TIER_QUESTION_V1},
+            retry=RetryPolicy(max_retries=1, backoff_max=0.2, timeout=1.0),
+        )
+    <span class="kw">except</span> TypeSafeAPIError <span class="kw">as</span> error:
+        <span class="kw">return</span> {<span class="st">"fallback"</span>: True, <span class="st">"status"</span>: error.status, <span class="st">"request_id"</span>: error.request_id}
+    answer = response.answers[<span class="st">"tier"</span>]
+    <span class="kw">return</span> {<span class="st">"jev_model"</span>: response.model,                 <span class="cm"># versioned ID, e.g. jev-1.14.0</span>
+            <span class="st">"input_tokens"</span>: response.usage.input_tokens,
+            <span class="st">"choice"</span>: answer.choice,
+            <span class="st">"probabilities"</span>: dict(answer.probabilities),
+            <span class="st">"confidence"</span>: answer.confidence}
+
+<span class="cm"># usage:  async with AsyncTypeSafeClient(model="jev-1.14.0") as client: ...</span></code></pre>
+
+<p>Two details are worth noting. Pinning <code>jev-1.14.0</code> instead of <code>jev-latest</code> stops thresholds from silently drifting when the alias moves. And the SDK retries <code>429</code> and <code>529</code> responses by default; on a request path with a deadline, the retry budget must be bounded, which is why the example sets it explicitly.</p>
+
+<h2 id="jev-known-unknown">Documented facts and open questions</h2>
+
+<table>
+  <thead><tr><th style="width:50%">Documented (accessed 28 Oct 2026)</th><th>Not documented — must be measured or remains unknown</th></tr></thead>
+  <tbody>
+    <tr><td>Endpoint <code>POST https://api.typesafe.ai/v1/systemone</code>; Bearer key in <code>Authorization</code>.</td><td>Latency from this Mac's network to the API, at p50 and p95, under the project's request sizes.</td></tr>
+    <tr><td>Models Jev 1.14 (<code>jev-1.14.0</code>, available from 14 Oct 2026) and Jev 1.13; aliases <code>jev-latest</code>, <code>jev-preview</code>.</td><td>Jev's internal architecture, parameter count and serving hardware.</td></tr>
+    <tr><td>Price: pay per input token, $0.042 per million; output tokens free.</td><td>Total Jev spend for this project — depends on state size and question count per request.</td></tr>
+    <tr><td>Context: 64k tokens per request, 32k per question (state plus one question); an opt-in long-context header raises both, documented as slower and less accurate.</td><td>Accuracy as state grows on this project's prompts (TypeSafe publishes a "jaggedness" page for 1.13 that is not reproduced here).</td></tr>
+    <tr><td>Training objective: RLCD for calibrated probabilities; calibration holds over groups, not individual answers. Same weights for every account; not trained on customer requests.</td><td>Calibration for this project's events (tier success, answer correctness, cache applicability).</td></tr>
+    <tr><td>Errors: 400, 401, 413, 415, 422, 429 (rate limit), 529 (overloaded); SDKs retry 429/529 with backoff.</td><td>The organisation's actual rate limits (shown only in the TypeSafe console).</td></tr>
+    <tr><td>Text input only for production use; English is the primary language.</td><td>How well Jev judges maths- and code-heavy prompts, given guidance that it handles words better than raw numbers (from earlier project notes, not re-verified).</td></tr>
+  </tbody>
+</table>
+
+<h1 id="part3"><span class="part-no">Part 3</span>What the models and programs are doing</h1>
+
+<p class="part-intro">The project involves six kinds of model and five kinds of program. Keeping clear which is which — weights, the software that runs them, and the application that decides what to ask — prevents most of the confusion that follows.</p>
+
+<h2 id="component-table">The components at a glance</h2>
+
+<table>
+  <thead><tr><th style="width:14%">Component</th><th style="width:15%">Kind</th><th style="width:15%">Runs where</th><th style="width:20%">Input → output</th><th>Role in the project</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Small model</td><td>Generation model (weights)</td><td>Mac via Ollama; Colab via vLLM</td><td>chat messages → text</td><td>Cheapest, fastest tier. Current candidate: Qwen2.5 1.5B Instruct (<code>qwen2.5:1.5b</code>).</td></tr>
+    <tr><td class="k">Medium model</td><td>Generation model</td><td>Mac via Ollama when memory permits; Colab via vLLM</td><td>chat messages → text</td><td>Middle tier for multi-step tasks. Candidate: Qwen2.5 7B Instruct (<code>qwen2.5:7b</code>).</td></tr>
+    <tr><td class="k">Frontier model</td><td>Generation model behind a paid API</td><td>Provider's servers</td><td>chat messages → text + usage</td><td>Highest-quality, most expensive tier. Model and provider not yet configured.</td></tr>
+    <tr><td class="k">Jev</td><td>Decision model behind an API</td><td>TypeSafe's servers</td><td>state + typed questions → typed answers + probabilities</td><td>Principal router and verifier (Days 3–4). Never generates the reply.</td></tr>
+    <tr><td class="k">DistilBERT</td><td>Classifier model, fine-tuned by the project</td><td>Trained on Colab; served on Mac CPU</td><td>prompt text → tier label + probabilities</td><td>Fallback router when Jev is unavailable; comparison baseline (Day 3).</td></tr>
+    <tr><td class="k">Embedding model</td><td>Encoder model</td><td>Mac</td><td>text → fixed-length vector</td><td>Finds similar past prompts for the semantic cache (Day 4).</td></tr>
+    <tr><td class="k">Ollama</td><td>Serving software</td><td>Mac (native app, port 11434)</td><td>HTTP requests → model execution</td><td>Downloads, loads, unloads and runs the local models; OpenAI-compatible endpoint.</td></tr>
+    <tr><td class="k">vLLM</td><td>Serving software</td><td>Colab NVIDIA GPU (port 8000)</td><td>HTTP requests → batched GPU execution</td><td>High-throughput serving for NVIDIA experiments (Day 1 notebook, Day 6 study).</td></tr>
+    <tr><td class="k">Gateway</td><td>Application code (this repo)</td><td>Mac, <code>127.0.0.1:8080</code></td><td>client request → backend call → response + trace</td><td>Validates, resolves a tier, forwards, streams, enforces caps, records.</td></tr>
+    <tr><td class="k">Client</td><td>Application code / tool</td><td>Mac</td><td>user intent → HTTP request</td><td><code>curl</code>, <code>jev smoke</code>, later the evaluation runner and load tests.</td></tr>
+    <tr><td class="k">Colab notebook</td><td>Experiment harness</td><td>Colab VM</td><td>uploaded source → server, requests, exported JSON</td><td>Runs the same committed source against vLLM; exports results; never a backend for the Mac.</td></tr>
+  </tbody>
+</table>
+
+<figure data-src="f10-layers" id="fig-layers"><img src="figures/f10-layers.svg" alt="Figure 8"><figcaption><span class="fig-no">Figure 8.</span> Three layers. Application code decides what to ask and records what happened; serving software and hosted services execute models; models are the trained weights. The same Qwen2.5 family is reached through two serving paths, Ollama on the Mac and vLLM on Colab.</figcaption></figure>
+
+<h2 id="weights-tokens">Weights, tokens and inference</h2>
+
+<p>A trained model is a large set of numbers called <b>weights</b> (or parameters). Qwen2.5 7B Instruct has about 7.6 billion of them; the 1.5B model about 1.5 billion. The weights are fixed after training; using the model does not change them.</p>
+
+<p>Models do not read characters directly. A <b>tokenizer</b> splits text into <b>tokens</b> — whole words, word pieces, punctuation — and maps each to an integer ID. "The gateway streams tokens." might become six or seven tokens. Prices, context limits and speeds are all counted in tokens, and different models' tokenizers split the same text differently, which is why the gateway's budget check estimates conservatively rather than counting exactly.</p>
+
+<p><b>Inference</b> means running the model forward on an input to get an output. For a generation model, the output of one forward pass is a probability distribution over the next token. The server picks a token (always the most likely one at temperature 0, or a random draw weighted by probability at higher temperatures), appends it, and repeats until it produces an end token or reaches <code>max_tokens</code>.</p>
+
+<h2 id="prefill-decode">Prefill and decode</h2>
+
+<p>A generation request happens in two phases with very different performance characteristics.</p>
+
+<figure data-src="f11-prefill-decode" id="fig-prefill-decode"><img src="figures/f11-prefill-decode.svg" alt="Figure 9"><figcaption><span class="fig-no">Figure 9.</span> Prefill processes the whole prompt at once and builds the KV cache; decode then produces one token per step, each step reading the weights and the growing cache.</figcaption></figure>
+
+<p><b>Prefill</b> processes every prompt token in one batched pass. Because many tokens share each read of the weights, prefill keeps the processor busy with arithmetic; its time grows with prompt length. It ends with the first output token, so prefill dominates the <em>time to first token</em>.</p>
+
+<p><b>Decode</b> generates the remaining tokens one at a time, because each new token depends on the previous one. Every decode step must stream essentially all the weights through the processor to produce a single token, so decode speed on one request is usually limited by memory bandwidth rather than arithmetic. This is why serving systems batch decode steps from many requests together: one read of the weights then produces a token for each request in the batch. vLLM's design centres on doing that efficiently; it is also where the Day 6 GPU experiment will look.</p>
+
+<div class="calc">Illustrative arithmetic, not a measurement
+prompt = 300 tokens,  output = 120 tokens
+if prefill takes 0.15 s and decode runs at 40 tokens/s:
+  time to first token ≈ queue + 0.15 s
+  remaining 119 tokens ≈ 119 / 40 = 2.98 s
+  end-to-end ≈ 0.15 + 2.98 ≈ 3.1 s   → output length, not prompt length, dominates</div>
+
+<h2 id="context-kv">Context windows and the KV cache</h2>
+
+<p>The <b>context window</b> is the maximum number of tokens — prompt plus generated output — a model can attend to in one request. Qwen2.5's published configuration allows 32,768 positions, but a serving runtime may allocate less: Ollama documents a default context of 4,096 tokens, adjustable with <code>OLLAMA_CONTEXT_LENGTH</code> or a Modelfile <span class="pill doc">Documented</span>. Text beyond the configured window is truncated or rejected, so a "fits the model" claim must name the runtime setting.</p>
+
+<p>During attention, each layer computes a <i>key</i> and a <i>value</i> vector for every token. Recomputing them for all earlier tokens at every decode step would be wasteful, so the server keeps them in the <b>KV cache</b>. The cache grows by a fixed amount per token, per concurrent request.</p>
+
+<div class="calc">KV cache per token = 2 (K and V) × layers × KV heads × head size × bytes per value
+Qwen2.5-7B-Instruct config: 28 layers, 4 KV heads, head size 3584/28 = 128, bf16 = 2 bytes
+  2 × 28 × 4 × 128 × 2 B = 57,344 B ≈ 56 KiB per token
+  × 4,096 tokens  ≈ 224 MiB per full-context request
+  × 32,768 tokens ≈ 1.75 GiB per full-context request
+Qwen2.5-1.5B-Instruct: 28 layers, 2 KV heads, head size 128 → 28 KiB per token, ≈ 112 MiB at 4,096
+(Configs from the Hugging Face model repositories. Runtimes may store the cache at lower precision.)</div>
+
+<p>Ollama notes that memory needed scales with <code>OLLAMA_NUM_PARALLEL × OLLAMA_CONTEXT_LENGTH</code>, which is this same arithmetic: allowing four parallel 4,096-token requests on the 7B model reserves roughly four times 224 MiB for the cache alone.</p>
+
+<h2 id="quantization">Quantization and approximate weight memory</h2>
+
+<p><b>Quantization</b> stores weights with fewer bits — 8 or 4 instead of 16 — trading a small amount of accuracy for less memory and less data to read per token. The first-order memory estimate is simple:</p>
+
+<div class="calc">weight bytes ≈ parameters × bits per weight ÷ 8
+Qwen2.5-7B: 7,615,616,512 params × 16 bits ÷ 8 ≈ 15.2 GB     × 4 bits ÷ 8 ≈ 3.8 GB
+Qwen2.5-1.5B: 1,543,714,304 params × 16 bits ÷ 8 ≈ 3.1 GB    × 4 bits ÷ 8 ≈ 0.77 GB
+Ollama's listed downloads: qwen2.5:7b 4.7 GB, qwen2.5:1.5b 986 MB — larger than pure 4-bit,
+because practical 4-bit formats keep some tensors at higher precision and add scales and metadata.</div>
+
+<figure data-src="f12-memory" id="fig-memory"><img src="figures/f12-memory.svg" alt="Figure 10"><figcaption><span class="fig-no">Figure 10.</span> First-order weight memory for the two candidate models at three precisions, against the Mac's 18 GB of unified memory. The bars are arithmetic, not measured residency.</figcaption></figure>
+
+<p>The Colab notebook serves <code>Qwen/Qwen2.5-1.5B-Instruct</code> from Hugging Face in its native 16-bit form, while the Mac serves Ollama's quantized build. They are the same model family but not the same artefact, so quality and speed results from the two environments are not interchangeable.</p>
+
+<h2 id="disk-vs-runtime">Why fitting on disk does not establish runtime feasibility</h2>
+
+<p>A 4.7 GB download proves only that the file fits on disk. At runtime the model also needs the KV cache for each active request, scratch buffers for intermediate activations, the runtime's own code and graph, and room for everything else on the machine. On Apple Silicon the CPU and GPU share one pool of unified memory, and macOS reserves part of it; Ollama may also place part of a model on the CPU if the GPU share is insufficient (its <code>ollama ps</code> output shows the split). The only trustworthy evidence is an observation: load the model, run a request at the intended context length, and read <code>ollama ps</code>, the <code>size_vram</code> field of <code>/api/ps</code>, and memory pressure in Activity Monitor. The repository records the download sizes and explicitly makes no residency claim yet.</p>
+
+<h2 id="cold-warm">Cold loading, warm execution and model switching</h2>
+
+<figure data-src="f13-cold-warm" id="fig-cold-warm"><img src="figures/f13-cold-warm.svg" alt="Figure 11"><figcaption><span class="fig-no">Figure 11.</span> A cold request pays for loading weights before prefill; a warm request does not. When two models cannot both stay resident, switching tiers can mean unloading one and loading the other.</figcaption></figure>
+
+<p>A <b>cold</b> request arrives when the model is not in memory: the server must read gigabytes from disk and initialise the runtime before prefill begins. A <b>warm</b> request finds the model already loaded. By default Ollama keeps a model loaded for five minutes after its last use (the <code>keep_alive</code> setting), may keep up to three models loaded on CPU-based or single-GPU systems if they fit, and queues new requests while it unloads idle models when memory is short <span class="pill doc">Documented</span>.</p>
+
+<p>This matters twice. For measurement, the first request after a load is not representative, so benchmarks need a warm-up and must record load state. For routing, a policy that alternates between small and medium on a machine that can hold only one of them will pay load time repeatedly — a cost invisible in an evaluation that runs all small requests and then all medium ones.</p>
+
+<h2 id="bigger">Why a larger model is not automatically better on every question</h2>
+
+<ul>
+  <li><b>Averages hide per-prompt reversals.</b> A larger model with higher average accuracy can still miss prompts a smaller model gets right; the oracle table in Part 7 is built to expose such rows.</li>
+  <li><b>Format and length.</b> A model that explains at length may hit <code>max_tokens</code> before stating the final answer, which the scorer will record as truncated rather than correct. The gateway's default output cap is 256 tokens.</li>
+  <li><b>Different artefacts.</b> A heavily quantized larger model may lose more accuracy than a lightly quantized smaller one.</li>
+  <li><b>The question may be easy.</b> For simple facts and classification, extra capacity adds latency and cost without adding correctness.</li>
+  <li><b>Speed is part of quality.</b> An answer that arrives too late for its deadline is a failure, regardless of its content.</li>
+</ul>
+
+<h2 id="model-choice">Choosing model families: criteria, not conclusions</h2>
+
+<p>The original plan sets role targets — a small instruction model of about 1–3B parameters and a quantized medium model of about 7–8B — and leaves the specific choice to the hardware. The current candidates, Qwen2.5 1.5B and 7B Instruct, were selected after the disk and memory preflight. Both are published under the Apache-2.0 licence on their Hugging Face model pages, both are available as Ollama tags, and the same family can be served by vLLM in Colab, which keeps the Mac and NVIDIA paths comparable in kind.</p>
+
+<p>The choice remains conditional. A model should be replaced if it does not run acceptably on the actual Mac, if its runtime support changes, if its licence terms do not fit the intended use, or if newer documentation recommends a different checkpoint. The criteria, in order: (1) measured memory and latency on the target machine; (2) supported by Ollama on Apple Silicon and by vLLM on the allocated GPU; (3) an instruction-tuned chat template; (4) licence compatible with publishing results; (5) the same family available in both environments; (6) a model card that states context length and revision.</p>
+
+<h1 id="part4"><span class="part-no">Part 4</span>Architecture and diagrams</h1>
+
+<p class="part-intro">Four diagrams carry the architecture: the system as a whole (A), the Day 1 request path (B), how a Jev decision becomes an action (C), and the Day 2 evaluation pipeline (D). Each is followed by the reasoning it summarises.</p>
+
+<h2 id="diagram-a">A · High-level architecture</h2>
+
+<figure data-src="f01-architecture" class="mid" id="fig-architecture"><img src="figures/f01-architecture.svg" alt="Figure 12"><figcaption><span class="fig-no">Figure 12.</span> <b>Diagram A.</b> Components on the Mac (solid warm boxes), external services (blue dashed), the separate Colab experiment environment (green dashed), and components added on later build days (grey dashed).</figcaption></figure>
+
+<p>The <b>client</b> — <code>curl</code>, <code>jev smoke</code>, or any OpenAI-compatible tool — sends a chat request to the <b>gateway</b> on <code>127.0.0.1:8080</code>. The gateway validates the request, resolves the tier to a backend, and forwards it. For the small and medium tiers on the Mac, the backend is <b>native Ollama</b> on port 11434, which serves both models from one process and decides which ones stay loaded. For the frontier tier, it is a paid provider API reached over HTTPS with a key read only from the environment. Every request produces a <b>trace record</b> with an ID, timings, status and token usage.</p>
+
+<p><b>Jev</b> appears on the diagram from the start because it shapes the architecture, but the gateway does not call it until Day 3. The trained DistilBERT fallback and the embedding cache are drawn as later components on the Mac. <b>Colab</b> is drawn apart on purpose: it receives a source archive and runs its own vLLM server and clients on loopback inside the VM. Nothing on the Mac sends requests to it.</p>
+
+<h2 id="diagram-b">B · Day 1 request sequence</h2>
+
+<figure data-src="f16-day1-sequence" id="fig-day1-sequence"><img src="figures/f16-day1-sequence.svg" alt="Figure 13"><figcaption><span class="fig-no">Figure 13.</span> <b>Diagram B.</b> One Day 1 request with an explicit tier. Steps 1–8 correspond to code in <code>api.py</code>, <code>config.py</code>, <code>budget.py</code>, <code>transport.py</code> and <code>tracing.py</code>. Dashed return arrows carry response data.</figcaption></figure>
+
+<ol>
+  <li><b>Client request.</b> <code>POST /v1/chat/completions</code> with <code>model</code> set to <code>small</code>, <code>medium</code> or <code>frontier</code>.</li>
+  <li><b>Validation.</b> Pydantic models reject anything outside the contract — unknown fields, non-text content, empty message lists, <code>model: "auto"</code> — with HTTP 422 before any backend is touched.</li>
+  <li><b>Backend resolution.</b> <code>Settings.backend(tier)</code> returns the configured URL and model name. For the frontier tier, the gateway first checks that it is enabled (key, model, prices and positive caps) and returns 503 if not.</li>
+  <li><b>Budget admission</b> (frontier only). <code>FrontierBudget.reserve</code> estimates tokens and dollars and returns 429 if the process caps would be exceeded.</li>
+  <li><b>Forwarding.</b> The shared <code>BackendTransport</code> posts an OpenAI-style payload to <code>{base_url}/chat/completions</code>.</li>
+  <li><b>Backend response.</b> Either a complete JSON body or, when streaming, a stream of SSE bytes.</li>
+  <li><b>Response to the client.</b> The backend's JSON is returned unchanged; routing metadata travels in headers: <code>x-request-id</code>, <code>x-jev-tier</code>, <code>x-jev-backend-model</code>.</li>
+  <li><b>Outcome record.</b> <code>RequestTrace.finish</code> logs one JSON line with status (<code>ok</code>, <code>timeout</code>, <code>backend_error</code>, <code>stream_interrupted</code>), duration, usage and cost status.</li>
+</ol>
+
+<div class="callout"><span class="label">Design decision · keep the backend body intact</span>
+<p>The gateway does not rewrite the backend's completion JSON or add fields to it. Metadata goes in headers, so any OpenAI-compatible client keeps working, and the original usage numbers survive untouched for later cost accounting. The alternative — a gateway-specific envelope — would have broken client compatibility for little gain.</p></div>
+
+<h2 id="diagram-c">C · How a Jev decision becomes an action</h2>
+
+<figure data-src="f06-decision-to-action" class="mid" id="fig-decision-action"><img src="figures/f06-decision-to-action.svg" alt="Figure 14"><figcaption><span class="fig-no">Figure 14.</span> <b>Diagram C.</b> The request context is turned into a state and a versioned question; Jev returns a typed result; application policy interprets it together with availability and budget; then the gateway calls the selected tier or falls back. Only the Jev box is product behaviour.</figcaption></figure>
+
+<p>Each step to the left and right of Jev belongs to this project. The <b>state builder</b> decides what Jev sees — the user's last message, perhaps a task hint, and plain-language descriptions of each tier — and stamps the question with a version so that results can be traced to wording. <b>Policy</b> combines Jev's answer with facts Jev cannot know: which tiers are enabled, what the remaining budget allows, how long the request has left before its deadline. When Jev is slow, unavailable or unsure, a deterministic <b>fallback</b> takes over (the trained DistilBERT classifier from Day 3, or a fixed tier) — and the fallback never silently promotes a request to the paid tier. The decision, its inputs and its latency go into the trace, so a later report can explain every routed request.</p>
+
+<h2 id="diagram-d">D · Day 2 evaluation pipeline</h2>
+
+<figure data-src="f23-day2-pipeline" class="mid" id="fig-day2-pipeline"><img src="figures/f23-day2-pipeline.svg" alt="Figure 15"><figcaption><span class="fig-no">Figure 15.</span> <b>Diagram D.</b> Versioned datasets are loaded, deduplicated and grouped, frozen into a manifest, and split 60/20/20 by group. Only train and validation reach the runner. Scored results become immutable records from which every report is regenerated. The test split stays sealed until Day 6.</figcaption></figure>
+
+<p>Data moves in one direction. Loaders turn each dataset row into a prompt record with a stable ID, a pinned dataset revision and the reference answer. Deduplication and grouping keep paraphrases and closely related variants together, so that a group can be assigned to exactly one split. The frozen manifest — between 2,000 and 3,000 prompts — is identified by a content hash, so any later report can say exactly which prompts it covers.</p>
+
+<p>The runner sends train and validation prompts to all three tiers within explicit request, token and dollar limits, and checkpoints as it goes. Task-specific scorers turn raw outputs into outcomes. Each outcome is appended to an immutable record file and never edited. Reports, oracle labels, cost tables and audit samples are all derived from those records, which means they can be regenerated — and checked — at any time.</p>
+
+<h2 id="consistency">Architecture and milestones: consistency check</h2>
+
+<p>Each architectural component should appear in exactly one checkpoint where it is introduced, and no Day 1 or Day 2 checkpoint should depend on a component that arrives later. This table was checked against <code>docs/COMMIT_PLAN.md</code> and the Day 1 commits.</p>
+
+<table>
+  <thead><tr><th style="width:25%">Component in diagrams A–D</th><th style="width:22%">Introduced at</th><th>Depends on · notes</th></tr></thead>
+  <tbody>
+    <tr><td>Gateway API, health, model registry</td><td>D1-05 (4d6ba55)</td><td>Config (D1-04). <code>/readyz</code> reports process readiness only.</td></tr>
+    <tr><td>Reusable async transport</td><td>D1-06 (e4406c4)</td><td>Used by every tier from D1-10 on.</td></tr>
+    <tr><td>Ollama small / medium adapters</td><td>D1-07, D1-08</td><td>Live answers pending: Ollama was not installed at preflight.</td></tr>
+    <tr><td>Frontier tier with spending controls</td><td>D1-09 (1ade058)</td><td>Disabled until key, model, prices and caps exist.</td></tr>
+    <tr><td>Explicit-tier dispatch; streaming</td><td>D1-10, D1-11</td><td>Diagram B; <code>model=auto</code> waits for the D3-17 router dispatch.</td></tr>
+    <tr><td>Request records</td><td>D1-13 (2d01a58)</td><td>Extended with decision fields in Day 3.</td></tr>
+    <tr><td>Colab vLLM experiment path</td><td>D1-15 (19bd683)</td><td>Not executed; GPU and wheel compatibility unknown.</td></tr>
+    <tr><td>Versioned datasets, manifest, splits</td><td>D2-01 to D2-06</td><td>No dependency on routers or Jev.</td></tr>
+    <tr><td>Scorers and code sandbox</td><td>D2-05, D2-07 to D2-09</td><td>Sandbox uses Docker on the Mac (already present at preflight).</td></tr>
+    <tr><td>Three-tier runner, oracle labels, costs</td><td>D2-11 to D2-15</td><td>Needs working backends from Day 1; frontier only with caps.</td></tr>
+    <tr><td>Jev decision path (diagram C)</td><td>D3-08 to D3-10, D3-17</td><td>Uses Day 2 labels for thresholds and calibration.</td></tr>
+    <tr><td>DistilBERT fallback</td><td>D3-03 to D3-06</td><td>Trained on Day 2 train-split oracle labels.</td></tr>
+    <tr><td>Embedding cache, verifier</td><td>D4-01 to D4-17</td><td>Outside this notebook's detailed scope.</td></tr>
+  </tbody>
+</table>
+
+<p>One gap is worth recording: Day 2's runner (D2-11) needs at least two live backends to produce meaningful labels, and those live checks are still pending from D1-07 and D1-08. Day 2 can implement and offline-test every component, but its real measurements (D2-18) are blocked until Ollama is installed and the models answer.</p>
+
+<h1 id="part5"><span class="part-no">Part 5</span>Prerequisites and setup notes</h1>
+
+<p class="part-intro">Day 1 touches packaging, HTTP, concurrency, version control and testing all at once. This part collects the practical knowledge each checkpoint assumes, then gives a setup sequence for the Mac and for Colab and a map of the repository.</p>
+
+<h2 id="python-packaging">Python packages, imports, virtual environments and lockfiles</h2>
+
+<p>A <b>module</b> is one <code>.py</code> file; a <b>package</b> is a directory of modules that can be imported by name. The gateway's code lives in <code>src/jev_gateway/</code>, so <code>from jev_gateway.config import from_env</code> works once the package is installed. The <code>src/</code> layout prevents a common trap: without it, Python can import the code straight from the working directory and tests pass even when the package would fail to install.</p>
+
+<p>A <b>virtual environment</b> (<code>.venv/</code>) is a private directory of installed packages for one project, so the gateway's FastAPI version cannot collide with another project's. <b>pyproject.toml</b> declares what the project needs: here, four core dependencies (FastAPI, httpx, Uvicorn, Pydantic) with version ranges, plus optional groups — <code>test</code>, <code>training</code> (transformers, datasets, accelerate, torch) and <code>embeddings</code> (sentence-transformers, faiss-cpu) — and a console script that makes <code>jev</code> run <code>jev_gateway.cli:main</code>.</p>
+
+<p>A <b>lockfile</b> (<code>uv.lock</code>) records the exact version and hash of every package, including indirect ones, that satisfied those ranges when it was created. <code>uv sync --locked</code> installs exactly that set and fails if <code>pyproject.toml</code> and the lock disagree, which is what makes "it worked on my machine" reproducible on a clean checkout.</p>
+
+<div class="callout tech"><span class="label">Technical note · why the lock contains CUDA packages</span>
+<p>The lockfile resolves <em>all</em> optional groups, so it lists torch and NVIDIA wheels for the <code>training</code> extra. They are not installed by a plain <code>uv sync</code>; D1-16 records that the core environment contains no torch, CUDA, NVIDIA or vLLM packages <span class="pill rec">Recorded</span>. vLLM is deliberately not in <code>pyproject.toml</code> at all — it is pinned only in <code>requirements/colab-serving.txt</code> for the notebook.</p></div>
+
+<h2 id="http-basics">HTTP requests, JSON, URLs, ports and authentication</h2>
+
+<p>The gateway, Ollama, vLLM, TypeSafe and the frontier provider all communicate over <b>HTTP</b>: a client sends a <i>request</i> with a method (<code>GET</code>, <code>POST</code>), a path, headers and an optional body; the server returns a <i>status code</i>, headers and a body. Bodies here are <b>JSON</b>. Status codes carry meaning the gateway relies on: 2xx success, 4xx the client's fault (422 invalid input, 429 over limit), 5xx the server's (502 bad upstream, 503 unavailable, 504 upstream timeout).</p>
+
+<p>A <b>URL</b> such as <code>http://127.0.0.1:11434/v1/chat/completions</code> combines a scheme (<code>http</code>), a host (<code>127.0.0.1</code>), a <b>port</b> (11434 — which program on that host), and a path. Each server listens on its own port: gateway 8080, Ollama 11434, notebook vLLM 8000. <code>config.py</code> rejects base URLs that are not absolute HTTP(S) or that embed credentials such as <code>http://user:pass@host</code>.</p>
+
+<p><b>Authentication</b> for the paid APIs uses a bearer token: the header <code>Authorization: Bearer &lt;key&gt;</code>. The gateway reads the frontier key only from the environment variable <code>JEV_FRONTIER_API_KEY</code>, sends it only to that backend, and never logs it. Local Ollama ignores keys.</p>
+
+<h2 id="localhost">Why “localhost” differs across a Mac, a container and Colab</h2>
+
+<figure data-src="f14-localhost" class="mid" id="fig-localhost"><img src="figures/f14-localhost.svg" alt="Figure 16"><figcaption><span class="fig-no">Figure 16.</span> <code>localhost</code> (or <code>127.0.0.1</code>) always refers to the machine or container where the code is running. It works between the gateway and Ollama on the Mac, fails from inside a container unless the host address is used, and never reaches the Mac from Colab.</figcaption></figure>
+
+<p>The address <code>127.0.0.1</code> is the <i>loopback</i> interface: traffic to it never leaves the current network namespace. On the Mac that means the gateway can reach Ollama at <code>127.0.0.1:11434</code>. Inside a Docker container on the same Mac (Day 5), <code>127.0.0.1</code> is the container itself; Docker Desktop documents <code>host.docker.internal</code> as the name for reaching services on the host. In Colab, <code>127.0.0.1:8000</code> is the vLLM server inside the Colab virtual machine — a different computer in Google's data centre. That is why the notebook runs its server, gateway code and client all in the same VM, and why the project rejects public tunnels as a way to bridge the two.</p>
+
+<h2 id="async">Async I/O and reusable HTTP clients</h2>
+
+<p>Most of a gateway's time is spent <em>waiting</em> — for a model to finish, for bytes to arrive. In synchronous code, a waiting request blocks its thread. In <b>asynchronous</b> code (<code>async def</code>, <code>await</code>), waiting hands control back to an event loop, which runs other requests until the awaited data arrives. One process can therefore hold many slow upstream calls open at once. Async does not make a model generate faster; it stops the gateway from being the bottleneck while models work.</p>
+
+<p>Opening a new TCP (and, for HTTPS, TLS) connection for every request is slow. A <b>reusable client</b> — one <code>httpx.AsyncClient</code> created at startup — keeps a pool of open connections and reuses them. <code>BackendTransport</code> bounds that pool (20 connections, 10 kept alive) so a burst of requests cannot open unlimited sockets, and closes it when the app shuts down via FastAPI's lifespan hook.</p>
+
+<h2 id="timeouts">Timeouts, cancellation and streaming</h2>
+
+<p>A <b>timeout</b> bounds how long one operation may wait. The gateway applies <code>JEV_TIMEOUT_SECONDS</code> (default 60, allowed range up to 300) to backend calls and maps an expiry to HTTP 504. A <b>deadline</b> is the related idea for a whole request: once routing and verification add steps (Days 3–4), each step must use what is left of one shared budget rather than its own fresh timeout.</p>
+
+<p><b>Cancellation</b> is what happens when the caller goes away. In Python's asyncio, the waiting task receives a <code>CancelledError</code>; correct code lets it propagate and releases resources in <code>finally</code> blocks — closing the upstream response so the backend connection is freed. The streaming generator in <code>api.py</code> does exactly this.</p>
+
+<p><b>Streaming</b> sends the answer as it is produced. OpenAI-compatible servers use server-sent events: lines of the form <code>data: {json}</code> separated by blank lines, ending with <code>data: [DONE]</code>. The gateway forwards these bytes without assembling the whole answer first, so the client sees the first words as soon as the backend produces them.</p>
+
+<h2 id="git">Git: working tree, staging, commits and remotes</h2>
+
+<p>The <b>working tree</b> is the files as they are on disk now. The <b>staging area</b> (index) holds the exact changes chosen for the next commit — <code>git add -p</code> lets you stage some hunks of a file and not others. A <b>commit</b> is a permanent snapshot with a message, author and timestamp; its hash (such as <code>4d6ba55</code>) identifies it forever. A <b>remote</b> is another copy of the repository, such as one on GitHub; nothing leaves the Mac until you <code>git push</code>.</p>
+
+<p>The project's rule is one coherent checkpoint per commit, with its tests and docs, labelled by checkpoint ID (<code>D1-05 feat: add gateway API and health endpoints</code>). Two details from this repository: the Git root is the parent folder <code>Research Project 2</code>, so paths in commits begin with <code>llm_gateway_full_project/</code>; and the Colab notebook is fed with <code>git archive</code> of a committed revision, which is why uncommitted edits never reach a Colab run.</p>
+
+<h2 id="testing-ladder">Unit tests, mocks, contract checks, real integrations and benchmarks</h2>
+
+<figure data-src="f20-evidence-ladder" class="narrow" id="fig-evidence-ladder"><img src="figures/f20-evidence-ladder.svg" alt="Figure 17"><figcaption><span class="fig-no">Figure 17.</span> Kinds of evidence, from weakest to strongest claim about the real system. Day 1 has offline evidence for the bottom three rungs; real integration and benchmarks remain to be done.</figcaption></figure>
+
+<ul>
+  <li><b>Unit test.</b> One function, controlled inputs, no network — for example, an invalid URL raises <code>ConfigError</code> (<code>test_config.py</code>).</li>
+  <li><b>Mock.</b> A stand-in for a dependency. <code>httpx.MockTransport</code> lets tests play the role of Ollama or a provider and return chosen responses, including 500 errors, timeouts and fragmented SSE.</li>
+  <li><b>Contract check.</b> Verifies the public interface: which requests the API accepts, which it rejects and with what code (<code>test_api_contract.py</code>).</li>
+  <li><b>Real integration check.</b> The real gateway talking to a real Ollama or API. Only this proves that model names, URLs and response shapes match reality; a mock cannot. <code>scripts/real_check.sh</code> is the opt-in entry point.</li>
+  <li><b>Benchmark.</b> A controlled, repeated measurement under a defined workload. It answers "how fast" or "how accurate", which none of the above can.</li>
+</ul>
+
+<h2 id="setup-mac">Setup sequence on the Mac</h2>
+
+<p>The commands below are grouped by purpose. Tool checks and installs come from official instructions; commands that run the project's own code are marked as such and exist in the repository as of D1-18.</p>
+
+<p class="code-label">Preflight · read-only checks</p>
+<pre><code>sw_vers                                   <span class="cm"># macOS version (Ollama requires macOS 14 Sonoma or newer)</span>
+system_profiler SPHardwareDataType | grep -E "Chip|Memory"
+df -h .                                   <span class="cm"># free disk before any model download</span>
+git --version; python3 --version; docker --version; kubectl version --client
+uv --version; ollama --version            <span class="cm"># both absent at the 27 Oct preflight</span></code></pre>
+
+<p class="code-label">Install tools · official instructions</p>
+<pre><code>curl -LsSf https://astral.sh/uv/install.sh | sh   <span class="cm"># or: brew install uv   (docs.astral.sh/uv)</span>
+<span class="cm"># Ollama: download the macOS app from ollama.com, drag to Applications, start it once;</span>
+<span class="cm"># it offers to link the `ollama` CLI into /usr/local/bin   (docs.ollama.com/macos)</span></code></pre>
+
+<p class="code-label">Project environment · repository commands</p>
+<pre><code>cd "llm_gateway_full_project"
+uv sync --locked                          <span class="cm"># exact core dependencies from uv.lock</span>
+uv run jev --help
+uv run --extra test pytest -q             <span class="cm"># offline suite (15 tests at D1-18)</span></code></pre>
+
+<p class="code-label">Models and live checks · repository commands, pending first run</p>
+<pre><code>ollama pull qwen2.5:1.5b                  <span class="cm"># ~986 MB download</span>
+ollama list; ollama ps
+uv run jev doctor                         <span class="cm"># reports installed/loaded models, frontier status</span>
+uv run jev serve                          <span class="cm"># terminal 1: gateway on 127.0.0.1:8080</span>
+uv run jev smoke --tier small             <span class="cm"># terminal 2: one bounded request</span>
+ollama pull qwen2.5:7b                    <span class="cm"># only after checking free disk (~4.7 GB)</span>
+uv run jev smoke --tier medium; ollama ps <span class="cm"># then record residency and memory pressure</span></code></pre>
+
+<p>Configuration is read from environment variables; <code>config/mac.env.example</code> lists them with safe defaults. Secrets go in an untracked <code>.env</code> (ignored by Git) and are exported in the shell. The frontier tier stays disabled until <code>JEV_FRONTIER_MODEL</code>, <code>JEV_FRONTIER_API_KEY</code>, both per-million-token prices and positive request, token and USD caps are all set.</p>
+
+<h2 id="setup-colab">Setup sequence for Colab</h2>
+
+<ol>
+  <li>On the Mac, commit the work, then build a source archive from that commit and record its digest. The repository's notebook README gives:
+<pre><code>git archive --format=zip -o jev-source.zip HEAD llm_gateway_full_project
+shasum -a 256 jev-source.zip</code></pre></li>
+  <li>In Colab, choose a GPU runtime explicitly and run <code>notebooks/colab_preflight.py</code> or the notebook's first cell to record Python, platform, <code>nvidia-smi</code> GPU name, memory and driver.</li>
+  <li>Paste the SHA-256 into the notebook, upload the zip, and let the notebook verify the hash and extract safely.</li>
+  <li>Install the package from the extracted source plus the pinned vLLM. Check the pin against the GPU and CUDA reported in step 2 and vLLM's installation page first: the repository pins <code>vllm==0.18.0</code>, while PyPI listed 0.32.0 as the latest release on 28 Oct 2026. If installation fails, record the facts and update the pin in a new checkpoint.</li>
+  <li>Run the serve, readiness, request and export cells; download the JSON result; run the cleanup cell. Results are labelled Colab and kept separate from Mac results.</li>
+</ol>
+
+<h2 id="repo-layout">Proposed and current repository layout</h2>
+
+<table>
+  <thead><tr><th style="width:24%">Path</th><th style="width:12%">State</th><th>Responsibility</th></tr></thead>
+  <tbody>
+    <tr><td><code>src/jev_gateway/</code></td><td>exists</td><td>The installable application package: API, configuration, transport, budget, tracing, diagnostics, Ollama discovery, CLI.</td></tr>
+    <tr><td><code>tests/</code></td><td>exists</td><td>Offline tests (15 at D1-18). Real checks are opt-in and live in <code>scripts/</code>.</td></tr>
+    <tr><td><code>config/</code></td><td>exists</td><td>Example environment profiles for Mac and Colab. No secrets.</td></tr>
+    <tr><td><code>requirements/</code></td><td>exists</td><td>Environment-specific pins that must not enter the core install (vLLM for Colab).</td></tr>
+    <tr><td><code>notebooks/</code></td><td>exists</td><td>Colab preflight script and the serving notebook; README with the archive procedure.</td></tr>
+    <tr><td><code>scripts/</code></td><td>exists</td><td>Opt-in real-path checks (<code>real_check.sh</code>).</td></tr>
+    <tr><td><code>docs/</code></td><td>exists</td><td>Plan, commit plan, status, decisions, environments, experiments, runtime profiles — the engineering evidence ledger. This notebook lives in <code>docs/engineering-notebook/</code>.</td></tr>
+    <tr><td><code>evidence/day1/</code></td><td>exists</td><td>Raw, timestamped outputs that status claims cite.</td></tr>
+    <tr><td><code>prompts/</code></td><td>exists</td><td>Per-day build instructions from the starter.</td></tr>
+    <tr><td><code>src/jev_gateway/eval/</code></td><td><span class="pill plan">Planned</span></td><td>Day 2 record schema, dataset loaders, manifest and split builder, scorers, runner, reports.</td></tr>
+    <tr><td><code>data/manifests/</code></td><td><span class="pill plan">Planned</span></td><td>Frozen manifest files and their hashes (prompt IDs and provenance, not bulk dataset copies).</td></tr>
+    <tr><td><code>results/</code></td><td><span class="pill plan">Planned</span></td><td>Run outputs (already in <code>.gitignore</code>); summaries copied into <code>evidence/</code> when cited.</td></tr>
+    <tr><td><code>sandbox/</code></td><td><span class="pill plan">Planned</span></td><td>Container definition for isolated code scoring.</td></tr>
+  </tbody>
+</table>
+
+<figure data-src="f15-modules" id="fig-modules"><img src="figures/f15-modules.svg" alt="Figure 18"><figcaption><span class="fig-no">Figure 18.</span> Module map of <code>src/jev_gateway</code> at D1-18. Arrows point from a module to what it uses. <code>api.py</code> is the hub for serving; <code>diagnostics.py</code> and <code>ollama.py</code> support the <code>doctor</code> and <code>smoke</code> commands.</figcaption></figure>
+
+<h1 id="part6"><span class="part-no">Part 6</span>Day 1 — the serving foundation</h1>
+
+<p class="part-intro">Day 1 builds a gateway that can serve all three tiers by explicit name, stream, fail clearly, stay within a budget, and leave a record of every request. It deliberately stops short of automatic routing.</p>
+
+<h2 id="day1-overview">Overview and recorded state</h2>
+
+<p>All eighteen Day 1 checkpoints were committed on 27 October 2026 between 13:03 and 13:11 (America/Toronto), as <code>7764899</code> through <code>4e6f7e0</code> <span class="pill rec">Recorded</span>. The final offline run, after <code>uv sync --locked</code>, reported <b>15 passed, 1 warning, 0.16 s</b>; the warning is a third-party Starlette deprecation notice about the test client. The raw output is <code>evidence/day1/mac-offline-20261027-1314.txt</code>.</p>
+
+<p>Everything that needs a live model is still open. Ollama was not installed at the preflight, so <code>jev doctor</code> reported <code>ConnectError</code> for both local tiers; the frontier tier reports <code>configured: false</code>; and no Colab cell has run. In the status figure below, amber marks checkpoints whose code is committed but whose completion evidence requires a live check.</p>
+
+<figure data-src="f22-day1-blocks" id="fig-day1-blocks"><img src="figures/f22-day1-blocks.svg" alt="Figure 19"><figcaption><span class="fig-no">Figure 19.</span> The eighteen Day 1 checkpoints in six blocks of three, coloured by recorded status in <code>docs/STATUS.md</code> at commit <code>4e6f7e0</code>.</figcaption></figure>
+
+<p>Each checkpoint below follows the same structure: what to understand first, what the change introduces, why it belongs at that point in the build, what evidence establishes completion, one specific common mistake, and what the repository records.</p>
+
+<!-- ============ BLOCK 1 ============ -->
+<div class="block-head">Block 1 <span>Scope, environments and the package</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-01</span><span class="cp-title">Define full scope and runtime profiles</span><span class="cp-commit">7764899</span></div><div class="row"><div class="dt">Understand</div><div class="dd">The difference between a scope map (every deliverable and where it runs) and a schedule. Which work belongs to the Mac, to Colab, and to external APIs.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd">A full-scope contract in <code>AGENTS.md</code> and <code>docs/RUNTIME_PROFILES.md</code>, which maps each original feature to a checkpoint range and environment and states that a running notebook is never a permanent backend.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Every later checkpoint decides where something runs. Settling that first prevents features from being dropped quietly when they become inconvenient.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A table in which every original deliverable has a checkpoint range and an environment, with no "optional" or "stretch" labels.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Writing "the medium tier runs in Colab" into the application's design. That turns an experiment environment into a production dependency and leads straight to the notebook-dependent architecture rejected in Part 1.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">"Full scope mapped." Six feature groups mapped to D1–D6 ranges.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-02</span><span class="cp-title">Record Mac and Colab environment preflights</span><span class="cp-commit">8f69a1c</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Which machine facts constrain the design: unified memory, free disk, OS version, toolchain. Why a remote environment needs its own report from its own host. What to omit (serial numbers, UUIDs, usernames).</div></div></div><div class="row"><div class="dt">Change</div><div class="dd">A dated, sanitised Mac report in <code>docs/ENVIRONMENT.md</code>, listing the commands used, and <code>notebooks/colab_preflight.py</code>, which prints Python, platform, <code>nvidia-smi</code> GPU name/memory/driver and <code>nvcc</code> as JSON.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Model selection (D1-07, D1-08) depends on memory and disk; the vLLM pin (D1-15) depends on the GPU and CUDA driver.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A Mac report with values and sources; a Colab report produced on an allocated Colab GPU and labelled separately.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Writing a GPU type such as "T4" into the plan before a session is allocated. Colab's available GPUs vary over time.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">MacBook Pro (Mac15,6), M3 Pro with 11 CPU cores, 18 GB unified memory, macOS 26.5.2, 18 GiB free of 460 GiB. Python 3.14.5, Docker CLI and <code>kubectl</code> present; <code>uv</code>, <code>ollama</code>, <code>kind</code> absent. Colab preflight not yet run.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-03</span><span class="cp-title">Initialize the reproducible package and CLI</span><span class="cp-commit">2448290</span></div><div class="row"><div class="dt">Understand</div><div class="dd"><code>pyproject.toml</code>, the <code>src/</code> layout, console scripts, optional extras, and what a lockfile guarantees.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd">Package <code>jev-gateway</code> 0.1.0 built with hatchling, requiring Python ≥3.11 and &lt;3.15; four core dependencies; <code>test</code>, <code>training</code> and <code>embeddings</code> extras; a <code>jev</code> command with <code>serve</code>, <code>doctor</code> and <code>smoke</code> subcommands; <code>uv.lock</code>.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Every later module and test imports the package. A lock from the first commit means any later failure can be reproduced exactly.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">In a fresh environment: <code>uv sync --locked</code>, <code>import jev_gateway</code>, and <code>jev --help</code> all succeed.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Adding <code>torch</code> or <code>transformers</code> to the core dependencies "for later". The Mac gateway would then download gigabytes of ML libraries it never uses.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Fresh virtual environment install, import, CLI help, and uv lock.</div></div></div>
+
+<!-- ============ BLOCK 2 ============ -->
+<div class="block-head">Block 2 <span>Contracts: configuration, API and transport</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-04</span><span class="cp-title">Validate backend configuration and resource limits</span><span class="cp-commit">10dbdbc</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Fail-fast validation; immutable settings objects; holding secrets <em>by reference</em> (the name of an environment variable) rather than by value; limits as policy.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>config.py</code>. <code>Backend(tier, model, base_url, api_key_env)</code> requires an absolute HTTP(S) URL without embedded credentials and a non-empty model. <code>Settings</code> requires a timeout in (0, 300] seconds, <code>max_output_tokens</code> in 1–8192, and non-negative frontier caps. <code>frontier_enabled</code> is true only when a model, a key and positive caps and prices all exist. <code>from_env()</code> parses typed values and reports which variable was malformed.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">The API and transport both rely on settings being valid. A mistyped URL caught at startup is far cheaper than a 502 discovered later.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Tests for a <code>file://</code> URL, a non-integer limit, and a frontier configuration that has a key but no caps (must stay disabled).</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Defaults that enable the paid tier, or keeping the key itself in a settings field that appears in logs and error messages. Here the key is read from the environment only when a request is built.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Config invalid and disabled cases pass.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-05</span><span class="cp-title">Add the API contract, health, readiness and model registry</span><span class="cp-commit">4d6ba55</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Liveness ("the process is up") versus readiness ("it can serve"); schema validation; why unknown fields are rejected rather than ignored.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd">Pydantic models with <code>extra="forbid"</code>: roles <code>system</code>, <code>developer</code>, <code>user</code>, <code>assistant</code>; text content of at least one character; <code>model</code> limited to <code>small</code>, <code>medium</code>, <code>frontier</code>; <code>max_tokens</code> 1–8192; <code>temperature</code> 0–2. Endpoints <code>/healthz</code>, <code>/readyz</code> and <code>/v1/models</code> (each tier with its backend model and enabled flag).</div></div><div class="row"><div class="dt">Why here</div><div class="dd">The contract is what clients code against and what tests check. Fixing it before the transport avoids reshaping both later.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Contract tests: health is OK; three models listed; <code>model="auto"</code> → 422; image content → 422; frontier while unconfigured → 503.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">A readiness endpoint that reports backends healthy without checking them. Here <code>/readyz</code> says <code>"backend_availability": "unchecked"</code>, and live availability is left to <code>jev doctor</code>.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Contract tests pass. A brief real loopback server returned HTTP 200 from <code>/healthz</code>; binding a socket needed elevated sandbox permission (the default sandbox denied it with EPERM).</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-06</span><span class="cp-title">Implement reusable asynchronous backend transport</span><span class="cp-commit">e4406c4</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Connection pooling and limits; client lifecycle; building a request once and sending it; injecting a fake transport for tests.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>BackendTransport</code> wraps one <code>httpx.AsyncClient</code> with a timeout and limits (20 connections, 10 keep-alive). <code>complete()</code> posts to <code>{base_url}/chat/completions</code> and raises on non-2xx; <code>open_stream()</code> returns an open streaming response; the bearer header is added only when a key exists. The app closes the client on shutdown.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">All three tiers share one HTTP behaviour. Building it once, before any adapter, keeps timeouts and limits consistent.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A <code>MockTransport</code> test checks the path <code>/v1/chat/completions</code>, the forwarded body, and a clean close.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Creating a new <code>AsyncClient</code> per request. It looks harmless in tests, but under load it discards pooling and can leak sockets.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Mock HTTP forwarding passes.</div></div></div>
+
+<!-- ============ BLOCK 3 ============ -->
+<div class="block-head">Block 3 <span>The three generation tiers</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-07</span><span class="cp-title">Connect the small Ollama model</span><span class="cp-commit">ef3b3bc</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Ollama's two surfaces: the native API (<code>/api/tags</code> for installed models, <code>/api/ps</code> for loaded ones) and the OpenAI-compatible <code>/v1/chat/completions</code>. Model tags and why the name must match exactly.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>ollama.py</code>: <code>model_status()</code> reads <code>/api/tags</code> and reports whether the configured tag is installed, with runtime label <code>native-ollama-mac</code>. <code>docs/MAC_MODELS.md</code> gives install, pull and check steps. Generation itself goes through the shared transport.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">The smallest model is the cheapest way to prove the whole path end to end before adding memory-heavy or paid tiers.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">One bounded real answer through the gateway, with the model ID and runtime label recorded.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Treating "pulled" as "working". A completed download says nothing about whether the model loads and answers within the timeout.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Adapter offline-tested; real answer pending because Ollama was absent at preflight.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-08</span><span class="cp-title">Connect the medium model and inspect memory and residency</span><span class="cp-commit">94d6717</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Residency, <code>keep_alive</code>, <code>size_vram</code>, memory pressure, and cold versus warm requests (Part 3).</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>loaded_models()</code> reads <code>/api/ps</code> and returns each loaded model's name, <code>size_vram</code> and <code>expires_at</code>; <code>jev doctor</code> includes it. Docs give the observation procedure: one bounded medium request, then <code>ollama ps</code>, Activity Monitor memory pressure, cold and warm load times, and whether both tags stay loaded.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It tests hypothesis H4. Day 2's evaluation plan depends on whether both tiers can stay loaded or must run one at a time.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A real medium answer with explicit residency and switching observations, or a documented hardware blocker.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Reporting only warm latency as "the medium model's latency", or assuming both models are co-resident because both were downloaded.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Residency adapter offline-tested; live memory and load measurements pending.</div></div></div>
+
+<figure data-src="f19-budget" class="mid" id="fig-budget"><img src="figures/f19-budget.svg" alt="Figure 20"><figcaption><span class="fig-no">Figure 20.</span> Frontier admission in <code>budget.py</code> (D1-09). The estimate is deliberately high; the check-and-reserve happens under one lock so that concurrent requests cannot overshoot the caps between them.</figcaption></figure>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-09</span><span class="cp-title">Connect the frontier API with spending controls</span><span class="cp-commit">1ade058</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Per-token pricing; admission control (deciding before the call) versus accounting (measuring after); process-local versus account-level limits; why counters need a lock under async concurrency.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>FrontierBudget.reserve()</code> estimates input as four units per character plus 32 per message, adds <code>max_tokens</code>, prices both with the configured per-million rates, then — under an <code>asyncio.Lock</code> — admits only if requests, tokens and dollars all stay within caps. Over the cap: HTTP 429. Not configured: 503.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">The paid path must be safe before D1-10 wires dispatch and makes it reachable.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Offline: with a cap of one request, a second reservation is refused. Real: a single request only once a key, model, current prices and positive caps are configured.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Recording spend after the response returns. Twenty concurrent requests would all pass the check before any was counted.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Admission tested; paid calls disabled. Reservations are never released, so counters only rise within a process, and the estimate is not provider billing (noted in <code>docs/DECISIONS.md</code>).</div></div></div>
+
+<!-- ============ BLOCK 4 ============ -->
+<div class="block-head">Block 4 <span>The request path: responses, streaming, failures</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-10</span><span class="cp-title">Implement explicit-tier nonstreaming responses</span><span class="cp-commit">27a16e0</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Translating a client request into a backend payload; why the backend body is preserved; carrying metadata in headers; the output-token policy.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd">The chat handler resolves the tier, builds <code>{model: backend.model, messages, max_tokens, stream}</code> (with <code>temperature</code> only if given), defaults <code>max_tokens</code> to the server policy and rejects larger values with 422, sends via the transport, and returns the backend JSON with <code>x-request-id</code>, <code>x-jev-tier</code> and <code>x-jev-backend-model</code>.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It is the first complete path. Streaming and error handling both build on it.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A <code>medium</code> request reaches the backend with <code>"model":"qwen2.5:7b"</code>, the answer arrives unchanged, and the tier header is set.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Forwarding the tier name (<code>"medium"</code>) as the backend's model name. Ollama would answer 404 because no model has that name.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Explicit dispatch mock-tested; live backend pending.</div></div></div>
+
+<figure data-src="f17-streaming" id="fig-streaming"><img src="figures/f17-streaming.svg" alt="Figure 21"><figcaption><span class="fig-no">Figure 21.</span> The streaming failure boundary (D1-11, D1-12). Before the first byte reaches the client, an upstream error can still become a clean 502 or 504. After headers are sent, the status is fixed at 200, so a failure can only cut the stream; the trace records it as <code>stream_interrupted</code>.</figcaption></figure>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-11</span><span class="cp-title">Implement streaming response forwarding</span><span class="cp-commit">a95c350</span></div><div class="row"><div class="dt">Understand</div><div class="dd">SSE framing; network chunks that split or merge events arbitrarily; HTTP headers committing at the first byte.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd">Streaming requests open the upstream with <code>open_stream()</code> and return a <code>StreamingResponse</code> that yields the upstream's raw bytes as they arrive, with <code>text/event-stream</code> and <code>cache-control: no-cache</code>. The generator finishes the trace on completion or interruption and always closes the upstream.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It reuses the D1-10 path and fixes the boundary that D1-12's error policy must respect.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A test sends three events across arbitrary chunk boundaries and checks that both content pieces and the final <code>data: [DONE]</code> arrive intact, with the tier header present.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Parsing and re-serialising each event in the gateway. It adds latency and breaks when a network chunk ends mid-event; forwarding bytes avoids both.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Fragmented SSE and completion tested; live streaming pending.</div></div></div>
+
+<figure data-src="f18-error-map" id="fig-error-map"><img src="figures/f18-error-map.svg" alt="Figure 22"><figcaption><span class="fig-no">Figure 22.</span> How the Day 1 gateway maps each failure to a status code, in the order the checks run. Provider error text never reaches the client.</figcaption></figure>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-12</span><span class="cp-title">Handle deadlines, cancellation and backend errors</span><span class="cp-commit">6d438ec</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Mapping failure types to status codes; why error bodies are sanitised; what is possible before versus after headers; letting cancellation propagate.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>httpx.TimeoutException</code> → 504 "backend deadline exceeded"; HTTP status errors, connection errors and invalid JSON → 502 "backend request failed". For streams, <code>open_stream()</code> checks status before any byte is forwarded, so an upstream 500 still becomes a clean 502. Any exception during the stream, including cancellation, is traced as <code>stream_interrupted</code>, re-raised, and the upstream is closed.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Only once both paths exist can failure behaviour be specified for both.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Tests: an upstream 500 containing "secret provider detail" becomes a 502 without that text, streaming and non-streaming; a read timeout becomes 504.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Catching <code>CancelledError</code> with a broad <code>except</code> and carrying on. The backend keeps generating for a client that has already left.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Timeout and sanitised-error tests pass. No test yet simulates a client disconnecting mid-stream; cancellation handling rests on code structure (<code>except BaseException … raise</code>, <code>finally: aclose()</code>).</div></div></div>
+
+<!-- ============ BLOCK 5 ============ -->
+<div class="block-head">Block 5 <span>Evidence: traces, diagnostics and the notebook</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-13</span><span class="cp-title">Record request traces, usage and timings</span><span class="cp-commit">2d01a58</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Request IDs; monotonic versus wall-clock time; allowlisting fields rather than blocklisting; one structured line per event.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>RequestTrace</code> assigns a <code>uuid4</code> hex ID and a UTC start time, measures <code>duration_ms</code> with a monotonic clock, and logs one JSON line with tier, backend model, status, usage restricted to <code>prompt_tokens</code>, <code>completion_tokens</code> and <code>total_tokens</code>, and <code>cost_status</code> (<code>reserved</code> for frontier, <code>unpriced</code> for local). The ID is returned in <code>x-request-id</code>.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Diagnostics, the notebook and Day 2 all need comparable records, so the record format comes first.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A test passes a usage dict containing an extra <code>secret</code> key and checks that it never appears in the log, and that the logged ID matches.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Timing with <code>time.time()</code>. The wall clock can jump (NTP adjustment), producing negative or inflated durations; <code>time.monotonic()</code> cannot.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Secret-free trace structure tested. The record currently holds one total duration; per-stage timestamps (for example, first upstream byte), named in the commit plan, are not yet captured.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-14</span><span class="cp-title">Add doctor and bounded smoke commands</span><span class="cp-commit">cb90aa4</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Diagnostics should touch real systems, be bounded in time and cost, and explain failure in words — never silently substitute test doubles.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>jev doctor</code> reports whether the frontier tier is configured and, for each local tier, queries <code>/api/tags</code> and <code>/api/ps</code> with a 3-second timeout, reporting the reason on failure; it exits 0 only if both local models are installed. <code>jev smoke --tier T</code> sends one request with <code>max_tokens: 16</code> and a 15-second timeout, then prints the tier, request ID, backend model and answer.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">These commands collect the live evidence that D1-07, D1-08 and the handoff require.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">With Ollama absent, <code>doctor</code> explains the failure; <code>smoke</code> against a closed port prints "smoke failed" and exits 1.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">A smoke command that defaults to the frontier tier or sends a long prompt. A routine check then becomes a paid call.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Doctor reports both models unavailable (<code>ConnectError</code>) and <code>frontier.configured=false</code>; raw JSON in <code>evidence/day1/mac-doctor-20261027-1314.json</code>.</div></div></div>
+
+<figure data-src="f21-colab-flow" class="mid" id="fig-colab-flow"><img src="figures/f21-colab-flow.svg" alt="Figure 23"><figcaption><span class="fig-no">Figure 23.</span> The Colab serving notebook (D1-15). Source enters only as a hashed archive of a committed revision; the server binds to loopback inside the VM; results are exported before the session ends.</figcaption></figure>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-15</span><span class="cp-title">Add a source-importing Colab serving notebook</span><span class="cp-commit">19bd683</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Why notebooks drift from repositories; pinning source by content hash; key <code>vllm serve</code> flags; why export comes before cleanup.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>day1_vllm.ipynb</code>: GPU preflight; upload and SHA-256 check of <code>jev-source.zip</code> with safe extraction (no absolute or <code>..</code> paths); <code>pip install</code> of the source plus <code>vllm==0.18.0</code>; <code>vllm serve Qwen/Qwen2.5-1.5B-Instruct</code> on <code>127.0.0.1:8000</code> with <code>--max-model-len 2048</code> and <code>--gpu-memory-utilization 0.75</code>; readiness polling for up to 240 s; two prompts at temperature 0 with <code>max_tokens</code> 16; JSON download; termination.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">The gateway contract and the profile split now exist, so the notebook can install and import the same code rather than copy it.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">The notebook structure validates, plus a record of which cells actually ran, on which GPU, with which archive hash.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Pasting gateway code into notebook cells "to save time". From then on there are two implementations, and results from one say nothing about the other.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Notebook JSON and cell syntax validate; no Colab cell executed. The vLLM pin is a starting point and predates the current release.</div></div></div>
+
+<!-- ============ BLOCK 6 ============ -->
+<div class="block-head">Block 6 <span>Portability, verification and handoff</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-16</span><span class="cp-title">Separate Mac and Colab profiles and dependencies</span><span class="cp-commit">59a5eac</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Configuration profiles versus code branches; keeping GPU-only packages out of the core install; ignoring local secrets.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>config/mac.env.example</code> (Ollama on 11434, Qwen tags, timeout, caps commented out) and <code>config/colab.env.example</code> (loopback 8000/8001, Hugging Face model IDs); <code>requirements/colab-serving.txt</code> for vLLM; lock updated for the extras; <code>.env</code> added to <code>.gitignore</code>.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">The notebook (D1-15) made the second environment concrete; the profiles make the difference explicit before integration tests target both.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A core environment on the Mac contains no torch, CUDA, NVIDIA or vLLM packages.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">One shared <code>requirements.txt</code> for Mac and Colab. Either the Mac install fails on CUDA wheels, or the notebook's pins leak into the app.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Core venv has no torch/CUDA/NVIDIA/vLLM packages.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-17</span><span class="cp-title">Verify offline contracts and available real integrations</span><span class="cp-commit">3e6320f</span></div><div class="row"><div class="dt">Understand</div><div class="dd">What an offline integration test can and cannot show; why real checks are opt-in; reporting the scope of each piece of evidence.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd"><code>test_profile_integration.py</code> dispatches through the full app with the small tier pointed at the Mac URL and then the Colab URL, checking URL, model and request ID. <code>scripts/real_check.sh</code> runs <code>doctor</code>, then <code>smoke</code> for small and medium against live services.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">All components exist; this is the first check that they work together under both profiles.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">The offline suite passes, and whatever real-path evidence is available is recorded with its exact scope.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Making real checks part of the default <code>pytest</code> run. They become flaky, slow, and potentially paid — and people learn to ignore failures.</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">15 passed, 1 warning, 0.16 s (<code>mac-day1-offline-20261027-1314</code>). Real models pending.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D1-18</span><span class="cp-title">Write setup documentation and the evidence handoff</span><span class="cp-commit">4e6f7e0</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Who reads a handoff: someone who must reproduce the result without asking. What a status ledger is for.</div></div></div><div class="row"><div class="dt">Change</div><div class="dd">README quickstart and API description; <code>docs/STATUS.md</code> with a commit and verification note per checkpoint and a list of unmet gates; <code>docs/DECISIONS.md</code>; run IDs in <code>docs/EXPERIMENTS.md</code>; raw files in <code>evidence/day1/</code>.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It closes the day: the next session, or another person, must know exactly what is proven and what is pending.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A clean reader can find the commands, the required model downloads, the evidence files and the next action.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Marking a checkpoint "done" when its only evidence is a mocked test. Here the ledger says "mock-tested; live pending".</div></div><div class="row"><div class="dt rec">Recorded</div><div class="dd">Quickstart and evidence ledger prepared; clean-reader walkthrough pending. Next action recorded: install Ollama, pull <code>qwen2.5:1.5b</code>, run <code>doctor</code>, <code>serve</code>, <code>smoke --tier small</code>.</div></div></div>
+
+<div class="callout evidence"><span class="label">Day 1 gates still open</span>
+<p>(1) Install and start native Ollama, check disk, pull the small then medium model, run bounded answers, and record model IDs, load times, <code>ollama ps</code> and memory pressure. (2) Run the Colab notebook on an allocated GPU and export its JSON. (3) Configure a frontier key, model, current prices and positive caps before any paid call. (4) Do a clean-reader install and real-path smoke test.</p></div>
+
+<section class="journal" id="journal-day1">
+<h2>Journal · Day 1: a gateway before a router</h2>
+<div class="jmeta">Conceptual entry, ready to copy. It explains the Day 1 system as designed and committed; it reports no model output, because none has been observed yet.</div>
+
+<p class="first">The first day's goal was not routing. It was a dependable place to put routing later: a single service that speaks the same chat API as the models behind it, knows exactly which backends exist, and leaves a record of everything it does. The client still chooses the tier by name — small, medium or frontier — and anything else, including a request for automatic routing, is refused at the door. That restriction is deliberate. A router cannot be judged until every tier can be reached reliably and every outcome can be measured.</p>
+
+<p>The gateway has four parts. Configuration describes each tier as a URL and a model name, checks them at startup, and keeps the paid tier switched off until a key, a model, current prices and positive spending caps are all present. The API layer defines what a valid request looks like and rejects everything else with a clear status code. A single asynchronous HTTP client, created once and shared, forwards requests and keeps a bounded pool of connections open, so the gateway can wait on many slow models at once without opening a new connection for each. A trace object gives every request an ID and records its tier, backend model, status, token usage and duration.</p>
+
+<p>The most useful idea of the day was the boundary that streaming creates. Before the first byte goes back to the client, a failing backend can still be turned into an honest error: 504 if it ran out of time, 502 if it failed. After the first byte, the HTTP status is already 200, and the only honest thing left is to stop the stream and record that it was interrupted. That is why the gateway checks the backend's status before forwarding anything, forwards raw bytes rather than re-parsing events, and closes the upstream connection in a finally block whether the stream ended normally, failed, or was cancelled because the client left.</p>
+
+<p>The paid tier needed a different kind of care. A budget that is counted after each response returns can be overrun by concurrent requests that all pass the check before any is recorded. The gateway therefore reserves an overestimate of tokens and dollars before calling the provider, under a lock, and refuses the request if the reservation would cross a cap. It is a guard against runaway loops inside one process, not a bill, and it complements rather than replaces limits set in the provider's account.</p>
+
+<p>Two environments are kept apart on purpose. The Mac runs the application and, through Ollama, the local models. Colab is a laboratory: it receives a hashed archive of a committed revision, installs that exact code, serves a model on its own loopback address, sends two small requests, exports the result and shuts the server down. The Mac never sends traffic to Colab, so a notebook session ending can never break the application, and every number carries the name of the environment that produced it.</p>
+
+<p>The evidence so far is honest but limited. The offline suite passes, and it covers configuration errors, the request contract, forwarding, fragmented streams, sanitised errors, timeouts, budget refusal and secret-free traces. Each of those tests replaces the model server with a controlled fake, which proves the gateway's logic and nothing about the real servers. The diagnostic command reached for Ollama and found nothing listening, because Ollama was not yet installed. No model has answered through the gateway.</p>
+
+<p>The next technical question is physical rather than logical: on an 18 GB Mac, can the 1.5B and 7B models both stay loaded, and if not, what does switching between them cost? The answer decides how Day 2's evaluation is scheduled, and it is the first measurement that will be taken from the real machine.</p>
+</section>
+
+<h1 id="part7"><span class="part-no">Part 7</span>Day 2 — evaluation and baselines</h1>
+
+<p class="part-intro">Day 2 builds the instrument that every later claim depends on: a frozen set of prompts with known answers, scorers that can be trusted, a runner that collects outcomes from all three tiers within budget, and reports that can be regenerated from raw records. All of it is <span class="pill plan">Planned</span>; none has been implemented in the repository yet.</p>
+
+<h2 id="day2-concepts">The ideas Day 2 depends on</h2>
+
+<h3>Why the three task families differ</h3>
+
+<p>The benchmark mixes three public datasets because each stresses something different, and routing is only interesting if the tiers' strengths differ by task.</p>
+
+<table>
+  <thead><tr><th style="width:12%">Dataset</th><th style="width:28%">What a prompt looks like</th><th style="width:27%">How it is scored</th><th>Licence · revision at access</th></tr></thead>
+  <tbody>
+    <tr><td class="k">GSM8K</td><td>A grade-school word problem needing several arithmetic steps.</td><td>Extract the final number and compare with the reference after the dataset's <code>####</code> marker.</td><td>MIT · <code>openai/gsm8k</code> @ <code>740312a</code></td></tr>
+    <tr><td class="k">MMLU</td><td>A four-option multiple-choice question from one of 57 subjects.</td><td>Extract one letter A–D and compare with the reference index.</td><td>MIT · <code>cais/mmlu</code> @ <code>c30699e</code></td></tr>
+    <tr><td class="k">MBPP</td><td>A short Python task with a description and assert-based tests.</td><td>Run the generated function against the tests in a sandbox.</td><td>CC BY 4.0 · <code>google-research-datasets/mbpp</code> @ <code>4bb6404</code></td></tr>
+  </tbody>
+</table>
+
+<p>Maths rewards multi-step reasoning and punishes a single slip; multiple-choice rewards stored knowledge and has a 25% chance floor; code requires exact syntax and correct behaviour. A small model might do respectably on multiple-choice and poorly on maths — hypothesis H1 — and that per-task difference is what a router can exploit. Revisions above are the Hugging Face commit hashes at access on 28 October 2026; D2-02 to D2-04 pin them in the loaders.</p>
+
+<h3>Training, validation and test</h3>
+
+<p>The manifest is split three ways. The <b>training</b> split (60%) is what the DistilBERT router learns from in Day 3. The <b>validation</b> split (20%) is used for every choice that involves looking at results: prompt templates, Jev question wording, thresholds, scorer fixes. The <b>test</b> split (20%) is used once, on Day 6, after every one of those choices is frozen. If the test set influences any decision, its numbers stop being an estimate of performance on unseen prompts and become a description of how well the choices fit those particular prompts.</p>
+
+<figure data-src="f24-grouped-splits" id="fig-grouped-splits"><img src="figures/f24-grouped-splits.svg" alt="Figure 24"><figcaption><span class="fig-no">Figure 24.</span> Splitting rows independently can put variants of one problem on both sides of the split. Assigning whole groups prevents this kind of leakage.</figcaption></figure>
+
+<h3>Data leakage and related-example grouping</h3>
+
+<p><b>Leakage</b> is any path by which information about the evaluation data reaches the thing being evaluated. Here the most likely path is related examples: two GSM8K problems that differ only in numbers, MMLU questions that share a passage, MBPP tasks that are near-duplicates. If one is in training and its twin is in test, the router can look clever by remembering. The defence is to group related prompts first (exact duplicates by normalised-text hash, near-duplicates by a similarity check, shared-source items by their source ID) and then assign <em>groups</em> to splits. Proportions become approximately rather than exactly 60/20/20, which is the right trade.</p>
+
+<p>A second form of leakage cannot be removed: these are public benchmarks, and any of the generation models may have seen them during pre-training. That inflates absolute accuracy for all tiers. Comparisons between tiers and routers on the same prompts remain meaningful; claims about absolute capability should be cautious.</p>
+
+<h3>Scoring errors versus model errors</h3>
+
+<figure data-src="f25-outcomes" id="fig-outcomes"><img src="figures/f25-outcomes.svg" alt="Figure 25"><figcaption><span class="fig-no">Figure 25.</span> Outcome taxonomy. Infrastructure failures are not wrong answers; unparseable and truncated responses need auditing before they are blamed on the model.</figcaption></figure>
+
+<p>When a tier's accuracy looks surprisingly low, there are two very different explanations. A <b>model error</b> means the model's answer was wrong. A <b>scoring error</b> means the model's answer was right but the scorer failed to recognise it — for example, the maths extractor took the last number in "The answer is 42. Check: 6 × 7 = 42." correctly, but in "So 42 apples, which is 3 dozen and 6" it would take 6. Scoring errors are systematic: they distort every comparison built on top of them. That is why each outcome type is stored separately, and why D2-10 exports samples for a human to check before any thresholds are chosen.</p>
+
+<h3>Why generated code needs isolation</h3>
+
+<p>Scoring MBPP means running code a model wrote. That code can loop forever, allocate all memory, delete files, open network connections, or spawn processes. Most of the time it will do none of those things, but the evaluation runs thousands of programs, and one bad one must not be able to damage the Mac or hang the run. The plan is a disposable container for each check with no network, memory, CPU and process limits, a non-root user, a temporary working directory and a hard wall-clock timeout. A timeout becomes a recorded <code>timeout</code> outcome, not a stuck evaluation.</p>
+
+<figure data-src="f26-sandbox" class="mid" id="fig-sandbox"><img src="figures/f26-sandbox.svg" alt="Figure 26"><figcaption><span class="fig-no">Figure 26.</span> Planned isolation for code scoring (D2-05). Exact Docker flags are a D2-05 decision and are verified there with deliberately hostile fixtures.</figcaption></figure>
+
+<h3>What the hindsight oracle can and cannot establish</h3>
+
+<figure data-src="f27-oracle" class="mid" id="fig-oracle"><img src="figures/f27-oracle.svg" alt="Figure 27"><figcaption><span class="fig-no">Figure 27.</span> Deriving oracle labels from observed outcomes. Rows and results are illustrative.</figcaption></figure>
+
+<p>After every tier has answered every train and validation prompt, each prompt can be labelled with the <b>cheapest tier that was observed to answer correctly</b>, or <code>none</code> if no tier did. Routing every prompt to its label gives the <b>hindsight oracle</b>: the best cost and accuracy any router could have achieved on these outcomes.</p>
+
+<p>The oracle <em>can</em> establish headroom: if it costs much less than always-frontier at similar accuracy, routing has room to help. Its labels <em>can</em> train the DistilBERT router. It <em>cannot</em> be deployed, because it uses outcomes nobody knows before generating. It is tied to one sample per prompt — with temperature above zero a tier might succeed on a rerun — and to the scorer's judgement. And it says nothing about latency. It is a bound on the measured data, reported as such.</p>
+
+<h3>Why sequential answer collection is not a live routing latency benchmark</h3>
+
+<p>On a memory-limited Mac the sensible way to collect outcomes is one tier at a time: load the small model, run every prompt, then the medium model, then the frontier API. That gives clean quality labels and clean per-tier generation timings. It does not measure what a routed request would experience, because it never alternates models (so never pays switching cost), never contends for memory with the other tier, never includes a Jev or DistilBERT decision on the path, and runs with whatever batching the runner chose rather than real arrival patterns. Live routing latency is a separate measurement (Day 3's overhead benchmark and Day 5's load tests). Day 2 reports quality runs and serving baselines as different things, with different metadata.</p>
+
+<h3>API usage costs versus provisioned GPU capacity costs</h3>
+
+<p>An API bill is proportional to tokens: no requests, no cost. A provisioned GPU is billed by time: the same hourly rate whether it serves one request or ten thousand. Mixing the two produces nonsense, so they are reported separately.</p>
+
+<div class="calc">Illustrative prices and workloads — not quotes and not project measurements
+API:  input $1.00 / M tokens, output $4.00 / M tokens; request = 400 in, 300 out
+      cost = 400 × 1.00/1e6 + 300 × 4.00/1e6 = $0.0004 + $0.0012 = $0.0016 per request
+GPU:  $1.20 per hour, whatever the load
+      at 2 requests/s sustained: 7,200 req/h → $1.20 / 7,200 ≈ $0.00017 per request
+      at 0.05 requests/s:          180 req/h → $1.20 / 180   ≈ $0.0067 per request
+      idle:                          0 req/h → $1.20 per hour for nothing
+Routing 30% of traffic away from that GPU lowers its utilisation, not its bill.</div>
+
+<p>Jev adds a third cost shape: TypeSafe charges per input token only, at $0.042 per million, so a decision's cost is set by state size and question count <span class="pill doc">Documented</span>. For the Mac tiers, the honest entry is "unpriced": electricity and hardware wear exist but are not measured. D2-14 keeps measured spend, modelled capacity cost and unknown rates in separate columns.</p>
+
+<h2 id="day2-checkpoints">The eighteen Day 2 checkpoints</h2>
+
+<figure data-src="f29-day2-blocks" id="fig-day2-blocks"><img src="figures/f29-day2-blocks.svg" alt="Figure 28"><figcaption><span class="fig-no">Figure 28.</span> Day 2 checkpoints in six blocks of three. None has started in the repository.</figcaption></figure>
+
+<!-- ============ BLOCK 1 ============ -->
+<div class="block-head">Block 1 <span>Records and the first two datasets</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-01</span><span class="cp-title">Define immutable evaluation records</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Schemas as contracts; append-only data; why an error is a value and not a missing row.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">A frozen record type with prompt ID, task, split, manifest hash, tier, backend model and revision, generation settings, template version, raw output, finish reason, extracted answer, outcome (one of the taxonomy values), usage, timings and cost fields, run ID and timestamp. Records are written as JSON lines and never edited.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Loaders, scorers, the runner and reports all produce or consume this record; defining it first prevents four incompatible formats.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Fixtures for each outcome validate; a backend error and a wrong answer remain distinguishable after a round trip through the file.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Dropping failed calls from the results. Accuracy then silently excludes the hardest or slowest prompts and looks better than it is.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-02</span><span class="cp-title">Load versioned GSM8K prompts</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Dataset revisions; deterministic IDs; where the reference answer lives (<code>#### &lt;number&gt;</code> at the end of the solution).</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">A loader that pins the dataset revision, assigns stable IDs (for example <code>gsm8k-test-0412</code>), stores the question and the parsed reference number, and records licence and source.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Maths has the simplest reference answers, so it is the easiest place to prove the loader-to-record path.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A known sample loads with the same ID, text and answer on two machines; provenance is recorded.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Loading the dataset's moving default branch. A later upstream fix changes prompts under the same IDs.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-03</span><span class="cp-title">Load versioned MMLU prompts</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Subject subsets; consistent prompt templates; how an answer index maps to a letter.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">A loader for selected subjects that renders each question with options labelled A–D in the dataset's order, stores the correct letter, and records subject, revision and template version.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It exercises templating and answer mapping, which the multiple-choice scorer (D2-08) depends on.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Tests confirm option order and the letter derived from the reference index on known items.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Shuffling options for "fairness" without storing the permutation. The reference letter no longer matches the rendered prompt.</div></div></div>
+
+<!-- ============ BLOCK 2 ============ -->
+<div class="block-head">Block 2 <span>Code tasks, isolation and the frozen manifest</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-04</span><span class="cp-title">Load MBPP tasks and test specifications</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">What the model must produce (a function with a specific name and signature) and what the tests assert.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">A loader that stores the task text, the test list, any setup code, the expected function name, the task ID, and licence metadata.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">The sandbox (D2-05) needs real task specifications to be tested against.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Dataset and licence metadata and task IDs recorded; a reference solution passes its own tests in the sandbox.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Leaving the expected function name out of the prompt. Correct code under a different name then fails every test.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-05</span><span class="cp-title">Isolate generated-code execution</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Containers as process and filesystem isolation; network namespaces; resource limits; the difference between a test failure and an infrastructure failure.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">A runner that writes code and tests to a temporary directory and executes them in a disposable, network-disabled, resource-limited container as a non-root user, returning <code>passed</code>, <code>failed</code>, <code>timeout</code>, <code>crashed</code> or <code>sandbox_error</code>.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">No model-written code may run before isolation exists, and the code scorer (D2-09) builds on it.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Hostile fixtures — an infinite loop, a memory bomb, a network call, a file write outside the work directory — are each contained and classified correctly.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">"Just for a quick check", running generated code with <code>exec()</code> in the evaluator's own process.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-06</span><span class="cp-title">Freeze a deduplicated manifest and grouped 60/20/20 splits</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Duplicates and near-duplicates; group IDs; seeded assignment; why "frozen" means hashed.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">Select 2,000–3,000 prompts across the three tasks, group related items, assign groups to train/validation/test with a fixed seed, and write a manifest of IDs, groups, splits and provenance with its content hash. Reading the test split requires an explicit flag.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">All three loaders exist, and the split must be fixed before any result is seen.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">No group spans two splits; the manifest hash is reproducible from the same inputs and seed; the runner refuses test prompts without the flag.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Regenerating the split after looking at early results. Every later number then depends on that choice.</div></div></div>
+
+<!-- ============ BLOCK 3 ============ -->
+<div class="block-head">Block 3 <span>Scoring</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-07</span><span class="cp-title">Implement math answer extraction and scoring</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Normalising numbers (commas, currency symbols, trailing units, decimals and fractions); explicit parser outcomes.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">An extractor that prefers an explicit final-answer pattern requested by the prompt template, falls back to clearly defined rules, and returns either a number or <code>unparseable</code>; then exact numeric comparison.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It is the simplest scorer and the first that real outputs will hit.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Edge-case tests ("$1,250.00", "3/4", "about 12", several numbers in a row) pass; the audit in D2-10 confirms behaviour on real outputs.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Always taking the last number in the text. Answers that end with a check or a unit conversion are then scored wrong.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-08</span><span class="cp-title">Implement multiple-choice scoring</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Accepted answer forms; ambiguity; why guessing in the scorer is worse than recording "unparseable".</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">A parser that accepts documented forms ("B", "(B)", "Answer: B", the option text matching exactly one choice) and returns <code>unparseable</code> for answers naming several letters or none.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It shares the outcome taxonomy with D2-07 and must be audited with it.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Malformed, truncated and incorrect answers remain distinguishable in tests.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Matching the first capital A–D anywhere in the text. "A good answer is C" scores as A.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-09</span><span class="cp-title">Integrate isolated code-task scoring</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Extracting code from a chat answer (fenced blocks, prose around code); mapping sandbox results to outcomes.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">Connect completions to the D2-05 sandbox: extract the code block, combine it with the task's tests, run it, and store a structured result including the sandbox outcome and test counts.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It combines D2-04 and D2-05, and completes the set of scorers.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Known pass, fail, timeout and syntax-error fixtures are classified correctly.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Counting a sandbox infrastructure failure, such as Docker not running, as the model's code failing.</div></div></div>
+
+<!-- ============ BLOCK 4 ============ -->
+<div class="block-head">Block 4 <span>Audit, the runner and resumption</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-10</span><span class="cp-title">Export samples for manual scoring audits</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Why human review catches systematic scorer bugs that unit tests miss; stratified sampling.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">Export 30–50 development-split answers per task, stratified by outcome and tier, in a format a person can read and mark; record corrections and the scorer changes they cause.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Before any threshold or router is tuned on scored outcomes.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A documented audit with disagreement counts and the resulting scorer fixes.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Auditing only answers marked wrong. False positives — wrong answers scored correct — are invisible that way.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-11</span><span class="cp-title">Implement bounded evaluation across all three tiers</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Concurrency limits; retries for transient errors only; per-run request, token and dollar caps; deterministic generation settings.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">A runner that sends selected splits through the gateway to each configured tier, with fixed settings (for example temperature 0), bounded concurrency and retries, and caps. Paid tiers are skipped unless a positive run budget is configured.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Records, loaders and scorers all exist; this connects them to the Day 1 gateway.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A small development run completes for each available tier; no paid job starts without an explicit budget.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Retrying wrong answers or timeouts until they succeed. That changes what is being measured.</div></div></div>
+
+<figure data-src="f28-resume" class="narrow" id="fig-resume"><img src="figures/f28-resume.svg" alt="Figure 29"><figcaption><span class="fig-no">Figure 29.</span> Planned resume logic (D2-12). A completed result is reused only when its full fingerprint matches; anything else is a new experiment.</figcaption></figure>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-12</span><span class="cp-title">Add checkpointing and safe resumption</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Fingerprints; atomic appends and flushing; partial lines after a crash.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">Fingerprint each unit of work (prompt ID and text hash, tier, model revision, generation settings, template version); on restart, discard a trailing partial line, skip completed fingerprints, and continue.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Long runs over thousands of prompts on a laptop or in Colab will be interrupted.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">A deliberately interrupted development run resumes without duplicate or corrupted records, and reused results keep their original run ID and time.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Keying completion on prompt ID alone. After a model update, old answers are silently reused as if new.</div></div></div>
+
+<!-- ============ BLOCK 5 ============ -->
+<div class="block-head">Block 5 <span>Oracle, cost and quality reports</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-13</span><span class="cp-title">Derive observed hindsight-oracle labels</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Tier order by cost; what to do when no tier is correct; why the oracle is a bound, not a policy.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">For each train and validation prompt, compute the cheapest tier observed to succeed, or <code>none</code>; store the label with the record set it came from; report the oracle's accuracy and cost.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It needs complete per-tier outcomes, and Day 3 training needs its labels.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Labels regenerate from records; the report states that the oracle is an offline bound for these measured outcomes.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Mapping <code>none</code> to <code>frontier</code>. The classifier is then trained to send unanswerable prompts to the most expensive tier.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-14</span><span class="cp-title">Calculate complete inference costs</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Token-billed versus time-billed resources; cost attribution per request; unknown rates.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">A cost model with separate fields for frontier usage (from returned usage and configured prices), decision and verification calls (from Day 3 on), and provisioned-capacity scenarios with an explicit hourly rate and utilisation. Local Mac tiers stay "unpriced" unless a rate is supplied.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Reports in D2-15 and every Day 3 comparison need cost on a common basis.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Unknown rates remain unknown in the output; idle capacity appears as a cost, not zero.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Treating self-hosted tiers as free. That makes "route everything local" look optimal regardless of quality.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-15</span><span class="cp-title">Generate per-tier quality and completion reports</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Accuracy versus completion rate versus error rate, each with its denominator; per-task breakdowns; sample counts.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">A report generator that reads records and outputs, per tier and per task, accuracy, completion and error rates, outcome counts, sample sizes and costs, stamped with the manifest hash and run IDs.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It closes the quality half of the day; its output is the baseline every router must beat.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Deleting the report and regenerating it from records gives an identical file.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Reporting accuracy over completed responses only, without the completion rate beside it.</div></div></div>
+
+<!-- ============ BLOCK 6 ============ -->
+<div class="block-head">Block 6 <span>Serving baselines and real measurements</span></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-16</span><span class="cp-title">Define controlled serving benchmark workloads</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">Closed-loop versus open-loop load; concurrency versus arrival rate; warm-up; prompt and output length control.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">A workload runner, separate from the quality runner, with configurable prompt-length buckets, fixed output lengths, concurrency or arrival rate, warm-up requests, and recorded model load state and cache state.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">Quality numbers are now in hand; performance needs its own controlled experiment rather than timings borrowed from evaluation runs.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Workload definitions are stored with every result, including client scheduling, warm-up and output controls.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Reusing evaluation timings as a latency benchmark. Output lengths vary per prompt, so differences in tokens generated swamp differences in serving speed.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-17</span><span class="cp-title">Report latency, throughput, errors and sample counts</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">The definitions in Part 8: time to first output, end-to-end latency, event gaps versus token timing, percentiles, throughput units.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">Metric computation with explicit denominators: per-request time to first output and end-to-end latency (p50 and p95, stating the percentile method), output tokens per second from usage counts, request throughput over a stated window, error rate, and sample counts.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It turns D2-16's raw timings into the baselines Day 3 and Day 6 compare against.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Each metric's formula and denominator is printed in the report; failed requests appear alongside successful-request latency.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">Computing latency percentiles over successful requests only. A configuration that fails its slow requests then looks faster.</div></div></div>
+
+<div class="cp"><div class="cp-keep"><div class="cp-head"><span class="cp-id">D2-18</span><span class="cp-title">Preserve actual train/validation measurements; keep the test held out</span><span class="cp-commit">planned</span></div><div class="row"><div class="dt">Understand</div><div class="dd">What can be completed within hardware and budget limits; reporting progress honestly; protecting the test split.</div></div></div><div class="row"><div class="dt plan">Planned change</div><div class="dd">Run the real evaluation on train and validation for every available tier within caps, preserve raw records and the manifest hash, and report coverage towards the 2,000+ prompt target per tier.</div></div><div class="row"><div class="dt">Why here</div><div class="dd">It is the day's deliverable: real outcomes that Day 3 can train and tune on.</div></div><div class="row"><div class="dt">Evidence</div><div class="dd">Raw records, run IDs and coverage counts per tier in <code>docs/EXPERIMENTS.md</code>; test-split access count of zero.</div></div><div class="row"><div class="dt mis">Common mistake</div><div class="dd">"Just a quick look" at test-split accuracy. Once seen, it cannot be unseen, and every later decision is suspect.</div></div></div>
+
+<div class="callout evidence"><span class="label">Dependency carried over from Day 1</span>
+<p>D2-01 to D2-17 can be implemented and tested offline with fixtures. D2-18 needs live tiers: at least the Ollama small and medium models answering through the gateway (D1-07, D1-08), and for the frontier tier a configured key and run budget. Until then, coverage is reported as zero rather than estimated.</p></div>
+
+<section class="journal" id="journal-day2">
+<h2>Journal · Day 2: building an instrument worth trusting</h2>
+<div class="jmeta">Conceptual entry, ready to copy. Day 2 has not been implemented; this entry explains the design and its reasons and reports no results.</div>
+
+<p class="first">Day 1 built a way to ask any of three models a question. Day 2 builds a way to know whether their answers were right, and that turns out to be the harder problem. Every later claim in the project — that one router saves money, that Jev's probabilities mean what they say, that a cache does not return wrong answers — rests on correctness labels produced here. If those labels are biased, every comparison built on them inherits the bias, however careful the later work is.</p>
+
+<p>The benchmark draws on three public datasets because the tiers should differ by task. GSM8K word problems need several correct arithmetic steps and a single final number. MMLU questions offer four options across many subjects and reward stored knowledge. MBPP tasks ask for a short Python function that must pass hidden tests. Each dataset is pinned to a specific revision and each prompt gets a permanent ID, so the same prompt means the same thing in every run and on every machine.</p>
+
+<p>Before any model sees a prompt, the prompts are grouped and split. Related items, such as paraphrases or problems that differ only in their numbers, are placed in one group, and whole groups go to training, validation or test. Training will teach the fallback router; validation will absorb every decision that involves looking at results; the test split stays sealed until the final day. Splitting by group rather than by row costs a little precision in the 60/20/20 proportions and buys protection against the most likely form of leakage.</p>
+
+<p>Scoring gets as much attention as generation. A maths answer has to be found in a paragraph of reasoning, a letter has to be found without guessing, and generated code has to run somewhere it can do no harm — in a disposable container without network access, with limits on memory, processes and time. Each attempt ends in one of several distinct outcomes: correct, incorrect, unparseable, truncated, timed out, or failed for infrastructure reasons. Keeping these apart is what lets a low score be traced to its cause. A human then reads a sample of scored answers from each task, because a scorer bug is systematic and no amount of model comparison will reveal it.</p>
+
+<p>Once each tier has answered the training and validation prompts, each prompt receives an oracle label: the cheapest tier observed to get it right, or none. The oracle is the best routing that was possible on these particular outcomes. It shows how much room there is for a real router, and its labels become training data, but it is not a router, because it uses answers no one has at request time.</p>
+
+<p>Cost and speed are measured with the same care. A paid API charges per token; a rented GPU charges per hour whether busy or idle; the Mac's own tiers are honestly marked unpriced. These are kept in separate columns. Collecting answers one tier at a time is the right way to get quality labels on a memory-limited laptop, but it is not a measurement of how fast a routed request would be, because it never switches models or makes a routing call. Serving performance therefore gets its own controlled workloads, with defined prompt and output lengths, warm-up, and percentiles reported alongside error rates and sample counts.</p>
+
+<p>The work divides cleanly into what can be built and tested now and what must wait. Records, loaders, splits, scorers, the sandbox, the runner, resumption and reports can all be written and checked against fixtures. Real outcomes need real models answering through the gateway, which brings the project back to the first open question from Day 1: getting Ollama running on the Mac and seeing the small model answer.</p>
+</section>
+
+<h1 id="part8"><span class="part-no">Part 8</span>Essential measurement notes</h1>
+
+<p class="part-intro">A short reference for the quantities Days 2, 3 and 6 will report. Every numerical example in this part is <span class="pill ill">Illustrative</span>; none is a project measurement.</p>
+
+<h2 id="m-latency">Latency: end to end, first output, and what happens between</h2>
+
+<figure data-src="f30-latency-anatomy" id="fig-latency-anatomy"><img src="figures/f30-latency-anatomy.svg" alt="Figure 30"><figcaption><span class="fig-no">Figure 30.</span> Client-side timings for one streamed request. Time to first visible output and end-to-end latency are measured from when the client sends; event gaps are measured between consecutive content events.</figcaption></figure>
+
+<p><b>End-to-end latency</b> is the time from the client sending a request to receiving the last byte (for streams, the <code>[DONE]</code> event). It is what a non-streaming user experiences and what a deadline bounds. State where it is measured: the client's view includes the network and the gateway; the gateway's trace <code>duration_ms</code> starts after the request has been received and parsed.</p>
+
+<p><b>Time to first visible output</b> is the time until the first event that contains answer text. It is close to, but not the same as, the server's time to first token: some servers send an initial event that carries only the role or metadata, and the network and gateway add their own delay. Name which one is reported.</p>
+
+<p><b>Stream-event gaps versus token timings.</b> An SSE event can carry one token, several, or none. The gap between events is therefore a delivery timing, not a per-token generation timing, unless the interface guarantees one token per event. Per-token rates should come from token counts in <code>usage</code>, not from counting events.</p>
+
+<p><b>Average time per output token</b> describes the decode phase for one request:</p>
+<div class="calc">TPOT = (end-to-end − time to first output) ÷ (output tokens − 1)
+Illustrative: end-to-end 3.40 s, first output at 0.40 s, 121 output tokens (from usage)
+  TPOT = (3.40 − 0.40) ÷ 120 = 0.025 s = 25 ms per token  →  about 40 tokens/s for this request</div>
+
+<h2 id="m-percentiles">p50 and p95</h2>
+
+<p>A latency distribution is usually skewed: most requests are similar, a few are much slower. The <b>p50</b> (median) is the value half the requests are at or below; the <b>p95</b> is the value 95% are at or below. The mean is a poor summary because one stalled request can move it a lot. Percentiles from small samples are fragile: with 20 requests, p95 is determined by roughly one request. Always report the sample count and the method (nearest-rank, or linear interpolation).</p>
+
+<figure data-src="f31-percentiles" id="fig-percentiles"><img src="figures/f31-percentiles.svg" alt="Figure 31"><figcaption><span class="fig-no">Figure 31.</span> Median, p95 and mean for twenty illustrative latencies. The median uses the average of the 10th and 11th values; p95 uses the nearest-rank method.</figcaption></figure>
+
+<h2 id="m-throughput">Request and output-token throughput</h2>
+
+<div class="calc">Illustrative 10-minute window (600 s), fixed concurrency of 4
+  completed requests 540, failed requests 18
+  request throughput      = 540 ÷ 600 s       = 0.90 requests/s   (state: completed only)
+  output tokens (usage)   = 81,000
+  output-token throughput = 81,000 ÷ 600 s    = 135 tokens/s
+  error rate              = 18 ÷ (540 + 18)   = 3.2%</div>
+
+<p>Throughput needs a stated window, a stated load (concurrency or arrival rate), and the error rate next to it. Higher throughput at higher concurrency usually comes with higher per-request latency; report both, never one alone.</p>
+
+<h2 id="m-quality">Accuracy, completion rate and error rate</h2>
+
+<div class="calc">Illustrative: 500 prompts sent to one tier
+  infrastructure errors (timeout, backend error)        40
+  responses received                                   460
+    correct 390 · incorrect 40 · unparseable 22 · truncated 8
+  accuracy (over all attempts)    = 390 ÷ 500 = 78.0%
+  completion rate                 = 460 ÷ 500 = 92.0%
+  error rate                      =  40 ÷ 500 =  8.0%
+  accuracy among completed        = 390 ÷ 460 = 84.8%   ← must be labelled; never reported alone</div>
+
+<p>The headline accuracy uses all attempted prompts as the denominator, so a tier cannot look better by failing hard prompts. Unparseable and truncated responses count as not correct in accuracy, and are also reported separately because they may point to scorer or template problems.</p>
+
+<h2 id="m-cost">Actual versus modelled cost</h2>
+
+<p><b>Actual cost</b> is money spent, computed from provider-reported usage and the prices in force at the time, ideally reconciled with the provider's billing. <b>Modelled cost</b> is a scenario: "if this workload ran on a GPU rented at <i>r</i> per hour at utilisation <i>u</i>". Both are useful; they belong in different columns with their assumptions stated. The gateway's budget reservation is neither — it is a conservative admission estimate. Unknown prices stay unknown; they are never filled with a guess.</p>
+
+<h2 id="m-cold-warm">Cold versus warm runs</h2>
+
+<p>Report whether each measurement started with the model unloaded (cold) or loaded (warm), how many warm-up requests were discarded, and the server's caching state. On the Mac, record <code>ollama ps</code> before and after a run. A cold measurement answers "how long after idle does the first user wait?"; a warm one answers "how fast is steady-state serving?". Both are legitimate; mixing them in one distribution is not.</p>
+
+<h2 id="m-mock-real">Mocked versus real evidence</h2>
+
+<table>
+  <thead><tr><th style="width:24%">Evidence</th><th style="width:38%">What it can establish</th><th>What it cannot</th></tr></thead>
+  <tbody>
+    <tr><td>Mocked test</td><td>The gateway's own logic: mapping, validation, error handling, record format.</td><td>That a real server accepts the request, returns that shape, or responds in time.</td></tr>
+    <tr><td>Real integration check</td><td>That configured URLs, model names and response shapes match a live service.</td><td>Speed or quality beyond the single request observed.</td></tr>
+    <tr><td>Replayed / offline analysis</td><td>Router comparisons on stored outcomes; oracle bounds.</td><td>Live latency, switching cost, or behaviour under load.</td></tr>
+    <tr><td>Controlled benchmark</td><td>Latency and throughput under the stated workload, environment and load state.</td><td>Performance under a different workload or on different hardware.</td></tr>
+  </tbody>
+</table>
+
+<p>Each result in the project should say which of these it is, which environment produced it (Mac or Colab), and which commit and configuration it used.</p>
+
+<h1 id="sources" class="unnumbered">Sources</h1>
+
+<p>All sources were accessed on <b>28 October 2026</b>. Official documentation was preferred; where only the repository is cited, the claim is about this project's own recorded state.</p>
+
+<h3>TypeSafe (Jev) — official documentation</h3>
+<ol class="sources">
+  <li>Introduction. <span class="url">https://docs.typesafe.ai/introduction</span></li>
+  <li>Quick start. <span class="url">https://docs.typesafe.ai/introduction/quickstart</span></li>
+  <li>System One. <span class="url">https://docs.typesafe.ai/concepts/system-one</span></li>
+  <li>State. <span class="url">https://docs.typesafe.ai/concepts/state</span></li>
+  <li>Choice. <span class="url">https://docs.typesafe.ai/primitives/choice</span></li>
+  <li>Score. <span class="url">https://docs.typesafe.ai/primitives/score</span></li>
+  <li>Noul. <span class="url">https://docs.typesafe.ai/primitives/noul</span></li>
+  <li>Box (image primitive, "dreamer-ready"). <span class="url">https://docs.typesafe.ai/primitives/box</span></li>
+  <li>Confidence. <span class="url">https://docs.typesafe.ai/confidence</span></li>
+  <li>Models (versions, price, context, aliases, rate limits). <span class="url">https://docs.typesafe.ai/models</span></li>
+  <li>AI primer (RLCD and calibration). <span class="url">https://docs.typesafe.ai/introduction/machine-learning-primer</span></li>
+  <li>Request rules and errors. <span class="url">https://docs.typesafe.ai/api/errors</span></li>
+  <li>Python SDK: basic usage; answers and responses. <span class="url">https://docs.typesafe.ai/sdk/python/usage/basic · https://docs.typesafe.ai/sdk/python/api/types/responses</span></li>
+  <li>typesafe-sdk package listing (version 0.7.5 at access). <span class="url">https://pypi.org/project/typesafe-sdk/</span></li>
+</ol>
+
+<h3>Serving runtimes and tools</h3>
+<ol class="sources" start="15">
+  <li>Ollama for macOS (requirements, install, file locations). <span class="url">https://docs.ollama.com/macos</span></li>
+  <li>Ollama OpenAI compatibility. <span class="url">https://docs.ollama.com/api/openai-compatibility</span></li>
+  <li>Ollama FAQ (context length, keep_alive, concurrency, ollama ps). <span class="url">https://docs.ollama.com/faq</span></li>
+  <li>Ollama API: list running models (/api/ps). <span class="url">https://docs.ollama.com/api/ps</span></li>
+  <li>Ollama library: qwen2.5 tags and sizes. <span class="url">https://ollama.com/library/qwen2.5</span></li>
+  <li>vLLM GPU installation. <span class="url">https://docs.vllm.ai/en/stable/getting_started/installation/gpu/</span></li>
+  <li>vLLM package listing (latest 0.32.0 at access). <span class="url">https://pypi.org/project/vllm/</span></li>
+  <li>uv installation. <span class="url">https://docs.astral.sh/uv/getting-started/installation/</span></li>
+  <li>Docker Desktop networking (host.docker.internal). <span class="url">https://docs.docker.com/desktop/features/networking/</span></li>
+  <li>Google Colab FAQ (resource limits, runtime lifetime). <span class="url">https://research.google.com/colaboratory/faq.html</span></li>
+</ol>
+
+<h3>Models and datasets</h3>
+<ol class="sources" start="25">
+  <li>Qwen2.5-1.5B-Instruct model card and config (Apache-2.0). <span class="url">https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct</span></li>
+  <li>Qwen2.5-7B-Instruct model card and config (Apache-2.0). <span class="url">https://huggingface.co/Qwen/Qwen2.5-7B-Instruct</span></li>
+  <li>DistilBERT base uncased (Apache-2.0). <span class="url">https://huggingface.co/distilbert/distilbert-base-uncased</span></li>
+  <li>GSM8K dataset (MIT). <span class="url">https://huggingface.co/datasets/openai/gsm8k</span></li>
+  <li>MMLU dataset (MIT). <span class="url">https://huggingface.co/datasets/cais/mmlu</span></li>
+  <li>MBPP dataset (CC BY 4.0). <span class="url">https://huggingface.co/datasets/google-research-datasets/mbpp</span></li>
+</ol>
+
+<h3>Repository evidence</h3>
+<ol class="sources" start="31">
+  <li>Commit plan and full scope. <span class="url">docs/COMMIT_PLAN.md · docs/PLAN.md · docs/RUNTIME_PROFILES.md · AGENTS.md</span></li>
+  <li>Day 1 status, decisions, environments, experiments. <span class="url">docs/STATUS.md · docs/DECISIONS.md · docs/ENVIRONMENT.md · docs/EXPERIMENTS.md · docs/MAC_MODELS.md</span></li>
+  <li>Raw Day 1 outputs. <span class="url">evidence/day1/mac-offline-20261027-1314.txt · evidence/day1/mac-doctor-20261027-1314.json</span></li>
+  <li>Source code and tests at commit 4e6f7e0. <span class="url">src/jev_gateway/ · tests/ · notebooks/ · config/</span></li>
+</ol>
+
+</body></html>
