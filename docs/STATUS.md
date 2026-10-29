@@ -54,3 +54,7 @@ D3-07 adds bounded prompted-small routing with strict JSON parsing; no local Oll
 ## Day 3 block 4
 
 D3-10 asks one typed success question per eligible generator in a single budgeted Jev request; thresholds require an explicit validation selection ID and none exists yet. D3-11 implements the official local Strands typed server path; checkpoint download and real serving remain blocked by unverified disk/memory headroom. D3-12 adds offline failure checks for ineligible selections, context limits, provider disablement, malformed decisions, deadlines, and budget denial. No test used a real decision service or paid backend.
+
+## Day 3 block 5
+
+D3-13 adds defined-event Brier, ECE, reliability bins, and SVG output. D3-14 selects thresholds only from saved validation cases with known costs and explicit quality/coverage objectives; no case set is available for a selection. D3-15 adds fixed/random/oracle/router validation replay and a cost-quality SVG. The real stored run produced ten policy coverage rows and **zero plotted points** because no answer was scored and no router selection was recorded. The held-out test was not loaded.

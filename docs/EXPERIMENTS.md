@@ -26,3 +26,7 @@ Run `day2-validation-8debb816`: `.venv/bin/jev eval-run --split validation --tie
 ## Day 3 block 1 — 2026-10-29 America/Toronto
 
 The existing `runs/day2-run-8debb816c7474f559ab5197df9c1fea6.jsonl` was inspected locally: two validation records, both `backend_error`, and no train records. No training labels, model training, or live router selections were produced. Focused routing contract, baseline, and training-data tests used fixtures only.
+
+## Day 3 validation replay — 2026-10-29 America/Toronto
+
+`python -m jev_gateway.routing.comparison --run runs/day2-run-8debb816c7474f559ab5197df9c1fea6.jsonl --output runs/day3-validation-comparison-20261029.json` produced a private JSON report and SVG (`runs/day3-validation-comparison-20261029.svg`). It enumerated ten planned policies but plotted zero cost-quality points. Small and medium fixed baselines each matched one backend-error result and lacked 499 results; frontier lacked all 500. The seeded random baseline matched one backend error and lacked 499 results. No router had saved real selections or scored answers. This is offline replay, not a live request or end-to-end timing result. The empty plot is the correct evidence state, not a quality comparison.
