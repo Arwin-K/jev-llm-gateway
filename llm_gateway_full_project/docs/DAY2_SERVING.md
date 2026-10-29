@@ -1,0 +1,3 @@
+# Controlled serving baseline
+
+Serving workloads are separate from quality collection. A workload pins tier, text and output cap, stopping rule, scheduled arrival interval, concurrency, warm-up count, cache state, backend placement, and declared cold/warm/unverified model condition. The runner records both scheduled and achieved client starts. Stream parsing records first visible text, not the first SSE event, and uses provider completion-token usage only if supplied. A sequential tier-quality run is not live routing performance. Cold and warm labels require environment evidence; the runner cannot force model residency.
