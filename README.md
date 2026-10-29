@@ -67,3 +67,7 @@ The [Colab notebook guide](notebooks/README.md) explains how to archive a commit
 ## Limitations
 
 Generated code is scored only in a constrained Docker container; containers reduce risk but do not provide an absolute security boundary. The project split grouping catches exact case and whitespace variants, not semantic paraphrases. Current quality and cost reports are infrastructure, not completed three-tier benchmark results. Keep raw prompts, references, credentials, private audit exports, and model outputs out of public commits.
+
+## Branch milestones
+
+The [day-one branch](https://github.com/Arwin-K/Jev-LLM-gateway/tree/day-one) preserves the gateway and notebook work; the [day-two branch](https://github.com/Arwin-K/Jev-LLM-gateway/tree/day-two) contains the evaluation foundation. Both are merged into `main` with explicit merge commits. See [the history guide](docs/HISTORY.md) for the graph and checkpoint lookup.
