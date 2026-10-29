@@ -44,13 +44,21 @@ class Settings:
     frontier_input_usd_per_million: float = 0.0
     frontier_output_usd_per_million: float = 0.0
     router_training_fingerprint: str = ""
+    jev_model: str = "UNCONFIGURED"
+    jev_max_requests: int = 0
+    jev_max_tokens: int = 0
+    jev_max_usd: float = 0.0
+    jev_input_usd_per_million: float = 0.0
+    jev_output_usd_per_million: float = 0.0
+    jev_decision_output_tokens: int = 256
 
     def __post_init__(self):
         if not 0 < self.timeout_seconds <= 300:
             raise ConfigError("timeout_seconds must be between 0 and 300")
         if not 1 <= self.max_output_tokens <= 8192:
             raise ConfigError("max_output_tokens must be between 1 and 8192")
-        if min(self.frontier_max_requests, self.frontier_max_tokens) < 0 or self.frontier_max_usd < 0:
+        if (min(self.frontier_max_requests, self.frontier_max_tokens, self.jev_max_requests, self.jev_max_tokens) < 0
+            or self.frontier_max_usd < 0 or self.jev_max_usd < 0 or self.jev_decision_output_tokens < 1):
             raise ConfigError("frontier limits cannot be negative")
 
     @property
@@ -58,6 +66,12 @@ class Settings:
         return bool(self.frontier.model != "UNCONFIGURED" and self.frontier.api_key and self.frontier_max_requests > 0 and
                     self.frontier_max_tokens > 0 and self.frontier_max_usd > 0 and
                     self.frontier_input_usd_per_million > 0 and self.frontier_output_usd_per_million > 0)
+
+    @property
+    def jev_enabled(self):
+        return bool(self.jev_model != "UNCONFIGURED" and os.getenv("TYPESAFE_API_KEY") and
+                    self.jev_max_requests > 0 and self.jev_max_tokens > 0 and self.jev_max_usd > 0 and
+                    self.jev_input_usd_per_million > 0 and self.jev_output_usd_per_million > 0)
 
     def backend(self, tier):
         if tier not in {"small", "medium", "frontier"}:
@@ -90,4 +104,11 @@ def from_env():
         frontier_input_usd_per_million=number("JEV_FRONTIER_INPUT_USD_PER_MILLION", "0"),
         frontier_output_usd_per_million=number("JEV_FRONTIER_OUTPUT_USD_PER_MILLION", "0"),
         router_training_fingerprint=os.getenv("JEV_ROUTER_TRAINING_FINGERPRINT", ""),
+        jev_model=os.getenv("JEV_DECISION_MODEL") or "UNCONFIGURED",
+        jev_max_requests=integer("JEV_DECISION_MAX_REQUESTS", "0"),
+        jev_max_tokens=integer("JEV_DECISION_MAX_TOKENS", "0"),
+        jev_max_usd=number("JEV_DECISION_MAX_USD", "0"),
+        jev_input_usd_per_million=number("JEV_DECISION_INPUT_USD_PER_MILLION", "0"),
+        jev_output_usd_per_million=number("JEV_DECISION_OUTPUT_USD_PER_MILLION", "0"),
+        jev_decision_output_tokens=integer("JEV_DECISION_OUTPUT_TOKENS", "256"),
     )
