@@ -54,3 +54,22 @@ def score_choice(raw, reference, truncated=False):
         return {'outcome':'evaluator_error','parsed_answer':None,'score':None}
     answer = labels[0]
     return {'outcome':'correct' if answer == reference else 'incorrect','parsed_answer':answer,'score':float(answer == reference)}
+
+
+def score_code(raw, tests, imports=(), timeout=8, executor=execute):
+    text = raw.strip()
+    fences = re.findall(r'(?s)```(?:python)?\s*\n(.*?)\n```', text, flags=re.I)
+    if fences:
+        if len(fences) != 1 or re.sub(r'(?s)```(?:python)?\s*\n.*?\n```', '', text, flags=re.I).strip():
+            return {'outcome':'parse_error','parsed_answer':None,'score':None,'error_category':'ambiguous_code'}
+        code = fences[0].strip()
+    elif '```' in text:
+        return {'outcome':'parse_error','parsed_answer':None,'score':None,'error_category':'malformed_fence'}
+    else:
+        code = text
+    if not code or len(code) > 100_000:
+        return {'outcome':'parse_error','parsed_answer':None,'score':None,'error_category':'empty_or_oversize'}
+    result = executor(code, tuple(tests), tuple(imports), timeout=timeout)
+    mapping = {'passed':('correct',1.0), 'failed_tests':('incorrect',0.0), 'timeout':('evaluator_error',None), 'crashed':('incorrect',0.0), 'environment_error':('blocked',None)}
+    outcome, score = mapping[result['status']]
+    return {'outcome':outcome,'parsed_answer':code,'score':score,'error_category':result['status']}
