@@ -34,3 +34,23 @@ def score_math(raw, reference):
         return {'outcome':'parse_error','parsed_answer':None,'score':None}
     value = values[0]
     return {'outcome':'correct' if value == ref else 'incorrect','parsed_answer':str(value),'score':float(value == ref)}
+
+
+def score_choice(raw, reference, truncated=False):
+    if truncated:
+        return {'outcome':'parse_error','parsed_answer':None,'score':None,'error_category':'truncated'}
+    text = raw.strip()
+    labels = re.findall(r'(?im)^\s*answer\s*:\s*([A-D])\s*\.?\s*$', text)
+    if not labels and re.fullmatch(r'[A-D]\.?', text, flags=re.I):
+        labels = [text[0]]
+    if not labels:
+        match = re.fullmatch(r'(?is)the answer is\s+([A-D])\s*\.?', text)
+        if match:
+            labels = [match.group(1)]
+    labels = [label.upper() for label in labels]
+    if not labels or len(set(labels)) != 1:
+        return {'outcome':'parse_error','parsed_answer':None,'score':None,'error_category':'ambiguous' if labels else 'malformed'}
+    if reference not in 'ABCD' or len(reference) != 1:
+        return {'outcome':'evaluator_error','parsed_answer':None,'score':None}
+    answer = labels[0]
+    return {'outcome':'correct' if answer == reference else 'incorrect','parsed_answer':answer,'score':float(answer == reference)}
