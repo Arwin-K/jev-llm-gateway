@@ -5,7 +5,12 @@ import json
 from datetime import datetime, timezone
 
 from .records import Attempt, Result, Outcome
+from .checkpoint import key as checkpoint_key
 from .scoring import score_math, score_choice, score_code
+
+
+def settings_fingerprint(limits):
+    return hashlib.sha256(json.dumps({'output_tokens':limits.output_tokens,'temperature':limits.temperature},sort_keys=True).encode()).hexdigest()
 
 
 class RunLimits:
@@ -43,7 +48,7 @@ async def evaluate_one(prompt, tier, run_id, settings, transport, budget, limits
         raise PermissionError('paid frontier requires explicit enablement, credentials, rates and positive caps')
     backend=settings.backend(tier)
     payload={'model':backend.model,'messages':[{'role':'user','content':prompt.prompt}],'max_tokens':limits.output_tokens,'temperature':limits.temperature,'stream':False}
-    settings_fp=hashlib.sha256(json.dumps({'output_tokens':limits.output_tokens,'temperature':limits.temperature},sort_keys=True).encode()).hexdigest()
+    settings_fp=settings_fingerprint(limits)
     began=datetime.now(timezone.utc); attempts=[]; raw=None; score=None; parsed=None; error=None; model=backend.model; usage={}
     outcome=Outcome.BLOCKED
     for _ in range(limits.retries+1):
@@ -76,11 +81,21 @@ async def evaluate_one(prompt, tier, run_id, settings, transport, budget, limits
     return Result(run_id=run_id,prompt_id=prompt.prompt_id,task=prompt.task,split=prompt.split,dataset_revision=prompt.dataset_revision,source_revision=prompt.source_revision,template_fingerprint=prompt.template_fingerprint,settings_fingerprint=settings_fp,tier=tier,backend=backend.base_url,model=model,raw_response=raw,parsed_answer=parsed,score=score,outcome=outcome,error_category=error,started_at=began,ended_at=ended,prompt_tokens=usage.get('prompt_tokens'),completion_tokens=usage.get('completion_tokens'),execution='real',attempts=tuple(attempts))
 
 
-async def evaluate_batch(prompts, tiers, run_id, settings, transport, limits, paid_enabled=False, executor=None):
+async def evaluate_batch(prompts, tiers, run_id, settings, transport, limits, paid_enabled=False, executor=None, checkpoints=None):
     if not prompts or not tiers or any(p.split=='test' for p in prompts):
         raise ValueError('nonempty development prompts and tiers required')
+    pairs=[(p.prompt_id,tier) for p in prompts for tier in tiers]
+    if len(pairs)!=len(set(pairs)):
+        raise ValueError('duplicate prompt/tier in batch')
     sem=asyncio.Semaphore(limits.concurrency); budget=RunBudget(limits)
     async def one(prompt,tier):
         async with sem:
-            return await evaluate_one(prompt,tier,run_id,settings,transport,budget,limits,paid_enabled,executor)
+            k=checkpoint_key(prompt,tier,settings.backend(tier),settings_fingerprint(limits))
+            if checkpoints:
+                saved=checkpoints.get(k,settings.backend(tier).model)
+                if saved: return saved
+            result=await evaluate_one(prompt,tier,run_id,settings,transport,budget,limits,paid_enabled,executor)
+            if checkpoints and result.outcome not in {Outcome.BACKEND_ERROR,Outcome.BLOCKED,Outcome.EVALUATOR_ERROR}:
+                checkpoints.put(k,result)
+            return result
     return await asyncio.gather(*(one(prompt,tier) for prompt in prompts for tier in tiers))
