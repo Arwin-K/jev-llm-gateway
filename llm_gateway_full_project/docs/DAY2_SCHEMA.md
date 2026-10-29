@@ -7,3 +7,5 @@ Math scoring accepts an explicit `Answer: <number>` line or a sole numeric line.
 Multiple-choice scoring accepts a standalone A–D, `Answer: X`, or `The answer is X.` It rejects ordinary prose, conflicting labels, and known truncated completions. Parsing failure is separate from an incorrect selected option.
 
 The audit CSV deliberately includes private prompts and references and belongs under ignored `runs/`. It samples up to 40 observed development rows per task by stable prompt/tier order. Every row is marked `pending_human_review`; creating an export does not constitute a human audit. No audit export is included in public aggregate reports.
+
+Oracle labels are offline hindsight references derived only for training prompts with all three tier results and comparable charges. Missing evaluations, failures, and unknown costs abstain; none-correct has its own status. Equal cheapest successful costs tie, with a deterministic tier order for the stored label. This is not a deployable perfect router.
