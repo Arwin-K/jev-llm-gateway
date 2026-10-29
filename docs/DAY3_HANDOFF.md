@@ -54,3 +54,20 @@ The training command refuses empty labels and mismatched backend or generation i
 Start and inspect native Ollama models, check disk/memory before a Strands download, collect bounded real answers across all three tiers, source current frontier and Jev rates and obtain a positive explicit paid budget, complete the pending human scoring audit, then create train/validation labels. Only after that can Colab training, artifact reload on Mac, Jev/Strands live comparison, validation threshold selection, calibration, and end-to-end timing be measured. The Day 4 verifier/cascade/cache work can consume this router contract; no Day 4 feature is claimed here.
 
 Official integration references checked 2026-10-29: [TypeSafe OpenAPI schema](https://api.typesafe.ai/openapi.json), [TypeSafe Python SDK](https://github.com/typesafe-ai/typesafe-sdk-python/blob/main/README.md), and [Strands Decider inference guide](https://github.com/strands-labs/strands-decider/blob/main/docs/inference.md).
+
+## Follow-up command paths
+
+The decision collector writes private JSONL with selected tiers, probability semantics, usage, timing, or explicit error categories. It never generates answers. For a local fixed policy, this exact bounded command was run:
+
+```bash
+.venv/bin/python -m jev_gateway.routing.evaluate --policy always-small --max-prompts 1 --max-decisions 1
+```
+
+For a live Jev validation collection, configure an official HTTPS rate source and ISO effective date in addition to key, model, positive environment caps, and current rate values. Then use `--policy jev-choice` or `--policy jev-threshold` with `--paid-enabled --max-usd <positive-run-cap> --max-decisions <positive-request-cap>`. No such run has occurred. Pass the printed decision file to replay and calibration:
+
+```bash
+.venv/bin/python -m jev_gateway.routing.comparison --run runs/<validation-run>.jsonl --selections runs/<decision-run>.jsonl
+.venv/bin/python -m jev_gateway.routing.calibration_report --event generator-success --decisions runs/<decision-run>.jsonl --run runs/<validation-run>.jsonl
+```
+
+The calibration CLI also accepts `selected-success` and `oracle-tier`. Its denominator covers selected decisions with the requested probability event; failed decisions remain in the decision file and are not assigned fabricated probabilities. It emits `insufficient_data` and no figure when independently scored coverage is absent; it does not treat a router's own probability as ground truth.

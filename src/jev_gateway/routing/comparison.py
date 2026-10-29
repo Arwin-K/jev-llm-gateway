@@ -107,6 +107,25 @@ def write_frontier_svg(reports: list[dict], path: Path):
                     + circles + '</svg>')
 
 
+def merge_selections(generated: list[Selection], supplied: list[dict]) -> list[Selection]:
+    """A saved real decision replaces its generated baseline for the same prompt."""
+    merged = {(s.policy,s.prompt_id):s for s in generated}
+    seen = set()
+    for entry in supplied:
+        if entry.get('status') == 'selected':
+            selected = Selection(**entry['selection'])
+        elif 'policy' in entry and 'tier' in entry:
+            selected = Selection(**entry)
+        else:
+            continue
+        key = (selected.policy,selected.prompt_id)
+        if key in seen:
+            raise ValueError('duplicate supplied policy selection for prompt')
+        seen.add(key)
+        merged[key] = selected
+    return list(merged.values())
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--manifest', type=Path, default=Path('runs/day2-manifest.jsonl'))
@@ -122,9 +141,9 @@ def main(argv=None):
         parser.error('comparison output must be under runs/')
     prompts = load(args.manifest, 'validation')
     results = [Result.model_validate_json(line) for line in args.run.read_text().splitlines() if line]
-    selections = baselines(prompts, seed=args.seed) + hindsight(prompts, results)
-    if args.selections:
-        selections += [Selection(**json.loads(line)) for line in args.selections.read_text().splitlines() if line]
+    generated = baselines(prompts, seed=args.seed) + hindsight(prompts, results)
+    supplied = [json.loads(line) for line in args.selections.read_text().splitlines() if line] if args.selections else []
+    selections = merge_selections(generated, supplied)
     reports = compare(prompts, results, selections, policy_names=[
         'always-small','always-medium','always-frontier',f'seeded-random-{args.seed}',
         'observed-hindsight-oracle','distilbert','prompted-small','jev-choice',
