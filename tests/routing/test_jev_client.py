@@ -11,7 +11,8 @@ def enabled(monkeypatch):
     monkeypatch.setenv('TYPESAFE_API_KEY', 'test-only')
     return replace(from_env(), jev_model='jev-latest', jev_max_requests=1,
                    jev_max_tokens=100000, jev_max_usd=1,
-                   jev_input_usd_per_million=1, jev_output_usd_per_million=1)
+                   jev_input_usd_per_million=1, jev_output_usd_per_million=1, jev_rate_source_url='https://example.com/rates',
+                   jev_rate_effective_date='2026-10-29')
 
 
 def test_official_contract_and_budget(monkeypatch):

@@ -1,6 +1,7 @@
 """Typed, explicit runtime configuration. Secrets are read only from environment."""
 
 import os
+from datetime import date
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -51,6 +52,8 @@ class Settings:
     jev_input_usd_per_million: float = 0.0
     jev_output_usd_per_million: float = 0.0
     jev_decision_output_tokens: int = 256
+    jev_rate_source_url: str = ""
+    jev_rate_effective_date: str = ""
     router_policy: str = "jev-choice"
     router_seed: int = 17
     router_artifact: str = ""
@@ -63,6 +66,11 @@ class Settings:
     def __post_init__(self):
         if not 0 < self.timeout_seconds <= 300:
             raise ConfigError("timeout_seconds must be between 0 and 300")
+        if self.jev_rate_effective_date:
+            try:
+                date.fromisoformat(self.jev_rate_effective_date)
+            except ValueError as exc:
+                raise ConfigError("Jev rate effective date must be ISO format") from exc
         if not 1 <= self.max_output_tokens <= 8192:
             raise ConfigError("max_output_tokens must be between 1 and 8192")
         if (min(self.frontier_max_requests, self.frontier_max_tokens, self.jev_max_requests, self.jev_max_tokens) < 0
@@ -79,7 +87,8 @@ class Settings:
     def jev_enabled(self):
         return bool(self.jev_model != "UNCONFIGURED" and os.getenv("TYPESAFE_API_KEY") and
                     self.jev_max_requests > 0 and self.jev_max_tokens > 0 and self.jev_max_usd > 0 and
-                    self.jev_input_usd_per_million > 0 and self.jev_output_usd_per_million > 0)
+                    self.jev_input_usd_per_million > 0 and self.jev_output_usd_per_million > 0 and
+                    self.jev_rate_source_url.startswith("https://") and self.jev_rate_effective_date)
 
     def backend(self, tier):
         if tier not in {"small", "medium", "frontier"}:
@@ -119,6 +128,8 @@ def from_env():
         jev_input_usd_per_million=number("JEV_DECISION_INPUT_USD_PER_MILLION", "0"),
         jev_output_usd_per_million=number("JEV_DECISION_OUTPUT_USD_PER_MILLION", "0"),
         jev_decision_output_tokens=integer("JEV_DECISION_OUTPUT_TOKENS", "256"),
+        jev_rate_source_url=os.getenv("JEV_DECISION_RATE_SOURCE_URL", ""),
+        jev_rate_effective_date=os.getenv("JEV_DECISION_RATE_EFFECTIVE_DATE", ""),
         router_policy=os.getenv("JEV_ROUTER_POLICY", "jev-choice"),
         router_seed=integer("JEV_ROUTER_SEED", "17"),
         router_artifact=os.getenv("JEV_ROUTER_ARTIFACT", ""),

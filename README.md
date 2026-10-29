@@ -13,7 +13,7 @@ The gateway now supports automatic policy selection, typed Jev choice and succes
 ## Observed evidence
 
 - Pinned source preparation selected **2,500 prompts**: 1,100 GSM8K math, 1,000 MMLU choice, and 400 sanitized MBPP code tasks. Project splits are 1,500 train, 500 validation, and 500 held-out test. The committed [manifest index](docs/day2-manifest-index.jsonl) contains IDs and hashes, not private prompt text or answers.
-- The Day 3 offline suite passed **69 tests** at the last recorded check. Controlled code fixtures passed, failed, crashed, and timed out inside the Docker evaluator as expected.
+- The Day 3 offline suite passed **72 tests** at the last recorded check. Controlled code fixtures passed, failed, crashed, and timed out inside the Docker evaluator as expected.
 - A bounded real validation check attempted one prompt on each local tier. Both returned backend errors because Ollama was unreachable. Frontier was unconfigured. **No model answer quality, live serving latency, or paid API cost has been measured.** The project test split is unused.
 
 See [the Day 2 handoff](docs/DAY2_HANDOFF.md) for the exact environment, commands, counts, and limitations.

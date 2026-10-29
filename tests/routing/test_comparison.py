@@ -21,3 +21,12 @@ def test_offline_replay_preserves_missing_coverage(tmp_path):
 def test_seeded_baseline_order_is_stable():
     p=prompt('validation')
     assert baselines([p],seed=8)==baselines([p],seed=8)
+
+
+def test_saved_decision_replaces_generated_baseline_once():
+    from jev_gateway.routing.comparison import merge_selections
+    generated=[Selection('p','always-small','small',0.)]
+    saved={'status':'selected','selection':{'prompt_id':'p','policy':'always-small','tier':'small',
+           'decision_charge_usd':0.,'decision_duration_ms':.1,'execution':'deterministic_local'}}
+    merged=merge_selections(generated,[saved])
+    assert len(merged)==1 and merged[0].decision_duration_ms==.1
