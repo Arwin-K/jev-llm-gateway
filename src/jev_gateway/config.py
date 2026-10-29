@@ -15,11 +15,14 @@ class Backend:
     model: str
     base_url: str
     api_key_env: str | None = None
+    max_context_tokens: int = 4096
 
     def __post_init__(self):
         parsed = urlparse(self.base_url)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.password:
             raise ConfigError(f"{self.tier} base URL must be an absolute HTTP(S) URL without credentials")
+        if self.max_context_tokens < 1:
+            raise ConfigError(f"{self.tier} context limit must be positive")
         if not self.model.strip():
             raise ConfigError(f"{self.tier} model is required")
 
@@ -75,9 +78,9 @@ def from_env():
             raise ConfigError(f"{name} must be a number") from exc
 
     return Settings(
-        small=Backend("small", os.getenv("JEV_SMALL_MODEL", "qwen2.5:1.5b"), os.getenv("JEV_SMALL_URL", "http://127.0.0.1:11434/v1")),
-        medium=Backend("medium", os.getenv("JEV_MEDIUM_MODEL", "qwen2.5:7b"), os.getenv("JEV_MEDIUM_URL", "http://127.0.0.1:11434/v1")),
-        frontier=Backend("frontier", os.getenv("JEV_FRONTIER_MODEL") or "UNCONFIGURED", os.getenv("JEV_FRONTIER_URL", "https://api.openai.com/v1"), "JEV_FRONTIER_API_KEY"),
+        small=Backend("small", os.getenv("JEV_SMALL_MODEL", "qwen2.5:1.5b"), os.getenv("JEV_SMALL_URL", "http://127.0.0.1:11434/v1"), max_context_tokens=integer("JEV_SMALL_CONTEXT_TOKENS", "4096")),
+        medium=Backend("medium", os.getenv("JEV_MEDIUM_MODEL", "qwen2.5:7b"), os.getenv("JEV_MEDIUM_URL", "http://127.0.0.1:11434/v1"), max_context_tokens=integer("JEV_MEDIUM_CONTEXT_TOKENS", "4096")),
+        frontier=Backend("frontier", os.getenv("JEV_FRONTIER_MODEL") or "UNCONFIGURED", os.getenv("JEV_FRONTIER_URL", "https://api.openai.com/v1"), "JEV_FRONTIER_API_KEY", max_context_tokens=integer("JEV_FRONTIER_CONTEXT_TOKENS", "4096")),
         timeout_seconds=number("JEV_TIMEOUT_SECONDS", "60"),
         max_output_tokens=integer("JEV_MAX_OUTPUT_TOKENS", "256"),
         frontier_max_requests=integer("JEV_FRONTIER_MAX_REQUESTS", "0"),
