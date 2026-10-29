@@ -46,3 +46,7 @@ D3-01 defines a shared decision with explicit probability event and identities. 
 ## Day 3 block 2
 
 D3-04 adds a repository-source Colab notebook and optional weighted DistilBERT trainer; code and CLI entry points are syntax and offline checked, but training is pending because the 1,500 train prompts have zero complete observed labels. D3-05 validates trained artifact provenance and compares predictions before and after reload in the real training path; no artifact exists to exercise that check. D3-06 adds an artifact-gated CPU/MPS inference adapter with explicit configuration compatibility. No Mac inference latency or memory can be measured without a trained artifact.
+
+## Day 3 block 3
+
+D3-07 adds bounded prompted-small routing with strict JSON parsing; no local Ollama inference was available. D3-08 adds a one-request TypeSafe System One client with explicit paid admission and offline contract fixtures, using the current official endpoint and schema. D3-09 adds typed Jev choice routing with versioned backend descriptions and preserves the choice distribution as a routing-choice probability, not generator-answer correctness. Jev credentials, model, rates, and positive caps are absent, so live Jev calls remain disabled.

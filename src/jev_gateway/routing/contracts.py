@@ -43,6 +43,9 @@ class Decision:
     probability_event: str | None = None
     probabilities: Mapping[str, float] = field(default_factory=dict)
     usage: Mapping[str, int] = field(default_factory=dict)
+    question_version: str | None = None
+    decision_model: str | None = None
+    raw_value: str | float | None = None
 
     def __post_init__(self):
         if self.tier is not None and self.tier not in TIERS:
