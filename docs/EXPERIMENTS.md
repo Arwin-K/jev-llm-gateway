@@ -34,3 +34,5 @@ The existing `runs/day2-run-8debb816c7474f559ab5197df9c1fea6.jsonl` was inspecte
 ## Day 3 local decision-only benchmark — 2026-10-29 America/Toronto
 
 Run `e6f85069cc9d4bd3a5545766cb7dc0a6` is preserved in ignored `runs/day3-routing-benchmark-e6f85069cc9d4bd3a5545766cb7dc0a6.json`. On the execution Mac, 10 warm-ups and 100 sequential measured calls per available local baseline used one short prompt and distinct request IDs. Always-small p50/p95 were 0.001583/0.001667 ms; always-medium 0.001583/0.001667 ms; seeded-random 0.002188/0.002750 ms. All 300 measured decisions succeeded. These microsecond-scale Python policy timings are subject to timer and scheduling noise; no model loaded, network call, generation, or full request was measured. Classifier, Jev, prompted, and Strands timings remain pending access.
+
+Day 3 final offline check: `.venv/bin/pytest -q` returned 69 passed, one Starlette deprecation warning, 0.40 seconds. Sanitized raw output is `evidence/day3/mac-offline-20261029.txt`. `jev doctor` returned both local tiers unavailable with `ConnectError` and frontier unconfigured. No inference or training job is running.

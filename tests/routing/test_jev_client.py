@@ -36,3 +36,11 @@ def test_disabled_has_no_network(monkeypatch):
     client=JevClient(from_env())
     with pytest.raises(RoutingError):
         asyncio.run(client.decide('x', {'x':{'type':'noul','instructions':'yes?'}}))
+
+
+def test_expired_jev_deadline_does_not_spend(monkeypatch):
+    settings=enabled(monkeypatch)
+    client=JevClient(settings)
+    with pytest.raises(RoutingError):
+        asyncio.run(client.decide('x', {'x':{'type':'noul','instructions':'yes?'}}, deadline_seconds=0))
+    assert client.requests==0

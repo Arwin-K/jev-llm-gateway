@@ -10,6 +10,12 @@ TIERS = ('small', 'medium', 'frontier')
 class RoutingError(RuntimeError):
     """A policy could not make an admissible decision."""
 
+    def __init__(self, message: str, *, duration_ms: float | None = None,
+                 usage: Mapping[str, int] | None = None):
+        super().__init__(message)
+        self.duration_ms = duration_ms
+        self.usage = dict(usage or {})
+
 
 @dataclass(frozen=True)
 class RoutingRequest:

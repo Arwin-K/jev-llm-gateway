@@ -62,3 +62,7 @@ D3-13 adds defined-event Brier, ECE, reliability bins, and SVG output. D3-14 sel
 ## Day 3 automatic dispatch
 
 D3-17 accepts `model=auto` and dispatches the selected eligible tier through the existing nonstreaming or SSE path. Offline tests verify explicit-tier preservation, auto headers, trained-fallback failure semantics, ineligible frontier rejection, and streaming. The default Jev policy returns 503 here because its configured key/model/rates/caps and trained fallback artifact are absent; this is a deliberate closed state, not a successful live integration.
+
+## Day 3 block 6 and handoff
+
+D3-16 measured only fixed/random decision overhead on this Mac; the raw run ID and limits are in `EXPERIMENTS.md`. D3-17 integrated `model=auto` with an eligible-tier recheck, whole-request deadline, existing frontier reservation, SSE, and trace metadata. D3-18 freezes the implemented router configuration and evidence state in `config/day3-router.json` and `DAY3_HANDOFF.md`. The final offline suite passed 69 tests with one third-party Starlette deprecation warning. No paid decision or frontier call, training run, model answer, or held-out test evaluation occurred. All 18 Day 3 checkpoints have substantive local commits, though live/training portions remain blocked as described in the handoff.

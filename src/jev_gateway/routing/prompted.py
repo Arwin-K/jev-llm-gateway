@@ -28,6 +28,7 @@ class PromptedRouter:
                    'max_tokens': 24, 'messages': [
                        {'role':'system','content':instruction},
                        {'role':'user','content':request.text}]}
+        response = None
         try:
             response = await self.transport.complete(self.settings.small, payload)
             content = response['choices'][0]['message']['content']
@@ -35,7 +36,10 @@ class PromptedRouter:
             if not isinstance(parsed, dict) or set(parsed) != {'tier'} or parsed['tier'] not in request.eligible_tiers:
                 raise ValueError('invalid tier selection')
         except Exception as exc:
-            raise RoutingError('prompted router returned no valid eligible tier') from exc
+            usage = (response.get('usage') or {}) if isinstance(response, dict) else {}
+            raise RoutingError('prompted router returned no valid eligible tier',
+                               duration_ms=(time.perf_counter()-start)*1000,
+                               usage={k:v for k,v in usage.items() if k in {'prompt_tokens','completion_tokens','total_tokens'} and isinstance(v,int)}) from exc
         usage = response.get('usage') or {}
         return Decision(parsed['tier'], self.name, self.version,
                         (time.perf_counter()-start)*1000,

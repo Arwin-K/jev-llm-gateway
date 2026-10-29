@@ -8,12 +8,12 @@ A reproducible study of three-tier language-model serving, answer quality, cost,
 
 > How much answer quality can a cost-aware gateway retain while using smaller models when possible, and what latency and spending overhead do routing, verification, and caching introduce?
 
-The gateway and evaluation foundation are implemented. Jev routing, a trained DistilBERT fallback, verifier cascades, semantic caching, deployment, and controlled load studies remain future stages. The [project plan](docs/PLAN.md) describes their scope; it is not a claim that they have run.
+The gateway now supports automatic policy selection, typed Jev choice and success questions, a prompted small-model comparison, fixed and seeded-random baselines, and a local Strands typed-server adapter. The DistilBERT trainer and artifact-gated fallback are implemented but no trained artifact exists because real three-tier labels are absent. Verifier cascades, semantic caching, deployment, and controlled load studies remain future stages. The [project plan](docs/PLAN.md) describes their scope; it is not a claim that they have run.
 
 ## Observed evidence
 
 - Pinned source preparation selected **2,500 prompts**: 1,100 GSM8K math, 1,000 MMLU choice, and 400 sanitized MBPP code tasks. Project splits are 1,500 train, 500 validation, and 500 held-out test. The committed [manifest index](docs/day2-manifest-index.jsonl) contains IDs and hashes, not private prompt text or answers.
-- The offline suite passed **36 tests** at the last recorded check. Controlled code fixtures passed, failed, crashed, and timed out inside the Docker evaluator as expected.
+- The Day 3 offline suite passed **69 tests** at the last recorded check. Controlled code fixtures passed, failed, crashed, and timed out inside the Docker evaluator as expected.
 - A bounded real validation check attempted one prompt on each local tier. Both returned backend errors because Ollama was unreachable. Frontier was unconfigured. **No model answer quality, live serving latency, or paid API cost has been measured.** The project test split is unused.
 
 See [the Day 2 handoff](docs/DAY2_HANDOFF.md) for the exact environment, commands, counts, and limitations.
@@ -36,7 +36,7 @@ uv run jev serve
 uv run jev smoke --tier small
 ```
 
-`POST http://127.0.0.1:8080/v1/chat/completions` accepts text messages with `model` set to `small`, `medium`, or `frontier`, plus optional `stream`, `max_tokens`, and `temperature`. `model=auto`, tools, image, and audio inputs are not implemented. `/healthz` checks the process; `/readyz` does not prove a model is loaded. `jev doctor` checks backend availability. The frontier tier stays disabled without a model, key, current rates, and positive request, token, and USD caps. These application-side limits are not provider spending controls.
+`POST http://127.0.0.1:8080/v1/chat/completions` accepts text messages with `model` set to `small`, `medium`, `frontier`, or `auto`, plus optional `stream`, `max_tokens`, and `temperature`. `model=auto` uses the configured router and returns 503 when neither it nor a compatible trained fallback can decide. Tools, image, and audio inputs are not implemented. `/healthz` checks the process; `/readyz` does not prove a model is loaded. `jev doctor` checks backend availability. The frontier tier stays disabled without a model, key, current rates, and positive request, token, and USD caps. These application-side limits are not provider spending controls.
 
 ## Reproduce evaluation preparation
 
@@ -62,7 +62,7 @@ prompts/               Original staged project instructions
 runs/, data/           Ignored private outputs and source snapshots
 ```
 
-The [Colab notebook guide](notebooks/README.md) explains how to archive a committed source revision. A notebook runtime is not a permanent Mac service dependency. The [development guide](docs/DEVELOPMENT.md) explains module boundaries and testing. [Contributing](CONTRIBUTING.md) describes evidence and review expectations.
+The [Day 3 handoff](docs/DAY3_HANDOFF.md) gives routing, training, calibration, and comparison commands with current blockers. The [Colab notebook guide](notebooks/README.md) explains how to archive a committed source revision. A notebook runtime is not a permanent Mac service dependency. The [development guide](docs/DEVELOPMENT.md) explains module boundaries and testing. [Contributing](CONTRIBUTING.md) describes evidence and review expectations.
 
 ## Limitations
 
@@ -70,4 +70,4 @@ Generated code is scored only in a constrained Docker container; containers redu
 
 ## Branch milestones
 
-The [day-one branch](https://github.com/Arwin-K/Jev-LLM-gateway/tree/day-one) preserves the gateway and notebook work; the [day-two branch](https://github.com/Arwin-K/Jev-LLM-gateway/tree/day-two) contains the evaluation foundation. Both are merged into `main` with explicit merge commits. See [the history guide](docs/HISTORY.md) for the graph and checkpoint lookup.
+The `day-one` and `day-two` branches preserve the gateway and evaluation foundations. The local `day-three` branch contains automatic routing and comparison infrastructure. These changes are integrated through explicit local merge commits. See [the history guide](docs/HISTORY.md) for the graph and checkpoint lookup.

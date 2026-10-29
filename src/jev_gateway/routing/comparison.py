@@ -112,9 +112,12 @@ def main(argv=None):
     parser.add_argument('--manifest', type=Path, default=Path('runs/day2-manifest.jsonl'))
     parser.add_argument('--run', type=Path, required=True)
     parser.add_argument('--selections', type=Path)
-    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--output', type=Path)
     parser.add_argument('--seed', type=int, default=17)
     args = parser.parse_args(argv)
+    if args.output is None:
+        import uuid
+        args.output = Path('runs')/f'day3-validation-comparison-{uuid.uuid4().hex}.json'
     if not args.output.resolve().is_relative_to(Path('runs').resolve()):
         parser.error('comparison output must be under runs/')
     prompts = load(args.manifest, 'validation')
@@ -127,7 +130,8 @@ def main(argv=None):
         'observed-hindsight-oracle','distilbert','prompted-small','jev-choice',
         'jev-threshold','strands-decider'])
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(reports, indent=2))
+    with args.output.open('x') as stream:
+        stream.write(json.dumps(reports, indent=2))
     write_frontier_svg(reports, args.output.with_suffix('.svg'))
     print(json.dumps({'report':str(args.output), 'figure':str(args.output.with_suffix('.svg')),
                       'policies':len(reports), 'plotted':sum(r['total_charge_usd'] is not None and r['scored']>0 for r in reports)}))

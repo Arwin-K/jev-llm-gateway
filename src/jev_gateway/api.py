@@ -96,6 +96,7 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
                 raise HTTPException(status_code=503, detail='automatic router unavailable')
             routing_request = request_for(settings, tuple(m.model_dump() for m in request.messages),
                                           max_tokens, trace.request_id)
+            decision_started = time.monotonic()
             try:
                 decision = require_eligible(await asyncio.wait_for(
                     app.state.router.decide(routing_request), timeout=max(.001,deadline-time.monotonic())),
@@ -110,6 +111,8 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
             except (RoutingError, asyncio.TimeoutError, ValueError) as exc:
                 if app.state.fallback_router is None:
                     trace.routing = {'policy':settings.router_policy,'outcome':'failed',
+                                     'duration_ms':getattr(exc,'duration_ms',None) or (time.monotonic()-decision_started)*1000,
+                                     'usage':getattr(exc,'usage',{}),
                                      'fallback_reason':type(exc).__name__}
                     trace.finish('router_error')
                     raise HTTPException(status_code=503, detail='automatic routing unavailable') from exc
@@ -118,7 +121,10 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
                         app.state.fallback_router.decide(routing_request),
                         timeout=max(.001,deadline-time.monotonic())), routing_request)
                     trace.routing = {'policy':decision.policy,'version':decision.version,
-                                     'duration_ms':decision.duration_ms,'outcome':'fallback_selected',
+                                     'duration_ms':decision.duration_ms,
+                                     'primary_duration_ms':getattr(exc,'duration_ms',None) or (time.monotonic()-decision_started)*1000,
+                                     'primary_usage':getattr(exc,'usage',{}),
+                                     'outcome':'fallback_selected',
                                      'fallback_reason':type(exc).__name__,
                                      'probability_event':decision.probability_event,
                                      'decision_model':decision.decision_model,

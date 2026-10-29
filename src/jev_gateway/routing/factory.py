@@ -29,8 +29,9 @@ def build(settings, transport):
         if not settings.router_thresholds:
             raise ArtifactError('validation threshold selection file required')
         selection = json.loads(Path(settings.router_thresholds).read_text())
-        if not selection.get('selected'):
-            raise ArtifactError('no selected validation operating point')
+        if (not selection.get('selected') or not selection.get('objective') or
+            selection['selected'].get('execution') != 'offline_replay'):
+            raise ArtifactError('no documented validation operating point')
         return JevThresholdRouter(settings, client, selection['selected']['thresholds'],
                                   selection_id=str(settings.router_thresholds)), [client]
     if policy == 'strands-decider':

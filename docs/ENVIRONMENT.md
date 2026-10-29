@@ -22,3 +22,7 @@ The core Mac venv has no installed `torch` or `transformers`; those remain in th
 ## Strands Decider comparison requirements
 
 The official [Strands Decider inference guide](https://github.com/strands-labs/strands-decider/blob/main/docs/inference.md), checked 2026-10-29, documents a local `strands-decider serve CHECKPOINT --device mps --port 8099` typed `POST /v1/systemone` endpoint. It is a decision model, not a chat completion server. The adapter requires a loopback URL, explicit served model name, checkpoint identity, and device; the server should be launched with its strict-window option for comparisons. The current reference 2B checkpoint also downloads a roughly 4.5 GB base model. With this Mac's 18 GB memory and previously observed 18 GiB free disk, no checkpoint download, server start, memory measurement, or real inference was attempted. The typed HTTP path is fixture-tested only.
+
+## Day 3 Mac check — 2026-10-29 America/Toronto
+
+`jev doctor` still returned `ConnectError` for `qwen2.5:1.5b` and `qwen2.5:7b`; frontier was unconfigured. `ollama` and `uv` were absent from PATH. The available fixed/random decision benchmark ran on macOS 26.5.2 arm64 with no model loaded; run ID and latency results are in `EXPERIMENTS.md`. Process `ru_maxrss` was 31,424,512 bytes before and after that benchmark, a process high-water mark rather than per-policy allocation. Colab, Jev, Strands, and DistilBERT model paths were not measured.

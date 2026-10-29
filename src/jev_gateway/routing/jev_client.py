@@ -40,7 +40,7 @@ class JevClient:
             raise RoutingError('Jev disabled: model, key, sourced rates, and positive caps required')
         if not questions or len(questions) > 3 or any(q.get('type') not in {'choice','noul','score'} for q in questions.values()):
             raise RoutingError('invalid or excessive Jev questions')
-        timeout = min(self.settings.timeout_seconds, deadline_seconds or self.settings.timeout_seconds)
+        timeout = min(self.settings.timeout_seconds, self.settings.timeout_seconds if deadline_seconds is None else deadline_seconds)
         if timeout <= 0:
             raise RoutingError('Jev decision deadline expired')
         body = {'model': self.settings.jev_model, 'state': state, 'questions': questions}

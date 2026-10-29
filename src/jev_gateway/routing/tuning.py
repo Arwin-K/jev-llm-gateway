@@ -81,7 +81,8 @@ def main(argv=None):
     report = select(cases, json.loads(args.candidates.read_text()),
                     min_correct_completion_rate=args.min_quality, min_coverage=args.min_coverage)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, sort_keys=True))
+    with args.output.open('x') as stream:
+        stream.write(json.dumps(report, indent=2, sort_keys=True))
     print(json.dumps({'output':str(args.output), 'selected':report['selected'] is not None}))
 
 
