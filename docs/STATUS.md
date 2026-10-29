@@ -38,3 +38,7 @@ Next Mac command after installing Ollama: `ollama pull qwen2.5:1.5b`, then `.ven
 ## Day 2 — 2026-10-28 America/Toronto
 
 Sixteen substantive local commits cover D2-01 through D2-18, with D2-02–04 combined into one adapter commit to meet the requested 16-commit target. Implementation includes frozen manifest preparation, isolated code scoring, task scorers, bounded evaluation, resumption, audit export, hindsight labels, cost states, quality reports, and separate serving baselines. D2-18's real-measurement checkpoint is partial: source acquisition and sandbox fixtures succeeded, but configured generation tiers were unavailable, so no model answer quality or latency was measured. The test split remains unused. See `DAY2_HANDOFF.md` for counts, commands, and blockers.
+
+## Day 3 — 2026-10-29 America/Toronto, block 1
+
+D3-01 defines a shared decision with explicit probability event and identities. D3-02 adds fixed and request-ID-seeded random policies with eligibility gates. D3-03 prepares training labels only from complete, identity-compatible, real train observations. The existing private Day 2 run contains two validation backend errors and zero train results, so the current labeled training subset is **0 of 1,500**; class balance and trained accuracy cannot yet be measured. Local policy checks are offline fixtures, not backend inference.
