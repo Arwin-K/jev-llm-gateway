@@ -22,16 +22,18 @@ class TrainingRow:
     cost_basis: str
 
 
-def prepare_training(prompts: list[Prompt], results: list[Result]) -> tuple[list[TrainingRow], dict]:
+def prepare_training(prompts: list[Prompt], results: list[Result], split: str = 'train') -> tuple[list[TrainingRow], dict]:
+    if split not in {'train', 'validation'}:
+        raise PermissionError('held-out test is unavailable to training preparation')
     by_prompt = defaultdict(list)
     for result in results:
-        if result.split == 'train' and result.execution == 'real':
+        if result.split == split and result.execution == 'real':
             by_prompt[result.prompt_id].append(result)
     rows = []
     states = Counter()
     for prompt in prompts:
-        if prompt.split != 'train':
-            raise PermissionError('training preparation accepts train prompts only')
+        if prompt.split != split:
+            raise PermissionError('prompt split does not match requested development split')
         observed = by_prompt[prompt.prompt_id]
         # Multiple versions of one tier are ambiguous rather than votes or extra samples.
         if len({r.tier for r in observed}) != len(observed):
@@ -45,12 +47,12 @@ def prepare_training(prompts: list[Prompt], results: list[Result]) -> tuple[list
         if len({r.settings_fingerprint for r in observed}) > 1:
             states['settings_mismatch'] += 1
             continue
-        oracle = oracle_label(prompt, observed)
+        oracle = oracle_label(prompt, observed, allowed_split=split)
         states[oracle.status] += 1
         if oracle.status != 'labeled':
             continue
         selected = {r.tier: r for r in observed}
-        rows.append(TrainingRow(prompt.prompt_id, prompt.prompt, oracle.tier, 'train',
+        rows.append(TrainingRow(prompt.prompt_id, prompt.prompt, oracle.tier, split,
                                 prompt.source_revision, prompt.dataset_revision,
                                 prompt.template_fingerprint, observed[0].settings_fingerprint,
                                 {t: selected[t].model for t in TIERS},

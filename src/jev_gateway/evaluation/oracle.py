@@ -13,9 +13,9 @@ class OracleLabel:
     cost_basis: str | None = None
 
 
-def label(prompt, results, cost_basis='recorded_charge_usd'):
-    if prompt.split != 'train':
-        raise PermissionError('training labels use training split only')
+def label(prompt, results, cost_basis='recorded_charge_usd', allowed_split='train'):
+    if allowed_split not in {'train', 'validation'} or prompt.split != allowed_split:
+        raise PermissionError('oracle labels require the explicitly authorized development split')
     selected={r.tier:r for r in results if r.prompt_id==prompt.prompt_id}
     if set(selected)!=set(TIERS):
         return OracleLabel(prompt.prompt_id,'incomplete',None,cost_basis=cost_basis)

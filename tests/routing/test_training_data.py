@@ -34,3 +34,16 @@ def test_validation_cannot_enter_training():
         pass
     else:
         raise AssertionError('validation entered training')
+
+
+def test_validation_labels_are_separate_and_test_is_forbidden():
+    rows, report = prepare_training([prompt('validation')],
+                                    [result(t, split='validation') for t in ('small','medium','frontier')],
+                                    split='validation')
+    assert rows[0].split == 'validation' and report['labeled'] == 1
+    try:
+        prepare_training([], [], split='test')
+    except PermissionError:
+        pass
+    else:
+        raise AssertionError('held-out test entered preparation')
