@@ -1,12 +1,12 @@
-"""Explicit source download and frozen manifest preparation; never runs on normal tests."""
+"""Explicit pinned source download and frozen manifest preparation."""
 import json
 from pathlib import Path
-from jev_gateway.evaluation.datasets import fetch_hf, fetch_mbpp
+from jev_gateway.evaluation.datasets import fetch_parquet, fetch_mbpp, GSM_REV, MMLU_REV
 from jev_gateway.evaluation.manifest import build, save
 
 sources = Path('data/day2_sources')
-print('gsm8k', fetch_hf('openai/gsm8k', '740312add88f781978c0658806c59bc2815b9866', 'main', 'train', sources/'gsm8k-train.jsonl'), flush=True)
-print('mmlu', fetch_hf('cais/mmlu', 'c30699e8356da336a370243923dbaf21066bb9fe', 'all', 'test', sources/'mmlu-test.jsonl'), flush=True)
+print('gsm8k', fetch_parquet('openai/gsm8k', GSM_REV, 'main/train-00000-of-00001.parquet', sources/'gsm8k-train.jsonl'), flush=True)
+print('mmlu', fetch_parquet('cais/mmlu', MMLU_REV, 'all/test-00000-of-00001.parquet', sources/'mmlu-test.jsonl'), flush=True)
 print('mbpp', fetch_mbpp(sources/'mbpp-sanitized.jsonl'), flush=True)
 prompts = build(sources)
 save(prompts, Path('runs/day2-manifest.jsonl'))

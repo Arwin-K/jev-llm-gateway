@@ -145,3 +145,5 @@ Target: at least 18 genuine commits on each of six work days, for at least 108 t
 | D6-17 | docs: add contributor and artifact provenance guidance | Document code license choice, model/data terms, configs, trained artifacts, and retraining. | Forks can substitute models and understand policy compatibility. |
 | D6-18 | release: checkpoint full project and publication checklist | Audit full-scope acceptance, secrets, artifact sizes, command validity, and local commit history. | Create a local release checkpoint; publish only to a specified authorized destination. |
 
+
+Day 2 execution note (2026-10-28): the user requested 16 commits instead of this plan's 18. D2-02 through D2-04 were combined into one substantive dataset-adapter commit; all remaining Day 2 checkpoint IDs have their own commits. The D2-18 live model measurement portion is explicitly blocked by unavailable Ollama and unconfigured frontier access; see `docs/DAY2_HANDOFF.md`.

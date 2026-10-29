@@ -31,3 +31,13 @@ def test_resumption_avoids_second_call(tmp_path):
     first=asyncio.run(evaluate_batch([prompt],['small'],'first',from_env(),transport,limits,checkpoints=store))
     second=asyncio.run(evaluate_batch([prompt],['small'],'second',from_env(),transport,limits,checkpoints=store))
     assert transport.calls==1 and second[0].run_id=='first' and second[0].reuse_of=='first'
+
+
+def test_reported_usage_overrun_stops_future_admission():
+    settings=from_env(); limits=RunLimits(2,1000,0)
+    budget=RunBudget(limits)
+    async def check():
+        assert await budget.reserve('x','small',settings)
+        await budget.reconcile('small',settings,{'prompt_tokens':1001,'completion_tokens':1})
+        assert not await budget.reserve('x','small',settings)
+    asyncio.run(check())

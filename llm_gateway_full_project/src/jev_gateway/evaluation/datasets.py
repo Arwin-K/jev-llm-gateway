@@ -87,3 +87,25 @@ def read_jsonl(path):
     with open(path) as stream:
         for line in stream:
             yield json.loads(line)
+
+
+def fetch_parquet(dataset, revision, parquet_path, output: Path):
+    """Pinned Parquet snapshot via optional duckdb; used when viewer API is throttled."""
+    import duckdb
+    url=f'https://huggingface.co/datasets/{dataset}/resolve/{revision}/{parquet_path}'
+    request=urllib.request.Request(url,headers={'User-Agent':'jev-gateway-evaluation/0.1'})
+    output.parent.mkdir(parents=True,exist_ok=True)
+    binary=output.with_suffix('.parquet')
+    with urllib.request.urlopen(request,timeout=60) as response, binary.open('wb') as stream:
+        while chunk:=response.read(1024*1024): stream.write(chunk)
+    connection=duckdb.connect()
+    try:
+        rows=connection.execute('SELECT * FROM read_parquet(?)',[str(binary)])
+        names=[column[0] for column in rows.description]
+        with output.open('w') as stream:
+            for index,values in enumerate(rows.fetchall()):
+                stream.write(json.dumps({'source_index':index,**dict(zip(names,values))},ensure_ascii=False)+'\n')
+    finally:
+        connection.close()
+        binary.unlink(missing_ok=True)
+    return index+1

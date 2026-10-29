@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from .records import Attempt, Result, Outcome
 from .checkpoint import key as checkpoint_key
+from .cost import attach_cost
 from .scoring import score_math, score_choice, score_code
 
 
@@ -23,7 +24,7 @@ class RunLimits:
 
 class RunBudget:
     def __init__(self, limits):
-        self.limits=limits; self.lock=asyncio.Lock(); self.requests=0; self.tokens=0; self.usd=0.0; self.frontier_requests=0; self.frontier_tokens=0; self.frontier_usd=0.0
+        self.limits=limits; self.lock=asyncio.Lock(); self.requests=0; self.tokens=0; self.usd=0.0; self.frontier_requests=0; self.frontier_tokens=0; self.frontier_usd=0.0; self.observed_tokens=0; self.observed_usd=0.0; self.frontier_observed_tokens=0; self.overrun=False
 
     async def reserve(self, prompt, tier, settings):
         input_units=4*len(prompt)+32
@@ -32,6 +33,7 @@ class RunBudget:
         if tier=='frontier':
             dollars=(input_units*settings.frontier_input_usd_per_million+self.limits.output_tokens*settings.frontier_output_usd_per_million)/1e6
         async with self.lock:
+            if self.overrun: return False
             if (self.requests+1>self.limits.max_requests or self.tokens+tokens>self.limits.max_tokens or self.usd+dollars>self.limits.max_usd or
                 tier=="frontier" and (self.frontier_requests+1>settings.frontier_max_requests or self.frontier_tokens+tokens>settings.frontier_max_tokens or self.frontier_usd+dollars>settings.frontier_max_usd)):
                 return False
@@ -39,6 +41,23 @@ class RunBudget:
             if tier=="frontier":
                 self.frontier_requests+=1; self.frontier_tokens+=tokens; self.frontier_usd+=dollars
             return True
+
+    async def reconcile(self, tier, settings, usage):
+        prompt_tokens=usage.get('prompt_tokens')
+        completion_tokens=usage.get('completion_tokens')
+        if prompt_tokens is None or completion_tokens is None:
+            return
+        actual_tokens=prompt_tokens+completion_tokens
+        actual_usd=0.0
+        if tier=='frontier':
+            actual_usd=(prompt_tokens*settings.frontier_input_usd_per_million+completion_tokens*settings.frontier_output_usd_per_million)/1e6
+        async with self.lock:
+            self.observed_tokens+=actual_tokens
+            self.observed_usd+=actual_usd
+            if tier=='frontier': self.frontier_observed_tokens+=actual_tokens
+            if (self.observed_tokens>self.limits.max_tokens or self.observed_usd>self.limits.max_usd or
+                self.frontier_observed_tokens>settings.frontier_max_tokens or self.observed_usd>settings.frontier_max_usd and tier=='frontier'):
+                self.overrun=True
 
 
 async def evaluate_one(prompt, tier, run_id, settings, transport, budget, limits, paid_enabled=False, executor=None):
@@ -61,6 +80,7 @@ async def evaluate_one(prompt, tier, run_id, settings, transport, budget, limits
             model=reply.get('model') or backend.model
             raw=reply['choices'][0]['message']['content']
             usage=reply.get('usage') or {}
+            await budget.reconcile(tier,settings,usage)
         except Exception as exc:
             end=datetime.now(timezone.utc)
             error='timeout' if isinstance(exc,asyncio.TimeoutError) else 'backend_error'
@@ -81,7 +101,7 @@ async def evaluate_one(prompt, tier, run_id, settings, transport, budget, limits
     return Result(run_id=run_id,prompt_id=prompt.prompt_id,task=prompt.task,split=prompt.split,dataset_revision=prompt.dataset_revision,source_revision=prompt.source_revision,template_fingerprint=prompt.template_fingerprint,settings_fingerprint=settings_fp,tier=tier,backend=backend.base_url,model=model,raw_response=raw,parsed_answer=parsed,score=score,outcome=outcome,error_category=error,started_at=began,ended_at=ended,prompt_tokens=usage.get('prompt_tokens'),completion_tokens=usage.get('completion_tokens'),execution='real',attempts=tuple(attempts))
 
 
-async def evaluate_batch(prompts, tiers, run_id, settings, transport, limits, paid_enabled=False, executor=None, checkpoints=None):
+async def evaluate_batch(prompts, tiers, run_id, settings, transport, limits, paid_enabled=False, executor=None, checkpoints=None, rates=None):
     if not prompts or not tiers or any(p.split=='test' for p in prompts):
         raise ValueError('nonempty development prompts and tiers required')
     pairs=[(p.prompt_id,tier) for p in prompts for tier in tiers]
@@ -93,8 +113,9 @@ async def evaluate_batch(prompts, tiers, run_id, settings, transport, limits, pa
             k=checkpoint_key(prompt,tier,settings.backend(tier),settings_fingerprint(limits))
             if checkpoints:
                 saved=checkpoints.get(k,settings.backend(tier).model)
-                if saved: return saved
+                if saved: return attach_cost(saved,(rates or {}).get(saved.model))
             result=await evaluate_one(prompt,tier,run_id,settings,transport,budget,limits,paid_enabled,executor)
+            result=attach_cost(result,(rates or {}).get(result.model))
             if checkpoints and result.outcome not in {Outcome.BACKEND_ERROR,Outcome.BLOCKED,Outcome.EVALUATOR_ERROR}:
                 checkpoints.put(k,result)
             return result

@@ -65,7 +65,11 @@ def validate(prompts):
 def save(prompts, path: Path):
     validate(prompts)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(''.join(p.model_dump_json() + '\n' for p in prompts))
+    content=''.join(p.model_dump_json() + '\n' for p in prompts)
+    if path.exists():
+        if path.read_text()!=content: raise FileExistsError('frozen manifest differs')
+        return
+    path.write_text(content)
 
 
 def load(path: Path, split='validation', allow_test=False):

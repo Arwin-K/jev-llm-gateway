@@ -21,3 +21,7 @@ curl -sS http://127.0.0.1:8080/v1/chat/completions \
 The frontier transport reads its key only from `JEV_FRONTIER_API_KEY`. It stays disabled until a model, key, positive request/token/USD caps, and current token prices are configured. Budget counters are process local, reserve conservatively, and do not replace provider account spending controls. Use one gateway worker. Never commit `.env` or run paid requests without explicit caps.
 
 For Colab, see [notebook instructions](notebooks/README.md). It serves on loopback within Colab and exports its results; it is not a permanent Mac backend. For evidence and blockers see [status](docs/STATUS.md), [environment](docs/ENVIRONMENT.md), and [experiments](docs/EXPERIMENTS.md).
+
+## Day 2 evaluation
+
+See [the Day 2 handoff](docs/DAY2_HANDOFF.md) for pinned dataset preparation, the 2,500-ID split index, bounded run/report/audit/serving commands, verified sandbox fixtures, and the current model-access blockers. Normal offline tests do not download datasets or call paid APIs.
