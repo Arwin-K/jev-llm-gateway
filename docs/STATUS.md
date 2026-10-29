@@ -58,3 +58,7 @@ D3-10 asks one typed success question per eligible generator in a single budgete
 ## Day 3 block 5
 
 D3-13 adds defined-event Brier, ECE, reliability bins, and SVG output. D3-14 selects thresholds only from saved validation cases with known costs and explicit quality/coverage objectives; no case set is available for a selection. D3-15 adds fixed/random/oracle/router validation replay and a cost-quality SVG. The real stored run produced ten policy coverage rows and **zero plotted points** because no answer was scored and no router selection was recorded. The held-out test was not loaded.
+
+## Day 3 automatic dispatch
+
+D3-17 accepts `model=auto` and dispatches the selected eligible tier through the existing nonstreaming or SSE path. Offline tests verify explicit-tier preservation, auto headers, trained-fallback failure semantics, ineligible frontier rejection, and streaming. The default Jev policy returns 503 here because its configured key/model/rates/caps and trained fallback artifact are absent; this is a deliberate closed state, not a successful live integration.

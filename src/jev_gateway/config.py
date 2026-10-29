@@ -51,6 +51,14 @@ class Settings:
     jev_input_usd_per_million: float = 0.0
     jev_output_usd_per_million: float = 0.0
     jev_decision_output_tokens: int = 256
+    router_policy: str = "jev-choice"
+    router_seed: int = 17
+    router_artifact: str = ""
+    router_thresholds: str = ""
+    strands_url: str = ""
+    strands_model: str = ""
+    strands_checkpoint: str = ""
+    strands_device: str = "mps"
 
     def __post_init__(self):
         if not 0 < self.timeout_seconds <= 300:
@@ -111,4 +119,12 @@ def from_env():
         jev_input_usd_per_million=number("JEV_DECISION_INPUT_USD_PER_MILLION", "0"),
         jev_output_usd_per_million=number("JEV_DECISION_OUTPUT_USD_PER_MILLION", "0"),
         jev_decision_output_tokens=integer("JEV_DECISION_OUTPUT_TOKENS", "256"),
+        router_policy=os.getenv("JEV_ROUTER_POLICY", "jev-choice"),
+        router_seed=integer("JEV_ROUTER_SEED", "17"),
+        router_artifact=os.getenv("JEV_ROUTER_ARTIFACT", ""),
+        router_thresholds=os.getenv("JEV_ROUTER_THRESHOLDS", ""),
+        strands_url=os.getenv("JEV_STRANDS_URL", ""),
+        strands_model=os.getenv("JEV_STRANDS_MODEL", ""),
+        strands_checkpoint=os.getenv("JEV_STRANDS_CHECKPOINT", ""),
+        strands_device=os.getenv("JEV_STRANDS_DEVICE", "mps"),
     )

@@ -17,6 +17,7 @@ class RequestTrace:
         self.started_at = datetime.now(timezone.utc).isoformat()
         self.tier = tier
         self.backend_model = backend_model
+        self.routing = None
 
     def finish(self, status: str, usage: dict | None = None, cost_status: str = "unknown"):
         record = {
@@ -25,6 +26,7 @@ class RequestTrace:
             "duration_ms": round((time.monotonic() - self.started_monotonic) * 1000, 3),
             "tier": self.tier,
             "backend_model": self.backend_model,
+            "routing": self.routing,
             "status": status,
             "usage": {key: usage.get(key) for key in ("prompt_tokens", "completion_tokens", "total_tokens")} if usage else None,
             "cost_status": cost_status,
