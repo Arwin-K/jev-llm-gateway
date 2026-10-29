@@ -50,3 +50,7 @@ D3-04 adds a repository-source Colab notebook and optional weighted DistilBERT t
 ## Day 3 block 3
 
 D3-07 adds bounded prompted-small routing with strict JSON parsing; no local Ollama inference was available. D3-08 adds a one-request TypeSafe System One client with explicit paid admission and offline contract fixtures, using the current official endpoint and schema. D3-09 adds typed Jev choice routing with versioned backend descriptions and preserves the choice distribution as a routing-choice probability, not generator-answer correctness. Jev credentials, model, rates, and positive caps are absent, so live Jev calls remain disabled.
+
+## Day 3 block 4
+
+D3-10 asks one typed success question per eligible generator in a single budgeted Jev request; thresholds require an explicit validation selection ID and none exists yet. D3-11 implements the official local Strands typed server path; checkpoint download and real serving remain blocked by unverified disk/memory headroom. D3-12 adds offline failure checks for ineligible selections, context limits, provider disablement, malformed decisions, deadlines, and budget denial. No test used a real decision service or paid backend.
