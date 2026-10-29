@@ -13,9 +13,9 @@ This table distinguishes implemented code from real backend verification. See [e
 | Math, choice, and code scoring | Implemented | Edge-case tests; Docker pass/fail/crash/timeout fixtures | Human audit of model outputs and scorer corrections if needed |
 | Bounded three-tier quality runner and resumption | Implemented | Offline budget/resume tests; two live local attempts failed to connect | Collect real train/validation outputs across all tiers |
 | Cost accounting and hindsight labels | Implemented | Offline retry/cost/oracle tests | Real usage, sourced price inputs, complete training observations |
-| Quality and serving reports | Implemented | Offline denominator/metric tests | Real model quality and controlled serving measurements |
-| Jev routing and DistilBERT fallback | Planned | None | Labels, training, Jev integration |
-| Prompted LLM and Strands Decider comparisons | Planned | None | Supported backends and comparison runs |
+| Quality, serving, calibration, and router comparison reports | Implemented | Offline metric tests; validation replay produced zero plottable points | Real model answers, router decisions, sourced costs |
+| Jev choice/success routing and DistilBERT fallback | Implemented; trained fallback artifact absent | Offline contract and failure tests; no live Jev or classifier run | Paid access, complete train/validation labels, Colab training, Mac artifact benchmark |
+| Prompted LLM and Strands Decider comparisons | Implemented adapters | Offline typed/prompt contract checks; no live model run | Ollama and pinned Strands checkpoint/runtime |
 | Verification cascades and semantic cache | Planned | None | Verifier and embedding/cache implementation |
 | Compose, Prometheus, Grafana, kind | Planned | Docker Engine and sandbox image checked only | Deployment and monitoring implementation |
 | Locust load and failure tests | Planned | None | Bounded workloads and actual runs |

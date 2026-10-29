@@ -1,0 +1,15 @@
+{
+  "default_policy": "jev-choice",
+  "fallback_policy": "distilbert_when_compatible_artifact_configured",
+  "failure_policy": "return_503_without_eligible_decision",
+  "choice_question_version": "routing-choice-v1",
+  "success_question_version": "generator-success-v1",
+  "seeded_random_seed": 17,
+  "context_ceiling_defaults_tokens": {"small": 4096, "medium": 4096, "frontier": 4096},
+  "selected_success_thresholds": null,
+  "trained_artifact": null,
+  "validation_selection": null,
+  "live_jev_model": null,
+  "strands_checkpoint": null,
+  "note": "Null means unavailable or unselected; this file contains no invented validation setting."
+}
