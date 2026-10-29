@@ -25,3 +25,14 @@ For Colab, see [notebook instructions](notebooks/README.md). It serves on loopba
 ## Day 2 evaluation
 
 See [the Day 2 handoff](docs/DAY2_HANDOFF.md) for pinned dataset preparation, the 2,500-ID split index, bounded run/report/audit/serving commands, verified sandbox fixtures, and the current model-access blockers. Normal offline tests do not download datasets or call paid APIs.
+
+## Documentation map
+
+- [Start here](START_HERE.md): current state and first actions.
+- [Architecture](docs/ARCHITECTURE.md): implemented gateway and evaluation paths.
+- [Evaluation workflow](docs/EVALUATION_WORKFLOW.md): bounded commands, private outputs, and paid-call prerequisites.
+- [Development](docs/DEVELOPMENT.md): modules, tests, and extension rules.
+- [Feature status](docs/FEATURE_STATUS.md): implemented, verified, and pending scope.
+- [History](docs/HISTORY.md): descriptive commit subjects and checkpoint lookup.
+
+The original [setup guide](SETUP_AND_BUILD_GUIDE.md) and [checkpoint plan](docs/COMMIT_PLAN.md) are planning references. Use the status and experiment ledger for evidence of actual execution.

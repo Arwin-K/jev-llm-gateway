@@ -9,7 +9,7 @@ The full original project is required. No original component is a stretch goal.
 5. Day 5: Docker/Compose, monitoring, kind Kubernetes, steady/spike/soak tests, failure injection, CI.
 6. Day 6: NVIDIA performance experiment, frozen held-out evaluation, final report/figures, clean install/demo, release/publication preparation.
 
-Each day contains 18 checkpoint commits in COMMIT_PLAN.md. Extra real fixes can create additional commits. All actual work uses its real date/time. More time or resources may be needed to verify blocked components; do not silently reduce scope or report them as completed.
+The original COMMIT_PLAN.md lists 18 checkpoints per day. The completed Day 2 work used 16 commits at the user's request; see HISTORY.md for its checkpoint trailers. Extra real fixes can create additional commits. All actual work uses its real date/time. More time or resources may be needed to verify blocked components; do not silently reduce scope or report them as completed.
 
 The learning journal is handwritten. Generate finished prose from actual work at close; do not build a digital journal.
 

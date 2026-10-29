@@ -1,3 +1,5 @@
+> **Historical project plan.** This guide preserves the original requested scope and prompts. For implemented behavior and current commands, start with [START_HERE.md](START_HERE.md), [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md), and [docs/EVALUATION_WORKFLOW.md](docs/EVALUATION_WORKFLOW.md). Its planned commit subjects and early "not implemented" statements are not the current repository state.
+
 # Full Jev gateway project on M3 and Colab
 
 This guide replaces the earlier reduced-scope plans. It preserves the complete original project and organizes it into six intensive build days, each with at least 18 meaningful commit checkpoints. The planned minimum is 108 commits.

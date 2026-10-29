@@ -2,26 +2,26 @@
 
 The Day 1 gateway implements explicit-tier text chat, SSE, tracing, diagnostics, and a Colab serving notebook. `model=auto` and Jev routing are Day 3 work. No model inference, frontier call, Colab GPU run, training, or load test occurred.
 
-| ID | Commit | Verification and status |
+| ID | Change | Verification and status |
 | --- | --- | --- |
-| D1-01 | 7764899 | Full scope mapped. |
-| D1-02 | 8f69a1c | Sanitized Mac preflight; Colab GPU pending. |
-| D1-03 | 2448290 | Fresh venv install, import, CLI help, uv lock. |
-| D1-04 | 10dbdbc | Config invalid/disabled cases pass. |
-| D1-05 | 4d6ba55 | API contract tests pass; localhost health later returned HTTP 200. |
-| D1-06 | e4406c4 | Mock HTTP forwarding passes. |
-| D1-07 | ef3b3bc | Ollama small adapter offline-tested; real answer pending. |
-| D1-08 | 94d6717 | Medium residency adapter offline-tested; live memory/load pending. |
-| D1-09 | 1ade058 | Frontier budget admission tested; paid call disabled. |
-| D1-10 | 27a16e0 | Explicit dispatch mock-tested; live backend pending. |
-| D1-11 | a95c350 | Fragmented SSE and completion tested; live stream pending. |
-| D1-12 | 6d438ec | Timeout and sanitized error tests pass. |
-| D1-13 | 2d01a58 | Secret-free trace structure tested. |
-| D1-14 | cb90aa4 | Doctor reports both models unavailable; smoke failure path tested. |
-| D1-15 | 19bd683 | Notebook JSON and cell syntax validate; no Colab cells executed. |
-| D1-16 | 59a5eac | Core venv has no torch/CUDA/NVIDIA/vLLM packages. |
-| D1-17 | 3e6320f | Mac and Colab URL profiles pass offline integration; real models pending. |
-| D1-18 | see commit subject | Quickstart and evidence ledger prepared; clean-reader walkthrough pending. |
+| D1-01 | Scope and runtime profiles | Full scope mapped. |
+| D1-02 | Mac and Colab preflight | Sanitized Mac preflight; Colab GPU pending. |
+| D1-03 | Package and CLI | Fresh venv install, import, CLI help, uv lock. |
+| D1-04 | Backend configuration | Config invalid/disabled cases pass. |
+| D1-05 | API contract | API contract tests pass; localhost health later returned HTTP 200. |
+| D1-06 | Async HTTP transport | Mock HTTP forwarding passes. |
+| D1-07 | Small Ollama adapter | Ollama small adapter offline-tested; real answer pending. |
+| D1-08 | Medium Ollama adapter | Medium residency adapter offline-tested; live memory/load pending. |
+| D1-09 | Frontier admission guard | Frontier budget admission tested; paid call disabled. |
+| D1-10 | Nonstreaming dispatch | Explicit dispatch mock-tested; live backend pending. |
+| D1-11 | SSE forwarding | Fragmented SSE and completion tested; live stream pending. |
+| D1-12 | Deadlines and errors | Timeout and sanitized error tests pass. |
+| D1-13 | Request traces | Secret-free trace structure tested. |
+| D1-14 | Diagnostics and smoke | Doctor reports both models unavailable; smoke failure path tested. |
+| D1-15 | Colab notebook | Notebook JSON and cell syntax validate; no Colab cells executed. |
+| D1-16 | Runtime profiles | Core venv has no torch/CUDA/NVIDIA/vLLM packages. |
+| D1-17 | Profile integration tests | Mac and Colab URL profiles pass offline integration; real models pending. |
+| D1-18 | Setup and evidence | Quickstart and evidence ledger prepared; clean-reader walkthrough pending. |
 
 Final offline suite after `uv sync --locked`: 15 passed, one third-party Starlette deprecation warning, 0.16 seconds; raw output is in `evidence/day1/mac-offline-20261027-1314.txt`. A brief loopback gateway returned HTTP 200 from `/healthz` under elevated sandbox permission; the default sandbox denied socket binding. `jev doctor` returned `ConnectError` for both Ollama tiers and `frontier.configured=false`; raw report is in `evidence/day1/mac-doctor-20261027-1314.json`.
 

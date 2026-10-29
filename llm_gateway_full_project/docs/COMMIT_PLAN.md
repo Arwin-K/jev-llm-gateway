@@ -1,6 +1,6 @@
 # Full project commit plan
 
-Target: at least 18 genuine commits on each of six work days, for at least 108 total. These are checkpoints to execute, not a record of completed work. More commits are appropriate for additional real fixes. Record actual completion and checks in docs/STATUS.md.
+Original target: at least 18 genuine commits on each of six work days, for at least 108 total. These are planning checkpoints, not the current Git subjects or a record of completed work. Day 2 was explicitly changed to 16 commits, with its three dataset adapters combined. More commits are appropriate for additional real fixes. Record actual completion and checks in docs/STATUS.md.
 
 ## Day 1 Mac application and Colab execution
 
