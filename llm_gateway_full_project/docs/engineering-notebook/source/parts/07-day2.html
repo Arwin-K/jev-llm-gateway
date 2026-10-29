@@ -1,0 +1,243 @@
+<h1 id="part7"><span class="part-no">Part 7</span>Day 2 — evaluation and baselines</h1>
+
+<p class="part-intro">Day 2 builds the instrument that every later claim depends on: a frozen set of prompts with known answers, scorers that can be trusted, a runner that collects outcomes from all three tiers within budget, and reports that can be regenerated from raw records. All of it is <span class="pill plan">Planned</span>; none has been implemented in the repository yet.</p>
+
+<h2 id="day2-concepts">The ideas Day 2 depends on</h2>
+
+<h3>Why the three task families differ</h3>
+
+<p>The benchmark mixes three public datasets because each stresses something different, and routing is only interesting if the tiers' strengths differ by task.</p>
+
+<table>
+  <thead><tr><th style="width:12%">Dataset</th><th style="width:28%">What a prompt looks like</th><th style="width:27%">How it is scored</th><th>Licence · revision at access</th></tr></thead>
+  <tbody>
+    <tr><td class="k">GSM8K</td><td>A grade-school word problem needing several arithmetic steps.</td><td>Extract the final number and compare with the reference after the dataset's <code>####</code> marker.</td><td>MIT · <code>openai/gsm8k</code> @ <code>740312a</code></td></tr>
+    <tr><td class="k">MMLU</td><td>A four-option multiple-choice question from one of 57 subjects.</td><td>Extract one letter A–D and compare with the reference index.</td><td>MIT · <code>cais/mmlu</code> @ <code>c30699e</code></td></tr>
+    <tr><td class="k">MBPP</td><td>A short Python task with a description and assert-based tests.</td><td>Run the generated function against the tests in a sandbox.</td><td>CC BY 4.0 · <code>google-research-datasets/mbpp</code> @ <code>4bb6404</code></td></tr>
+  </tbody>
+</table>
+
+<p>Maths rewards multi-step reasoning and punishes a single slip; multiple-choice rewards stored knowledge and has a 25% chance floor; code requires exact syntax and correct behaviour. A small model might do respectably on multiple-choice and poorly on maths — hypothesis H1 — and that per-task difference is what a router can exploit. Revisions above are the Hugging Face commit hashes at access on 28 October 2026; D2-02 to D2-04 pin them in the loaders.</p>
+
+<h3>Training, validation and test</h3>
+
+<p>The manifest is split three ways. The <b>training</b> split (60%) is what the DistilBERT router learns from in Day 3. The <b>validation</b> split (20%) is used for every choice that involves looking at results: prompt templates, Jev question wording, thresholds, scorer fixes. The <b>test</b> split (20%) is used once, on Day 6, after every one of those choices is frozen. If the test set influences any decision, its numbers stop being an estimate of performance on unseen prompts and become a description of how well the choices fit those particular prompts.</p>
+
+<figure data-src="f24-grouped-splits" id="fig-grouped-splits"><figcaption>Splitting rows independently can put variants of one problem on both sides of the split. Assigning whole groups prevents this kind of leakage.</figcaption></figure>
+
+<h3>Data leakage and related-example grouping</h3>
+
+<p><b>Leakage</b> is any path by which information about the evaluation data reaches the thing being evaluated. Here the most likely path is related examples: two GSM8K problems that differ only in numbers, MMLU questions that share a passage, MBPP tasks that are near-duplicates. If one is in training and its twin is in test, the router can look clever by remembering. The defence is to group related prompts first (exact duplicates by normalised-text hash, near-duplicates by a similarity check, shared-source items by their source ID) and then assign <em>groups</em> to splits. Proportions become approximately rather than exactly 60/20/20, which is the right trade.</p>
+
+<p>A second form of leakage cannot be removed: these are public benchmarks, and any of the generation models may have seen them during pre-training. That inflates absolute accuracy for all tiers. Comparisons between tiers and routers on the same prompts remain meaningful; claims about absolute capability should be cautious.</p>
+
+<h3>Scoring errors versus model errors</h3>
+
+<figure data-src="f25-outcomes" id="fig-outcomes"><figcaption>Outcome taxonomy. Infrastructure failures are not wrong answers; unparseable and truncated responses need auditing before they are blamed on the model.</figcaption></figure>
+
+<p>When a tier's accuracy looks surprisingly low, there are two very different explanations. A <b>model error</b> means the model's answer was wrong. A <b>scoring error</b> means the model's answer was right but the scorer failed to recognise it — for example, the maths extractor took the last number in "The answer is 42. Check: 6 × 7 = 42." correctly, but in "So 42 apples, which is 3 dozen and 6" it would take 6. Scoring errors are systematic: they distort every comparison built on top of them. That is why each outcome type is stored separately, and why D2-10 exports samples for a human to check before any thresholds are chosen.</p>
+
+<h3>Why generated code needs isolation</h3>
+
+<p>Scoring MBPP means running code a model wrote. That code can loop forever, allocate all memory, delete files, open network connections, or spawn processes. Most of the time it will do none of those things, but the evaluation runs thousands of programs, and one bad one must not be able to damage the Mac or hang the run. The plan is a disposable container for each check with no network, memory, CPU and process limits, a non-root user, a temporary working directory and a hard wall-clock timeout. A timeout becomes a recorded <code>timeout</code> outcome, not a stuck evaluation.</p>
+
+<figure data-src="f26-sandbox" class="mid" id="fig-sandbox"><figcaption>Planned isolation for code scoring (D2-05). Exact Docker flags are a D2-05 decision and are verified there with deliberately hostile fixtures.</figcaption></figure>
+
+<h3>What the hindsight oracle can and cannot establish</h3>
+
+<figure data-src="f27-oracle" class="mid" id="fig-oracle"><figcaption>Deriving oracle labels from observed outcomes. Rows and results are illustrative.</figcaption></figure>
+
+<p>After every tier has answered every train and validation prompt, each prompt can be labelled with the <b>cheapest tier that was observed to answer correctly</b>, or <code>none</code> if no tier did. Routing every prompt to its label gives the <b>hindsight oracle</b>: the best cost and accuracy any router could have achieved on these outcomes.</p>
+
+<p>The oracle <em>can</em> establish headroom: if it costs much less than always-frontier at similar accuracy, routing has room to help. Its labels <em>can</em> train the DistilBERT router. It <em>cannot</em> be deployed, because it uses outcomes nobody knows before generating. It is tied to one sample per prompt — with temperature above zero a tier might succeed on a rerun — and to the scorer's judgement. And it says nothing about latency. It is a bound on the measured data, reported as such.</p>
+
+<h3>Why sequential answer collection is not a live routing latency benchmark</h3>
+
+<p>On a memory-limited Mac the sensible way to collect outcomes is one tier at a time: load the small model, run every prompt, then the medium model, then the frontier API. That gives clean quality labels and clean per-tier generation timings. It does not measure what a routed request would experience, because it never alternates models (so never pays switching cost), never contends for memory with the other tier, never includes a Jev or DistilBERT decision on the path, and runs with whatever batching the runner chose rather than real arrival patterns. Live routing latency is a separate measurement (Day 3's overhead benchmark and Day 5's load tests). Day 2 reports quality runs and serving baselines as different things, with different metadata.</p>
+
+<h3>API usage costs versus provisioned GPU capacity costs</h3>
+
+<p>An API bill is proportional to tokens: no requests, no cost. A provisioned GPU is billed by time: the same hourly rate whether it serves one request or ten thousand. Mixing the two produces nonsense, so they are reported separately.</p>
+
+<div class="calc">Illustrative prices and workloads — not quotes and not project measurements
+API:  input $1.00 / M tokens, output $4.00 / M tokens; request = 400 in, 300 out
+      cost = 400 × 1.00/1e6 + 300 × 4.00/1e6 = $0.0004 + $0.0012 = $0.0016 per request
+GPU:  $1.20 per hour, whatever the load
+      at 2 requests/s sustained: 7,200 req/h → $1.20 / 7,200 ≈ $0.00017 per request
+      at 0.05 requests/s:          180 req/h → $1.20 / 180   ≈ $0.0067 per request
+      idle:                          0 req/h → $1.20 per hour for nothing
+Routing 30% of traffic away from that GPU lowers its utilisation, not its bill.</div>
+
+<p>Jev adds a third cost shape: TypeSafe charges per input token only, at $0.042 per million, so a decision's cost is set by state size and question count <span class="pill doc">Documented</span>. For the Mac tiers, the honest entry is "unpriced": electricity and hardware wear exist but are not measured. D2-14 keeps measured spend, modelled capacity cost and unknown rates in separate columns.</p>
+
+<h2 id="day2-checkpoints">The eighteen Day 2 checkpoints</h2>
+
+<figure data-src="f29-day2-blocks" id="fig-day2-blocks"><figcaption>Day 2 checkpoints in six blocks of three. None has started in the repository.</figcaption></figure>
+
+<!-- ============ BLOCK 1 ============ -->
+<div class="block-head">Block 1 <span>Records and the first two datasets</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-01</span><span class="cp-title">Define immutable evaluation records</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Schemas as contracts; append-only data; why an error is a value and not a missing row.</dd>
+<dt class="plan">Planned change</dt><dd>A frozen record type with prompt ID, task, split, manifest hash, tier, backend model and revision, generation settings, template version, raw output, finish reason, extracted answer, outcome (one of the taxonomy values), usage, timings and cost fields, run ID and timestamp. Records are written as JSON lines and never edited.</dd>
+<dt>Why here</dt><dd>Loaders, scorers, the runner and reports all produce or consume this record; defining it first prevents four incompatible formats.</dd>
+<dt>Evidence</dt><dd>Fixtures for each outcome validate; a backend error and a wrong answer remain distinguishable after a round trip through the file.</dd>
+<dt class="mis">Common mistake</dt><dd>Dropping failed calls from the results. Accuracy then silently excludes the hardest or slowest prompts and looks better than it is.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-02</span><span class="cp-title">Load versioned GSM8K prompts</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Dataset revisions; deterministic IDs; where the reference answer lives (<code>#### &lt;number&gt;</code> at the end of the solution).</dd>
+<dt class="plan">Planned change</dt><dd>A loader that pins the dataset revision, assigns stable IDs (for example <code>gsm8k-test-0412</code>), stores the question and the parsed reference number, and records licence and source.</dd>
+<dt>Why here</dt><dd>Maths has the simplest reference answers, so it is the easiest place to prove the loader-to-record path.</dd>
+<dt>Evidence</dt><dd>A known sample loads with the same ID, text and answer on two machines; provenance is recorded.</dd>
+<dt class="mis">Common mistake</dt><dd>Loading the dataset's moving default branch. A later upstream fix changes prompts under the same IDs.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-03</span><span class="cp-title">Load versioned MMLU prompts</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Subject subsets; consistent prompt templates; how an answer index maps to a letter.</dd>
+<dt class="plan">Planned change</dt><dd>A loader for selected subjects that renders each question with options labelled A–D in the dataset's order, stores the correct letter, and records subject, revision and template version.</dd>
+<dt>Why here</dt><dd>It exercises templating and answer mapping, which the multiple-choice scorer (D2-08) depends on.</dd>
+<dt>Evidence</dt><dd>Tests confirm option order and the letter derived from the reference index on known items.</dd>
+<dt class="mis">Common mistake</dt><dd>Shuffling options for "fairness" without storing the permutation. The reference letter no longer matches the rendered prompt.</dd></dl></div>
+
+<!-- ============ BLOCK 2 ============ -->
+<div class="block-head">Block 2 <span>Code tasks, isolation and the frozen manifest</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-04</span><span class="cp-title">Load MBPP tasks and test specifications</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>What the model must produce (a function with a specific name and signature) and what the tests assert.</dd>
+<dt class="plan">Planned change</dt><dd>A loader that stores the task text, the test list, any setup code, the expected function name, the task ID, and licence metadata.</dd>
+<dt>Why here</dt><dd>The sandbox (D2-05) needs real task specifications to be tested against.</dd>
+<dt>Evidence</dt><dd>Dataset and licence metadata and task IDs recorded; a reference solution passes its own tests in the sandbox.</dd>
+<dt class="mis">Common mistake</dt><dd>Leaving the expected function name out of the prompt. Correct code under a different name then fails every test.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-05</span><span class="cp-title">Isolate generated-code execution</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Containers as process and filesystem isolation; network namespaces; resource limits; the difference between a test failure and an infrastructure failure.</dd>
+<dt class="plan">Planned change</dt><dd>A runner that writes code and tests to a temporary directory and executes them in a disposable, network-disabled, resource-limited container as a non-root user, returning <code>passed</code>, <code>failed</code>, <code>timeout</code>, <code>crashed</code> or <code>sandbox_error</code>.</dd>
+<dt>Why here</dt><dd>No model-written code may run before isolation exists, and the code scorer (D2-09) builds on it.</dd>
+<dt>Evidence</dt><dd>Hostile fixtures — an infinite loop, a memory bomb, a network call, a file write outside the work directory — are each contained and classified correctly.</dd>
+<dt class="mis">Common mistake</dt><dd>"Just for a quick check", running generated code with <code>exec()</code> in the evaluator's own process.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-06</span><span class="cp-title">Freeze a deduplicated manifest and grouped 60/20/20 splits</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Duplicates and near-duplicates; group IDs; seeded assignment; why "frozen" means hashed.</dd>
+<dt class="plan">Planned change</dt><dd>Select 2,000–3,000 prompts across the three tasks, group related items, assign groups to train/validation/test with a fixed seed, and write a manifest of IDs, groups, splits and provenance with its content hash. Reading the test split requires an explicit flag.</dd>
+<dt>Why here</dt><dd>All three loaders exist, and the split must be fixed before any result is seen.</dd>
+<dt>Evidence</dt><dd>No group spans two splits; the manifest hash is reproducible from the same inputs and seed; the runner refuses test prompts without the flag.</dd>
+<dt class="mis">Common mistake</dt><dd>Regenerating the split after looking at early results. Every later number then depends on that choice.</dd></dl></div>
+
+<!-- ============ BLOCK 3 ============ -->
+<div class="block-head">Block 3 <span>Scoring</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-07</span><span class="cp-title">Implement math answer extraction and scoring</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Normalising numbers (commas, currency symbols, trailing units, decimals and fractions); explicit parser outcomes.</dd>
+<dt class="plan">Planned change</dt><dd>An extractor that prefers an explicit final-answer pattern requested by the prompt template, falls back to clearly defined rules, and returns either a number or <code>unparseable</code>; then exact numeric comparison.</dd>
+<dt>Why here</dt><dd>It is the simplest scorer and the first that real outputs will hit.</dd>
+<dt>Evidence</dt><dd>Edge-case tests ("$1,250.00", "3/4", "about 12", several numbers in a row) pass; the audit in D2-10 confirms behaviour on real outputs.</dd>
+<dt class="mis">Common mistake</dt><dd>Always taking the last number in the text. Answers that end with a check or a unit conversion are then scored wrong.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-08</span><span class="cp-title">Implement multiple-choice scoring</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Accepted answer forms; ambiguity; why guessing in the scorer is worse than recording "unparseable".</dd>
+<dt class="plan">Planned change</dt><dd>A parser that accepts documented forms ("B", "(B)", "Answer: B", the option text matching exactly one choice) and returns <code>unparseable</code> for answers naming several letters or none.</dd>
+<dt>Why here</dt><dd>It shares the outcome taxonomy with D2-07 and must be audited with it.</dd>
+<dt>Evidence</dt><dd>Malformed, truncated and incorrect answers remain distinguishable in tests.</dd>
+<dt class="mis">Common mistake</dt><dd>Matching the first capital A–D anywhere in the text. "A good answer is C" scores as A.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-09</span><span class="cp-title">Integrate isolated code-task scoring</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Extracting code from a chat answer (fenced blocks, prose around code); mapping sandbox results to outcomes.</dd>
+<dt class="plan">Planned change</dt><dd>Connect completions to the D2-05 sandbox: extract the code block, combine it with the task's tests, run it, and store a structured result including the sandbox outcome and test counts.</dd>
+<dt>Why here</dt><dd>It combines D2-04 and D2-05, and completes the set of scorers.</dd>
+<dt>Evidence</dt><dd>Known pass, fail, timeout and syntax-error fixtures are classified correctly.</dd>
+<dt class="mis">Common mistake</dt><dd>Counting a sandbox infrastructure failure, such as Docker not running, as the model's code failing.</dd></dl></div>
+
+<!-- ============ BLOCK 4 ============ -->
+<div class="block-head">Block 4 <span>Audit, the runner and resumption</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-10</span><span class="cp-title">Export samples for manual scoring audits</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Why human review catches systematic scorer bugs that unit tests miss; stratified sampling.</dd>
+<dt class="plan">Planned change</dt><dd>Export 30–50 development-split answers per task, stratified by outcome and tier, in a format a person can read and mark; record corrections and the scorer changes they cause.</dd>
+<dt>Why here</dt><dd>Before any threshold or router is tuned on scored outcomes.</dd>
+<dt>Evidence</dt><dd>A documented audit with disagreement counts and the resulting scorer fixes.</dd>
+<dt class="mis">Common mistake</dt><dd>Auditing only answers marked wrong. False positives — wrong answers scored correct — are invisible that way.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-11</span><span class="cp-title">Implement bounded evaluation across all three tiers</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Concurrency limits; retries for transient errors only; per-run request, token and dollar caps; deterministic generation settings.</dd>
+<dt class="plan">Planned change</dt><dd>A runner that sends selected splits through the gateway to each configured tier, with fixed settings (for example temperature 0), bounded concurrency and retries, and caps. Paid tiers are skipped unless a positive run budget is configured.</dd>
+<dt>Why here</dt><dd>Records, loaders and scorers all exist; this connects them to the Day 1 gateway.</dd>
+<dt>Evidence</dt><dd>A small development run completes for each available tier; no paid job starts without an explicit budget.</dd>
+<dt class="mis">Common mistake</dt><dd>Retrying wrong answers or timeouts until they succeed. That changes what is being measured.</dd></dl></div>
+
+<figure data-src="f28-resume" class="narrow" id="fig-resume"><figcaption>Planned resume logic (D2-12). A completed result is reused only when its full fingerprint matches; anything else is a new experiment.</figcaption></figure>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-12</span><span class="cp-title">Add checkpointing and safe resumption</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Fingerprints; atomic appends and flushing; partial lines after a crash.</dd>
+<dt class="plan">Planned change</dt><dd>Fingerprint each unit of work (prompt ID and text hash, tier, model revision, generation settings, template version); on restart, discard a trailing partial line, skip completed fingerprints, and continue.</dd>
+<dt>Why here</dt><dd>Long runs over thousands of prompts on a laptop or in Colab will be interrupted.</dd>
+<dt>Evidence</dt><dd>A deliberately interrupted development run resumes without duplicate or corrupted records, and reused results keep their original run ID and time.</dd>
+<dt class="mis">Common mistake</dt><dd>Keying completion on prompt ID alone. After a model update, old answers are silently reused as if new.</dd></dl></div>
+
+<!-- ============ BLOCK 5 ============ -->
+<div class="block-head">Block 5 <span>Oracle, cost and quality reports</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-13</span><span class="cp-title">Derive observed hindsight-oracle labels</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Tier order by cost; what to do when no tier is correct; why the oracle is a bound, not a policy.</dd>
+<dt class="plan">Planned change</dt><dd>For each train and validation prompt, compute the cheapest tier observed to succeed, or <code>none</code>; store the label with the record set it came from; report the oracle's accuracy and cost.</dd>
+<dt>Why here</dt><dd>It needs complete per-tier outcomes, and Day 3 training needs its labels.</dd>
+<dt>Evidence</dt><dd>Labels regenerate from records; the report states that the oracle is an offline bound for these measured outcomes.</dd>
+<dt class="mis">Common mistake</dt><dd>Mapping <code>none</code> to <code>frontier</code>. The classifier is then trained to send unanswerable prompts to the most expensive tier.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-14</span><span class="cp-title">Calculate complete inference costs</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Token-billed versus time-billed resources; cost attribution per request; unknown rates.</dd>
+<dt class="plan">Planned change</dt><dd>A cost model with separate fields for frontier usage (from returned usage and configured prices), decision and verification calls (from Day 3 on), and provisioned-capacity scenarios with an explicit hourly rate and utilisation. Local Mac tiers stay "unpriced" unless a rate is supplied.</dd>
+<dt>Why here</dt><dd>Reports in D2-15 and every Day 3 comparison need cost on a common basis.</dd>
+<dt>Evidence</dt><dd>Unknown rates remain unknown in the output; idle capacity appears as a cost, not zero.</dd>
+<dt class="mis">Common mistake</dt><dd>Treating self-hosted tiers as free. That makes "route everything local" look optimal regardless of quality.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-15</span><span class="cp-title">Generate per-tier quality and completion reports</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Accuracy versus completion rate versus error rate, each with its denominator; per-task breakdowns; sample counts.</dd>
+<dt class="plan">Planned change</dt><dd>A report generator that reads records and outputs, per tier and per task, accuracy, completion and error rates, outcome counts, sample sizes and costs, stamped with the manifest hash and run IDs.</dd>
+<dt>Why here</dt><dd>It closes the quality half of the day; its output is the baseline every router must beat.</dd>
+<dt>Evidence</dt><dd>Deleting the report and regenerating it from records gives an identical file.</dd>
+<dt class="mis">Common mistake</dt><dd>Reporting accuracy over completed responses only, without the completion rate beside it.</dd></dl></div>
+
+<!-- ============ BLOCK 6 ============ -->
+<div class="block-head">Block 6 <span>Serving baselines and real measurements</span></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-16</span><span class="cp-title">Define controlled serving benchmark workloads</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>Closed-loop versus open-loop load; concurrency versus arrival rate; warm-up; prompt and output length control.</dd>
+<dt class="plan">Planned change</dt><dd>A workload runner, separate from the quality runner, with configurable prompt-length buckets, fixed output lengths, concurrency or arrival rate, warm-up requests, and recorded model load state and cache state.</dd>
+<dt>Why here</dt><dd>Quality numbers are now in hand; performance needs its own controlled experiment rather than timings borrowed from evaluation runs.</dd>
+<dt>Evidence</dt><dd>Workload definitions are stored with every result, including client scheduling, warm-up and output controls.</dd>
+<dt class="mis">Common mistake</dt><dd>Reusing evaluation timings as a latency benchmark. Output lengths vary per prompt, so differences in tokens generated swamp differences in serving speed.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-17</span><span class="cp-title">Report latency, throughput, errors and sample counts</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>The definitions in Part 8: time to first output, end-to-end latency, event gaps versus token timing, percentiles, throughput units.</dd>
+<dt class="plan">Planned change</dt><dd>Metric computation with explicit denominators: per-request time to first output and end-to-end latency (p50 and p95, stating the percentile method), output tokens per second from usage counts, request throughput over a stated window, error rate, and sample counts.</dd>
+<dt>Why here</dt><dd>It turns D2-16's raw timings into the baselines Day 3 and Day 6 compare against.</dd>
+<dt>Evidence</dt><dd>Each metric's formula and denominator is printed in the report; failed requests appear alongside successful-request latency.</dd>
+<dt class="mis">Common mistake</dt><dd>Computing latency percentiles over successful requests only. A configuration that fails its slow requests then looks faster.</dd></dl></div>
+
+<div class="cp"><div class="cp-head"><span class="cp-id">D2-18</span><span class="cp-title">Preserve actual train/validation measurements; keep the test held out</span><span class="cp-commit">planned</span></div><dl>
+<dt>Understand</dt><dd>What can be completed within hardware and budget limits; reporting progress honestly; protecting the test split.</dd>
+<dt class="plan">Planned change</dt><dd>Run the real evaluation on train and validation for every available tier within caps, preserve raw records and the manifest hash, and report coverage towards the 2,000+ prompt target per tier.</dd>
+<dt>Why here</dt><dd>It is the day's deliverable: real outcomes that Day 3 can train and tune on.</dd>
+<dt>Evidence</dt><dd>Raw records, run IDs and coverage counts per tier in <code>docs/EXPERIMENTS.md</code>; test-split access count of zero.</dd>
+<dt class="mis">Common mistake</dt><dd>"Just a quick look" at test-split accuracy. Once seen, it cannot be unseen, and every later decision is suspect.</dd></dl></div>
+
+<div class="callout evidence"><span class="label">Dependency carried over from Day 1</span>
+<p>D2-01 to D2-17 can be implemented and tested offline with fixtures. D2-18 needs live tiers: at least the Ollama small and medium models answering through the gateway (D1-07, D1-08), and for the frontier tier a configured key and run budget. Until then, coverage is reported as zero rather than estimated.</p></div>
+
+<section class="journal" id="journal-day2">
+<h2>Journal · Day 2: building an instrument worth trusting</h2>
+<div class="jmeta">Conceptual entry, ready to copy. Day 2 has not been implemented; this entry explains the design and its reasons and reports no results.</div>
+
+<p class="first">Day 1 built a way to ask any of three models a question. Day 2 builds a way to know whether their answers were right, and that turns out to be the harder problem. Every later claim in the project — that one router saves money, that Jev's probabilities mean what they say, that a cache does not return wrong answers — rests on correctness labels produced here. If those labels are biased, every comparison built on them inherits the bias, however careful the later work is.</p>
+
+<p>The benchmark draws on three public datasets because the tiers should differ by task. GSM8K word problems need several correct arithmetic steps and a single final number. MMLU questions offer four options across many subjects and reward stored knowledge. MBPP tasks ask for a short Python function that must pass hidden tests. Each dataset is pinned to a specific revision and each prompt gets a permanent ID, so the same prompt means the same thing in every run and on every machine.</p>
+
+<p>Before any model sees a prompt, the prompts are grouped and split. Related items, such as paraphrases or problems that differ only in their numbers, are placed in one group, and whole groups go to training, validation or test. Training will teach the fallback router; validation will absorb every decision that involves looking at results; the test split stays sealed until the final day. Splitting by group rather than by row costs a little precision in the 60/20/20 proportions and buys protection against the most likely form of leakage.</p>
+
+<p>Scoring gets as much attention as generation. A maths answer has to be found in a paragraph of reasoning, a letter has to be found without guessing, and generated code has to run somewhere it can do no harm — in a disposable container without network access, with limits on memory, processes and time. Each attempt ends in one of several distinct outcomes: correct, incorrect, unparseable, truncated, timed out, or failed for infrastructure reasons. Keeping these apart is what lets a low score be traced to its cause. A human then reads a sample of scored answers from each task, because a scorer bug is systematic and no amount of model comparison will reveal it.</p>
+
+<p>Once each tier has answered the training and validation prompts, each prompt receives an oracle label: the cheapest tier observed to get it right, or none. The oracle is the best routing that was possible on these particular outcomes. It shows how much room there is for a real router, and its labels become training data, but it is not a router, because it uses answers no one has at request time.</p>
+
+<p>Cost and speed are measured with the same care. A paid API charges per token; a rented GPU charges per hour whether busy or idle; the Mac's own tiers are honestly marked unpriced. These are kept in separate columns. Collecting answers one tier at a time is the right way to get quality labels on a memory-limited laptop, but it is not a measurement of how fast a routed request would be, because it never switches models or makes a routing call. Serving performance therefore gets its own controlled workloads, with defined prompt and output lengths, warm-up, and percentiles reported alongside error rates and sample counts.</p>
+
+<p>The work divides cleanly into what can be built and tested now and what must wait. Records, loaders, splits, scorers, the sandbox, the runner, resumption and reports can all be written and checked against fixtures. Real outcomes need real models answering through the gateway, which brings the project back to the first open question from Day 1: getting Ollama running on the Mac and seeing the small model answer.</p>
+</section>

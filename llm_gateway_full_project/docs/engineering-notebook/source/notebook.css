@@ -1,0 +1,214 @@
+/* Jev LLM Gateway engineering notebook — print stylesheet (Chrome print-to-PDF) */
+
+:root {
+  --ink: #2f2a25;
+  --muted: #6f665c;
+  --rule: #d9cdbd;
+  --paper: #fbf8f2;
+  --sand: #f4ecdf;
+  --accent: #a8512a;
+  --sage: #5c7a5c;
+  --slate: #55697d;
+  --amber: #b08532;
+  --plum: #6d5a7a;
+  --sans: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --serif: Charter, "Iowan Old Style", Georgia, serif;
+  --mono: Menlo, "SF Mono", monospace;
+}
+
+@page {
+  size: Letter;
+  margin: 0.72in 0.82in 0.8in 0.82in;
+  @bottom-left { content: "Jev LLM Gateway · Engineering Notebook"; font: 7.5pt var(--sans); color: #9a8f82; }
+  @bottom-right { content: counter(page); font: 600 8.5pt var(--sans); color: #6f665c; }
+}
+@page cover {
+  margin: 0;
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 10pt;
+  line-height: 1.46;
+  color: var(--ink);
+  hyphens: auto;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- cover ---------- */
+.cover {
+  page: cover;
+  height: 11in;
+  width: 8.5in;
+  background: var(--paper);
+  position: relative;
+  padding: 1.25in 1in 0.9in 1.1in;
+  break-after: page;
+}
+.cover .band { position: absolute; left: 0; top: 0; bottom: 0; width: 0.42in; background: var(--accent); }
+.cover .kicker { font: 600 9.5pt var(--sans); letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); }
+.cover h1.title {
+  font: 600 34pt/1.08 var(--sans); margin: 0.22in 0 0.18in; color: var(--ink); letter-spacing: -0.01em;
+  break-before: avoid; border: none; padding: 0;
+}
+.cover .subtitle { font: 400 14pt/1.4 var(--serif); color: var(--muted); max-width: 5.6in; }
+.cover .cover-fig { margin: 0.55in 0 0.45in; width: 6.35in; }
+.cover .cover-fig img { width: 100%; }
+.cover .meta { font: 9.5pt/1.65 var(--sans); color: var(--muted); position: absolute; bottom: 0.9in; left: 1.1in; right: 1in; }
+.cover .meta b { color: var(--ink); font-weight: 600; }
+.cover .meta .rule { border-top: 1px solid var(--rule); margin-bottom: 0.14in; }
+
+/* ---------- headings ---------- */
+h1, h2, h3, h4 { font-family: var(--sans); color: var(--ink); break-after: avoid; }
+h1 {
+  break-before: page;
+  font-size: 22pt; font-weight: 600; line-height: 1.15;
+  margin: 0 0 0.22in; padding-top: 0.05in;
+}
+h1 .part-no { display: block; font-size: 9.5pt; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.08in; }
+h2 { font-size: 13.5pt; font-weight: 600; margin: 0.26in 0 0.07in; padding-top: 0.04in; border-top: 1px solid var(--rule); }
+h3 { font-size: 10.8pt; font-weight: 600; margin: 0.17in 0 0.04in; }
+h4 { font-size: 9.6pt; font-weight: 600; margin: 0.12in 0 0.02in; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+h2 + p, h3 + p { margin-top: 0.03in; }
+.part-intro { font-size: 11.2pt; line-height: 1.5; color: #4a423b; margin-bottom: 0.16in; }
+
+p { margin: 0 0 0.09in; orphans: 3; widows: 3; }
+ul, ol { margin: 0.02in 0 0.1in; padding-left: 0.24in; }
+li { margin: 0.025in 0; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+a { color: var(--accent); text-decoration: none; }
+code { font-family: var(--mono); font-size: 8.4pt; background: #f3ede3; padding: 0.5pt 2.5pt; border-radius: 2.5pt; color: #4b3a2c; hyphens: none; }
+.nowrap { white-space: nowrap; }
+.small { font-size: 9pt; color: var(--muted); }
+
+/* ---------- code blocks ---------- */
+pre {
+  font-family: var(--mono); font-size: 7.9pt; line-height: 1.42;
+  background: #f6f1e8; border: 1px solid #e6dccd; border-left: 3px solid #c8b79f;
+  padding: 0.09in 0.13in; margin: 0.06in 0 0.13in; white-space: pre-wrap; break-inside: avoid;
+  color: #3a312a; hyphens: none;
+}
+pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+pre .cm { color: #8a7f72; font-style: italic; }
+pre .kw { color: #8b3f1f; font-weight: 600; }
+pre .st { color: #4f6b4f; }
+.code-label { font: 600 7.8pt var(--sans); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin: 0.1in 0 -0.03in; break-after: avoid; }
+.code-label .tag { color: var(--accent); }
+
+/* ---------- figures ---------- */
+figure { margin: 0.12in 0 0.16in; break-inside: avoid; text-align: center; }
+figure img { width: 100%; display: block; }
+figure.narrow img { width: 82%; margin: 0 auto; }
+figcaption {
+  text-align: left; font: 8.6pt/1.45 var(--sans); color: #4f4840;
+  margin-top: 0.07in; padding-top: 0.05in; border-top: 1px solid #ebe2d5;
+}
+figcaption .fig-no { font-weight: 700; color: var(--accent); margin-right: 0.04in; }
+
+/* ---------- callouts ---------- */
+.callout {
+  break-inside: avoid; margin: 0.1in 0 0.14in; padding: 0.08in 0.14in 0.06in;
+  border-left: 3px solid var(--accent); background: #fbf3ec; border-radius: 0 4px 4px 0;
+  font-size: 9.6pt; line-height: 1.48;
+}
+.callout .label { display: block; font: 700 7.6pt var(--sans); letter-spacing: 0.13em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.03in; }
+.callout p:last-child { margin-bottom: 0.02in; }
+.callout.hypothesis { border-color: var(--plum); background: #f5f1f6; }
+.callout.hypothesis .label { color: var(--plum); }
+.callout.tech { border-color: var(--slate); background: #eff3f6; }
+.callout.tech .label { color: var(--slate); }
+.callout.evidence { border-color: var(--sage); background: #eef4ec; }
+.callout.evidence .label { color: var(--sage); }
+
+/* ---------- tables ---------- */
+table { width: 100%; border-collapse: collapse; margin: 0.08in 0 0.15in; font: 8.4pt/1.4 var(--sans); break-inside: auto; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+th { text-align: left; font-weight: 600; color: var(--ink); background: var(--sand); border-bottom: 1.2px solid #c8b79f; padding: 0.045in 0.07in; vertical-align: bottom; }
+td { border-bottom: 1px solid #ebe2d5; padding: 0.045in 0.07in; vertical-align: top; }
+td code, th code { font-size: 7.6pt; }
+table.tight td, table.tight th { padding: 0.03in 0.06in; }
+td.k { font-weight: 600; white-space: nowrap; }
+.tbl-caption { font: 600 8.4pt var(--sans); color: var(--muted); margin: 0.1in 0 -0.04in; break-after: avoid; }
+
+/* ---------- checkpoints ---------- */
+.block-head {
+  font: 600 9pt var(--sans); color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase;
+  margin: 0.22in 0 0.04in; padding-bottom: 0.03in; border-bottom: 1.5px solid var(--accent); break-after: avoid;
+}
+.block-head span { color: var(--muted); letter-spacing: 0.02em; text-transform: none; font-weight: 500; margin-left: 0.08in; }
+.cp {
+  break-inside: avoid; margin: 0.08in 0 0.12in; border: 1px solid #e3d8c8; border-radius: 6px; overflow: hidden;
+}
+.cp-head { display: flex; gap: 0.1in; align-items: baseline; background: var(--sand); padding: 0.05in 0.12in; }
+.cp-id { font: 700 9.4pt var(--sans); color: var(--accent); white-space: nowrap; }
+.cp-title { font: 600 9.8pt var(--sans); color: var(--ink); }
+.cp-commit { margin-left: auto; font: 7.4pt var(--mono); color: var(--muted); white-space: nowrap; }
+.cp dl { margin: 0; padding: 0.05in 0.12in 0.06in; display: grid; grid-template-columns: 0.98in 1fr; column-gap: 0.12in; row-gap: 0.035in; font-size: 9.2pt; line-height: 1.45; }
+.cp dt { font: 600 7.6pt/1.9 var(--sans); text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+.cp dd { margin: 0; }
+.cp dt.rec { color: var(--sage); }
+.cp dt.mis { color: #a24b36; }
+.cp dt.plan { color: var(--plum); }
+
+/* ---------- journal entries ---------- */
+.journal {
+  break-before: page; background: var(--paper); border: 1px solid #e6dccd; border-radius: 6px;
+  padding: 0.2in 0.28in 0.12in; font-size: 10.4pt; line-height: 1.62;
+}
+.journal h2 { border: none; margin-top: 0; font-size: 14pt; }
+.journal .jmeta { font: 8.5pt var(--sans); color: var(--muted); margin: -0.03in 0 0.12in; }
+.journal p { text-indent: 1.4em; margin: 0 0 0.05in; }
+.journal p.first { text-indent: 0; }
+
+/* ---------- contents ---------- */
+.toc { break-after: page; }
+.toc h1 { break-before: avoid; }
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li { margin: 0; }
+.toc .t1 { display: flex; font: 600 10.5pt var(--sans); margin-top: 0.12in; padding-bottom: 0.02in; }
+.toc .t2 { display: flex; font: 9.2pt var(--sans); color: #4a423b; padding-left: 0.28in; margin-top: 0.012in; }
+.toc .t1 .num { color: var(--accent); min-width: 0.28in; }
+.toc .dots { flex: 1; border-bottom: 1px dotted #c9bcaa; margin: 0 0.06in 0.045in; }
+.toc .pg { font-variant-numeric: tabular-nums; min-width: 0.22in; text-align: right; }
+
+/* ---------- misc ---------- */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.2in; }
+.legend-table td:first-child { width: 1.25in; }
+.pill { display: inline-block; font: 600 7.3pt var(--sans); letter-spacing: 0.06em; text-transform: uppercase; padding: 0.5pt 4pt; border-radius: 3pt; vertical-align: 1pt; }
+.pill.doc { background: #f6e2d4; color: var(--accent); }
+.pill.ours { background: #f4ecdf; color: #8a6a48; }
+.pill.plan { background: #efe9f1; color: var(--plum); }
+.pill.rec { background: #e4eee2; color: var(--sage); }
+.pill.ill { background: #e7edf2; color: var(--slate); }
+.sources li { margin: 0.05in 0; font-size: 9pt; line-height: 1.4; }
+.sources .url { font: 7.8pt var(--mono); color: var(--muted); word-break: break-all; }
+.keep { break-inside: avoid; }
+.pb { break-before: page; }
+.calc { font: 8.6pt/1.55 var(--mono); background: #f6f1e8; border: 1px solid #e6dccd; padding: 0.07in 0.13in; margin: 0.05in 0 0.12in; break-inside: avoid; white-space: pre-wrap; }
+h1, h2, h3, h4, .cp-title, figcaption, th { hyphens: manual; }
+
+/* pagination refinements */
+td.k { white-space: normal; }
+.cp { break-inside: auto; }
+.cp-head { break-after: avoid; }
+.cp dt, .cp dd { break-inside: avoid; }
+.cp dt { break-after: avoid; }
+.cp dl { font-size: 9pt; grid-template-columns: 0.9in 1fr; row-gap: 0.03in; }
+
+.cp-keep { break-inside: avoid; }
+.cp .row { display: grid; grid-template-columns: 0.9in 1fr; column-gap: 0.12in; padding: 0.025in 0.12in; break-inside: avoid; font-size: 9pt; line-height: 1.43; }
+.cp .row:first-of-type { padding-top: 0.06in; }
+.cp > .row:last-child { padding-bottom: 0.07in; }
+.cp .dt { font: 600 7.4pt/1.95 var(--sans); text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+.cp .dt.rec { color: var(--sage); }
+.cp .dt.mis { color: #a24b36; }
+.cp .dt.plan { color: var(--plum); }
+figure.narrow img { width: 84%; margin: 0 auto; }
+figure.mid img { width: 94%; margin: 0 auto; }

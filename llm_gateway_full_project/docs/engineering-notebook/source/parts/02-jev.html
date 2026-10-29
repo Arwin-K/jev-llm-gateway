@@ -1,0 +1,170 @@
+<h1 id="part2"><span class="part-no">Part 2</span>Background research: how Jev works and how this project uses it</h1>
+
+<p class="part-intro">Jev is the component the project is named after, and the one most likely to be misunderstood. This part separates what TypeSafe's official documentation says from the ways this project proposes to use it.</p>
+
+<h2 id="jev-sources">Sources and scope</h2>
+
+<p>Everything marked <span class="pill doc">Documented</span> in this part comes from TypeSafe's official documentation at <code>docs.typesafe.ai</code>, accessed on <b>28 October 2026</b>: the Introduction, Quick start, System One, State, Choice, Score, Noul, Confidence, Models, AI primer, Request rules and errors, and Python SDK pages (full list in Sources). Earlier project notes drew on press coverage and used names such as "yes/no" and "scale" questions and a 32K context window; the current official pages name the primitives <b>Noul</b> and <b>Score</b> and give a 64k per-request and 32k per-question context limit. Where the two disagree, this notebook follows the official documentation and does not repeat unverified press figures for speed or funding.</p>
+
+<h2 id="jev-what">What Jev is</h2>
+
+<p>TypeSafe describes Jev as its flagship model and the first "System One" model: a model built to make fast, structured decisions that software can consume directly <span class="pill doc">Documented</span>. The name borrows Daniel Kahneman's distinction between fast, intuitive "System 1" judgement and slow, deliberate "System 2" reasoning. You send Jev a <b>state</b> — the material to judge — and a set of <b>typed questions</b> about it. It returns one typed answer per question, with probabilities, and no generated prose.</p>
+
+<p>Three documented properties matter most for this project:</p>
+<ul>
+  <li><b>Constrained answers.</b> You define the answer space (the options of a Choice, the levels of a Score, yes/no for a Noul). Jev's answer always lies inside that space, so there is no free text to parse.</li>
+  <li><b>Parallel, isolated questions.</b> All questions in a request are evaluated in parallel and independently against the same state. TypeSafe states that adding questions barely changes response time, though each adds input tokens.</li>
+  <li><b>Calibration as a training goal.</b> TypeSafe says System One models are trained with "reinforcement learning for calibrated decisions" (RLCD) so that probabilities reflect uncertainty, and that calibration "is measured across groups of predictions; it does not guarantee that an individual answer is correct."</li>
+</ul>
+
+<h2 id="gen-vs-decision">Generation models and decision models</h2>
+
+<p>A <b>generation model</b> — Qwen2.5, a frontier model — takes text and produces new text one token at a time. Its output is open-ended: an explanation, a program, a number embedded in a sentence. To use it for a decision, the application has to coax it into a format and then parse what it wrote, which can fail.</p>
+
+<p>A <b>decision model</b> such as Jev takes text and returns a value from a set the caller defined, plus a probability distribution over that set. It cannot answer the user's question; it can only judge something <em>about</em> the question or an answer. In this project the two kinds of model have strictly different jobs: Qwen and the frontier model produce answers; Jev helps decide which of them to use and whether to trust what they produced.</p>
+
+<div class="callout tech"><span class="label">Technical note · what Jev never does</span>
+<p>Jev does not call other models, run code, or browse. "Jev routes a request" is shorthand for "the gateway asks Jev a question, then the gateway's own code calls a model". Every action is taken by application code.</p></div>
+
+<h2 id="state-questions">State and typed questions</h2>
+
+<p><b>State</b> is the content being judged. The documentation allows a plain string, a JSON object, or an array of text values; it recommends an object for most requests so that each part has a descriptive name, and it describes state as "the material you would present to a panel of experts before asking them to make a judgment." Jev currently accepts text only; English is its primary training language <span class="pill doc">Documented</span>.</p>
+
+<p>A <b>typed question</b> is a small object with a <code>type</code> (<code>choice</code>, <code>score</code> or <code>noul</code>), <code>instructions</code> (the question itself), and usually <code>criteria</code> (the options, levels, or a description of what "true" and "false" mean). The caller chooses an ID for each question; the answer comes back under that ID, and the model never sees the ID itself. TypeSafe advises keeping each question <em>atomic</em> — one judgement — and combining several answers in code rather than asking one compound question.</p>
+
+<figure data-src="f05-jev-anatomy" id="fig-jev-anatomy"><figcaption>Anatomy of one request to <code>POST /v1/systemone</code>. Field names follow the official documentation; the state content, question IDs and answer values are illustrative and were not returned by a real call.</figcaption></figure>
+
+<h2 id="primitives">The decision primitives</h2>
+
+<p>The current introduction lists three primitives, verified on the pages below. A fourth, <b>Box</b>, locates objects in images; it is labelled "dreamer-ready" (not production-ready), requires an opt-in header, and is irrelevant to a text gateway, so it is not used here.</p>
+
+<table>
+  <thead><tr><th style="width:11%">Primitive</th><th style="width:22%">Asks</th><th style="width:22%">Request criteria</th><th>Returned fields</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Choice</td><td>Which one of these options?</td><td>Map of option name → description; up to 255 options</td><td><code>choice</code> (option with highest probability), <code>probabilities</code> (sum to 1 across options), <code>confidence</code> (0–1)</td></tr>
+    <tr><td class="k">Score</td><td>Where on this ordered scale?</td><td>Ordered list of 2–10 level descriptions, low to high</td><td><code>score</code> (probability-weighted average of level numbers, can fall between levels), <code>probabilities</code>, <code>confidence</code>, <code>legend</code></td></tr>
+    <tr><td class="k">Noul</td><td>Is this statement true?</td><td>Optional descriptions of what true and false mean</td><td><code>noul</code>: a single probability that the answer is yes, 0 to 1. No separate confidence field.</td></tr>
+  </tbody>
+</table>
+
+<p>Every response also carries the versioned <code>model</code> that answered (for example <code>jev-1.14.0</code> when the request used the alias <code>jev-latest</code>) and <code>usage</code> with input and output token counts. TypeSafe notes that aliases move when a new release ships, so a project that tunes thresholds should pin a versioned model ID and log the <code>model</code> field of every response <span class="pill doc">Documented</span>.</p>
+
+<h2 id="returned-values">What the returned values actually mean</h2>
+
+<p><b>Probabilities</b> are Jev's distribution over the answer space you defined. For a Choice they are spread over options; for a Score, over levels.</p>
+
+<p><b>Confidence</b> is <em>not</em> a probability of being right. It is a statistic computed from the shape of the distribution: 1 when all probability sits on one outcome, 0 when it is spread evenly. For a Choice with <i>n</i> options, the documented formula is <code>confidence = (p_max − 1/n) / (1 − 1/n)</code>. For a Score, the formula also accounts for how far probability lies from the most likely level, so indecision between neighbouring levels lowers confidence less than indecision between opposite ends.</p>
+
+<div class="calc">Illustrative Choice over three tiers:  probabilities = small 0.15, medium 0.70, frontier 0.15
+confidence = (0.70 − 1/3) / (1 − 1/3) = 0.3667 / 0.6667 = 0.55
+
+Same top probability, different spread:  small 0.30, medium 0.70, frontier 0.00
+confidence = 0.55 as well — the formula only looks at p_max.</div>
+
+<p>The <b>Noul value</b> is itself the probability of "yes". Near 1 is a strong yes, near 0 a strong no, near 0.5 an even split. TypeSafe suggests starting thresholds of 0.7 for yes and 0.3 for no, sending the middle band elsewhere, and tuning on one's own data rather than to a few test cases. If a confidence-style number is wanted, <code>|2p − 1|</code> puts a Noul on the same scale as a Choice.</p>
+
+<div class="callout tech"><span class="label">Technical note · what the documentation does not claim</span>
+<p>The Confidence page makes no calibration claim about <code>confidence</code>; it explicitly says right thresholds "depend on your domain and the performance of the model for your use case." The AI primer states calibration as the training objective for probabilities, measured over groups. Neither page says how well calibrated Jev will be for a question like "will this 1.5B model answer this maths problem correctly?" — that is for this project to measure.</p></div>
+
+<h2 id="decision-to-action">How application code turns a decision into an action</h2>
+
+<p>The documented pattern is to branch on the answer with risk-scaled thresholds: act automatically at high confidence, proceed carefully at medium, and fall back or escalate at low confidence. TypeSafe's own example gates a destructive action at a higher confidence than a read-only one. In this project the "action" is calling a generation tier, and the risky outcomes are a wrong answer (if the tier is too small) or a needlessly expensive one (if too large). The full flow — context in, typed result out, policy, then the model call — is drawn as architecture diagram C in Part 4 (<a class="xref" href="#fig-decision-action"></a>).</p>
+
+<p>The application policy has more inputs than Jev's answer. It must also know whether the chosen tier is enabled (the frontier tier is disabled without a key and caps), whether the budget admits the request, whether the Jev call failed or timed out, and what to do then. Those rules are <span class="pill ours">Our design</span>, not product behaviour.</p>
+
+<h2 id="four-roles">Four roles for Jev in this project</h2>
+
+<figure data-src="f07-four-roles" id="fig-four-roles"><figcaption>Where each proposed Jev role sits on the request path. Roles 1 and 2 decide before any answer exists; roles 3 and 4 judge an existing answer. All four are application designs to be built and evaluated in Days 3–4.</figcaption></figure>
+
+<table>
+  <thead><tr><th style="width:15%">Role</th><th style="width:21%">Information supplied</th><th style="width:22%">Illustrative question</th><th style="width:13%">Result</th><th>Gateway's next step · limitation to evaluate</th></tr></thead>
+  <tbody>
+    <tr><td class="k">1 · Select a tier before answering</td><td>State: the prompt and short descriptions of each tier's strengths</td><td>Choice: "Which is the cheapest model likely to answer the <code>prompt</code> correctly?" options small / medium / frontier</td><td><code>choice</code>, probabilities, confidence</td><td>Call the chosen tier if confidence clears a threshold and the tier is available; otherwise fall back. <i>Limitation:</i> one fixed operating point; tier descriptions must be tuned on validation; confidence measures spread, not correctness.</td></tr>
+    <tr><td class="k">2 · Estimate whether a named backend will succeed</td><td>State: the prompt and a description of one specific tier</td><td>Noul: "Would a small 1.5-billion-parameter instruction model answer the <code>prompt</code> correctly?"</td><td><code>noul</code> probability</td><td>Use small if <code>noul ≥ t₁</code>; else ask about medium; else frontier. Sweeping t gives a cost–quality curve. <i>Limitation:</i> asking twice adds latency and tokens; calibration must be measured against observed success labels.</td></tr>
+    <tr><td class="k">3 · Check an already generated answer</td><td>State: the prompt and the generated answer</td><td>Noul: "Does the <code>answer</code> correctly and completely respond to the <code>prompt</code>?"</td><td><code>noul</code> probability</td><td>Return the answer if above threshold; else escalate to the next tier (a cascade). <i>Limitation:</i> false accepts return wrong answers; false rejects pay twice; escalation must not replay output already streamed.</td></tr>
+    <tr><td class="k">4 · Check that a cached answer applies</td><td>State: the new prompt, the cached prompt, the cached answer</td><td>Noul: "Does the <code>cached_answer</code> correctly answer the <code>new_prompt</code>?"</td><td><code>noul</code> probability</td><td>Serve the cached answer only on a confident yes; else generate. <i>Limitation:</i> near-miss pairs ("capital of Australia" vs "largest city of Australia") are where similarity search fails and the check must succeed; false-hit rate needs its own benchmark.</td></tr>
+  </tbody>
+</table>
+
+<p>A request can combine roles. Because questions in one request run in parallel, roles 1 and 2 could be asked together in a single call; roles 3 and 4 need the answer or cache candidate first, so they are always separate calls on the request path, and their latency adds to the request.</p>
+
+<h2 id="two-probabilities">Tier-choice confidence is not the probability of a correct answer</h2>
+
+<p>It is tempting to read "Jev chose medium with confidence 0.9" as "there is a 90% chance the medium tier's answer will be correct". That reading is wrong for two separate reasons. First, <code>confidence</code> is a measure of how concentrated the Choice distribution is, not a probability of anything. Second, even the underlying Choice probability refers to the question that was asked — "which is the cheapest model likely to answer correctly?" — which is a different event from "the medium tier will be correct". A prompt every tier answers correctly should, ideally, make Jev choose <em>small</em>; a prompt no tier can answer has no right choice at all.</p>
+
+<figure data-src="f08-two-probabilities" id="fig-two-probabilities"><figcaption>Left: a Choice over tiers yields a preference distribution and a dispersion-based confidence; no scoreable event is defined. Right: a Noul phrased around a specific, scoreable event can be compared with observed outcomes. Values are illustrative.</figcaption></figure>
+
+<p><b>Calibration needs a defined event and observed labels.</b> To say a probability is calibrated, one needs (a) an event that is precisely defined and objectively decidable — for example, "the small tier's answer to this prompt, generated with these settings, passes the Day 2 scorer" — and (b) the actual outcome of that event for many prompts. Day 2 produces exactly those labels: for every prompt in the manifest and every tier, whether the answer was correct. With them, Day 3 can group Noul predictions into probability bins and compare each bin's average prediction with the fraction of prompts that actually succeeded.</p>
+
+<figure data-src="f09-reliability" id="fig-reliability" class="narrow"><figcaption>How calibration will be read once labels exist: a reliability diagram plots observed frequency against mean predicted probability for each bin. The points shown are synthetic and say nothing about Jev.</figcaption></figure>
+
+<h2 id="routing-pseudocode">Routing in pseudocode</h2>
+
+<p class="code-label"><span class="tag">Pseudocode</span> · threshold routing with Noul questions (role 2) · <span class="tag">Our design</span>, not implemented</p>
+<pre><code><span class="kw">function</span> route(request, deadline):
+    <span class="kw">if</span> request.model != "auto": <span class="kw">return</span> request.model           <span class="cm"># Day 1 behaviour: explicit tier</span>
+    state = { prompt: last_user_message(request), tiers: TIER_DESCRIPTIONS_V2 }
+    questions = { small_ok:  Noul("Would the small tier answer `prompt` correctly?"),
+                  medium_ok: Noul("Would the medium tier answer `prompt` correctly?") }
+    <span class="kw">try</span>:
+        answers = jev.ask(state, questions, timeout = min(1.0 s, deadline.remaining))
+    <span class="kw">except</span> (Timeout, ApiError):
+        <span class="kw">return</span> fallback_router(request)                         <span class="cm"># DistilBERT, Day 3</span>
+    record(question_version = "v2", answers, latency)
+    <span class="kw">if</span> answers.small_ok  >= T_SMALL  <span class="kw">and</span> enabled("small"):  <span class="kw">return</span> "small"
+    <span class="kw">if</span> answers.medium_ok >= T_MEDIUM <span class="kw">and</span> enabled("medium"): <span class="kw">return</span> "medium"
+    <span class="kw">if</span> enabled("frontier") <span class="kw">and</span> budget.admits(request):      <span class="kw">return</span> "frontier"
+    <span class="kw">return</span> "medium"                                            <span class="cm"># never silently upgrade to paid</span></code></pre>
+
+<p>Both questions are asked in one call because they are independent and parallel. <code>T_SMALL</code> and <code>T_MEDIUM</code> are chosen on the validation split and then frozen before the held-out test.</p>
+
+<h2 id="sdk-example">An SDK example checked against current documentation</h2>
+
+<p>The example below uses only names that appear in the official Python SDK documentation: <code>AsyncTypeSafeClient</code>, <code>Choice</code>, <code>RetryPolicy(max_retries, backoff_max, timeout)</code>, <code>client.system_one(state=…, questions=…, retry=…)</code>, <code>response.model</code>, <code>response.usage</code>, <code>response.answers[id].choice / .probabilities / .confidence</code>, and <code>TypeSafeAPIError</code> with <code>status</code> and <code>request_id</code>. The package is <code>typesafe-sdk</code> (Python 3.10+), and the client reads <code>TYPESAFE_API_KEY</code> from the environment. It has not been run: no TypeSafe key is configured for this project.</p>
+
+<p class="code-label"><span class="tag">Python</span> · verified against docs.typesafe.ai on 28 Oct 2026 · not executed</p>
+<pre><code><span class="kw">from</span> typesafe_sdk <span class="kw">import</span> AsyncTypeSafeClient, Choice, RetryPolicy, TypeSafeAPIError
+
+TIER_QUESTION_V1 = Choice(
+    instructions=<span class="st">"Which is the cheapest model likely to answer the `prompt` correctly?"</span>,
+    criteria={
+        <span class="st">"small"</span>: <span class="st">"1.5B instruction model: short facts and simple arithmetic"</span>,
+        <span class="st">"medium"</span>: <span class="st">"7B instruction model: multi-step reasoning and short programs"</span>,
+        <span class="st">"frontier"</span>: <span class="st">"Large hosted model: hard maths, long or subtle code"</span>,
+    },
+)
+
+<span class="kw">async def</span> choose_tier(client: AsyncTypeSafeClient, prompt: str) -> dict:
+    <span class="kw">try</span>:
+        response = <span class="kw">await</span> client.system_one(
+            state={<span class="st">"prompt"</span>: prompt},
+            questions={<span class="st">"tier"</span>: TIER_QUESTION_V1},
+            retry=RetryPolicy(max_retries=1, backoff_max=0.2, timeout=1.0),
+        )
+    <span class="kw">except</span> TypeSafeAPIError <span class="kw">as</span> error:
+        <span class="kw">return</span> {<span class="st">"fallback"</span>: True, <span class="st">"status"</span>: error.status, <span class="st">"request_id"</span>: error.request_id}
+    answer = response.answers[<span class="st">"tier"</span>]
+    <span class="kw">return</span> {<span class="st">"jev_model"</span>: response.model,                 <span class="cm"># versioned ID, e.g. jev-1.14.0</span>
+            <span class="st">"input_tokens"</span>: response.usage.input_tokens,
+            <span class="st">"choice"</span>: answer.choice,
+            <span class="st">"probabilities"</span>: dict(answer.probabilities),
+            <span class="st">"confidence"</span>: answer.confidence}
+
+<span class="cm"># usage:  async with AsyncTypeSafeClient(model="jev-1.14.0") as client: ...</span></code></pre>
+
+<p>Two details are worth noting. Pinning <code>jev-1.14.0</code> instead of <code>jev-latest</code> stops thresholds from silently drifting when the alias moves. And the SDK retries <code>429</code> and <code>529</code> responses by default; on a request path with a deadline, the retry budget must be bounded, which is why the example sets it explicitly.</p>
+
+<h2 id="jev-known-unknown">Documented facts and open questions</h2>
+
+<table>
+  <thead><tr><th style="width:50%">Documented (accessed 28 Oct 2026)</th><th>Not documented — must be measured or remains unknown</th></tr></thead>
+  <tbody>
+    <tr><td>Endpoint <code>POST https://api.typesafe.ai/v1/systemone</code>; Bearer key in <code>Authorization</code>.</td><td>Latency from this Mac's network to the API, at p50 and p95, under the project's request sizes.</td></tr>
+    <tr><td>Models Jev 1.14 (<code>jev-1.14.0</code>, available from 14 Oct 2026) and Jev 1.13; aliases <code>jev-latest</code>, <code>jev-preview</code>.</td><td>Jev's internal architecture, parameter count and serving hardware.</td></tr>
+    <tr><td>Price: pay per input token, $0.042 per million; output tokens free.</td><td>Total Jev spend for this project — depends on state size and question count per request.</td></tr>
+    <tr><td>Context: 64k tokens per request, 32k per question (state plus one question); an opt-in long-context header raises both, documented as slower and less accurate.</td><td>Accuracy as state grows on this project's prompts (TypeSafe publishes a "jaggedness" page for 1.13 that is not reproduced here).</td></tr>
+    <tr><td>Training objective: RLCD for calibrated probabilities; calibration holds over groups, not individual answers. Same weights for every account; not trained on customer requests.</td><td>Calibration for this project's events (tier success, answer correctness, cache applicability).</td></tr>
+    <tr><td>Errors: 400, 401, 413, 415, 422, 429 (rate limit), 529 (overloaded); SDKs retry 429/529 with backoff.</td><td>The organisation's actual rate limits (shown only in the TypeSafe console).</td></tr>
+    <tr><td>Text input only for production use; English is the primary language.</td><td>How well Jev judges maths- and code-heavy prompts, given guidance that it handles words better than raw numbers (from earlier project notes, not re-verified).</td></tr>
+  </tbody>
+</table>

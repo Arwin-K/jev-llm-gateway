@@ -1,0 +1,2 @@
+# Notebook GPU environment only. Do not install in the Mac gateway core.
+vllm==0.18.0

@@ -1,0 +1,124 @@
+<h1 id="part8"><span class="part-no">Part 8</span>Essential measurement notes</h1>
+
+<p class="part-intro">A short reference for the quantities Days 2, 3 and 6 will report. Every numerical example in this part is <span class="pill ill">Illustrative</span>; none is a project measurement.</p>
+
+<h2 id="m-latency">Latency: end to end, first output, and what happens between</h2>
+
+<figure data-src="f30-latency-anatomy" id="fig-latency-anatomy"><figcaption>Client-side timings for one streamed request. Time to first visible output and end-to-end latency are measured from when the client sends; event gaps are measured between consecutive content events.</figcaption></figure>
+
+<p><b>End-to-end latency</b> is the time from the client sending a request to receiving the last byte (for streams, the <code>[DONE]</code> event). It is what a non-streaming user experiences and what a deadline bounds. State where it is measured: the client's view includes the network and the gateway; the gateway's trace <code>duration_ms</code> starts after the request has been received and parsed.</p>
+
+<p><b>Time to first visible output</b> is the time until the first event that contains answer text. It is close to, but not the same as, the server's time to first token: some servers send an initial event that carries only the role or metadata, and the network and gateway add their own delay. Name which one is reported.</p>
+
+<p><b>Stream-event gaps versus token timings.</b> An SSE event can carry one token, several, or none. The gap between events is therefore a delivery timing, not a per-token generation timing, unless the interface guarantees one token per event. Per-token rates should come from token counts in <code>usage</code>, not from counting events.</p>
+
+<p><b>Average time per output token</b> describes the decode phase for one request:</p>
+<div class="calc">TPOT = (end-to-end − time to first output) ÷ (output tokens − 1)
+Illustrative: end-to-end 3.40 s, first output at 0.40 s, 121 output tokens (from usage)
+  TPOT = (3.40 − 0.40) ÷ 120 = 0.025 s = 25 ms per token  →  about 40 tokens/s for this request</div>
+
+<h2 id="m-percentiles">p50 and p95</h2>
+
+<p>A latency distribution is usually skewed: most requests are similar, a few are much slower. The <b>p50</b> (median) is the value half the requests are at or below; the <b>p95</b> is the value 95% are at or below. The mean is a poor summary because one stalled request can move it a lot. Percentiles from small samples are fragile: with 20 requests, p95 is determined by roughly one request. Always report the sample count and the method (nearest-rank, or linear interpolation).</p>
+
+<figure data-src="f31-percentiles" id="fig-percentiles"><figcaption>Median, p95 and mean for twenty illustrative latencies. The median uses the average of the 10th and 11th values; p95 uses the nearest-rank method.</figcaption></figure>
+
+<h2 id="m-throughput">Request and output-token throughput</h2>
+
+<div class="calc">Illustrative 10-minute window (600 s), fixed concurrency of 4
+  completed requests 540, failed requests 18
+  request throughput      = 540 ÷ 600 s       = 0.90 requests/s   (state: completed only)
+  output tokens (usage)   = 81,000
+  output-token throughput = 81,000 ÷ 600 s    = 135 tokens/s
+  error rate              = 18 ÷ (540 + 18)   = 3.2%</div>
+
+<p>Throughput needs a stated window, a stated load (concurrency or arrival rate), and the error rate next to it. Higher throughput at higher concurrency usually comes with higher per-request latency; report both, never one alone.</p>
+
+<h2 id="m-quality">Accuracy, completion rate and error rate</h2>
+
+<div class="calc">Illustrative: 500 prompts sent to one tier
+  infrastructure errors (timeout, backend error)        40
+  responses received                                   460
+    correct 390 · incorrect 40 · unparseable 22 · truncated 8
+  accuracy (over all attempts)    = 390 ÷ 500 = 78.0%
+  completion rate                 = 460 ÷ 500 = 92.0%
+  error rate                      =  40 ÷ 500 =  8.0%
+  accuracy among completed        = 390 ÷ 460 = 84.8%   ← must be labelled; never reported alone</div>
+
+<p>The headline accuracy uses all attempted prompts as the denominator, so a tier cannot look better by failing hard prompts. Unparseable and truncated responses count as not correct in accuracy, and are also reported separately because they may point to scorer or template problems.</p>
+
+<h2 id="m-cost">Actual versus modelled cost</h2>
+
+<p><b>Actual cost</b> is money spent, computed from provider-reported usage and the prices in force at the time, ideally reconciled with the provider's billing. <b>Modelled cost</b> is a scenario: "if this workload ran on a GPU rented at <i>r</i> per hour at utilisation <i>u</i>". Both are useful; they belong in different columns with their assumptions stated. The gateway's budget reservation is neither — it is a conservative admission estimate. Unknown prices stay unknown; they are never filled with a guess.</p>
+
+<h2 id="m-cold-warm">Cold versus warm runs</h2>
+
+<p>Report whether each measurement started with the model unloaded (cold) or loaded (warm), how many warm-up requests were discarded, and the server's caching state. On the Mac, record <code>ollama ps</code> before and after a run. A cold measurement answers "how long after idle does the first user wait?"; a warm one answers "how fast is steady-state serving?". Both are legitimate; mixing them in one distribution is not.</p>
+
+<h2 id="m-mock-real">Mocked versus real evidence</h2>
+
+<table>
+  <thead><tr><th style="width:24%">Evidence</th><th style="width:38%">What it can establish</th><th>What it cannot</th></tr></thead>
+  <tbody>
+    <tr><td>Mocked test</td><td>The gateway's own logic: mapping, validation, error handling, record format.</td><td>That a real server accepts the request, returns that shape, or responds in time.</td></tr>
+    <tr><td>Real integration check</td><td>That configured URLs, model names and response shapes match a live service.</td><td>Speed or quality beyond the single request observed.</td></tr>
+    <tr><td>Replayed / offline analysis</td><td>Router comparisons on stored outcomes; oracle bounds.</td><td>Live latency, switching cost, or behaviour under load.</td></tr>
+    <tr><td>Controlled benchmark</td><td>Latency and throughput under the stated workload, environment and load state.</td><td>Performance under a different workload or on different hardware.</td></tr>
+  </tbody>
+</table>
+
+<p>Each result in the project should say which of these it is, which environment produced it (Mac or Colab), and which commit and configuration it used.</p>
+
+<h1 id="sources" class="unnumbered">Sources</h1>
+
+<p>All sources were accessed on <b>28 October 2026</b>. Official documentation was preferred; where only the repository is cited, the claim is about this project's own recorded state.</p>
+
+<h3>TypeSafe (Jev) — official documentation</h3>
+<ol class="sources">
+  <li>Introduction. <span class="url">https://docs.typesafe.ai/introduction</span></li>
+  <li>Quick start. <span class="url">https://docs.typesafe.ai/introduction/quickstart</span></li>
+  <li>System One. <span class="url">https://docs.typesafe.ai/concepts/system-one</span></li>
+  <li>State. <span class="url">https://docs.typesafe.ai/concepts/state</span></li>
+  <li>Choice. <span class="url">https://docs.typesafe.ai/primitives/choice</span></li>
+  <li>Score. <span class="url">https://docs.typesafe.ai/primitives/score</span></li>
+  <li>Noul. <span class="url">https://docs.typesafe.ai/primitives/noul</span></li>
+  <li>Box (image primitive, "dreamer-ready"). <span class="url">https://docs.typesafe.ai/primitives/box</span></li>
+  <li>Confidence. <span class="url">https://docs.typesafe.ai/confidence</span></li>
+  <li>Models (versions, price, context, aliases, rate limits). <span class="url">https://docs.typesafe.ai/models</span></li>
+  <li>AI primer (RLCD and calibration). <span class="url">https://docs.typesafe.ai/introduction/machine-learning-primer</span></li>
+  <li>Request rules and errors. <span class="url">https://docs.typesafe.ai/api/errors</span></li>
+  <li>Python SDK: basic usage; answers and responses. <span class="url">https://docs.typesafe.ai/sdk/python/usage/basic · https://docs.typesafe.ai/sdk/python/api/types/responses</span></li>
+  <li>typesafe-sdk package listing (version 0.7.5 at access). <span class="url">https://pypi.org/project/typesafe-sdk/</span></li>
+</ol>
+
+<h3>Serving runtimes and tools</h3>
+<ol class="sources" start="15">
+  <li>Ollama for macOS (requirements, install, file locations). <span class="url">https://docs.ollama.com/macos</span></li>
+  <li>Ollama OpenAI compatibility. <span class="url">https://docs.ollama.com/api/openai-compatibility</span></li>
+  <li>Ollama FAQ (context length, keep_alive, concurrency, ollama ps). <span class="url">https://docs.ollama.com/faq</span></li>
+  <li>Ollama API: list running models (/api/ps). <span class="url">https://docs.ollama.com/api/ps</span></li>
+  <li>Ollama library: qwen2.5 tags and sizes. <span class="url">https://ollama.com/library/qwen2.5</span></li>
+  <li>vLLM GPU installation. <span class="url">https://docs.vllm.ai/en/stable/getting_started/installation/gpu/</span></li>
+  <li>vLLM package listing (latest 0.32.0 at access). <span class="url">https://pypi.org/project/vllm/</span></li>
+  <li>uv installation. <span class="url">https://docs.astral.sh/uv/getting-started/installation/</span></li>
+  <li>Docker Desktop networking (host.docker.internal). <span class="url">https://docs.docker.com/desktop/features/networking/</span></li>
+  <li>Google Colab FAQ (resource limits, runtime lifetime). <span class="url">https://research.google.com/colaboratory/faq.html</span></li>
+</ol>
+
+<h3>Models and datasets</h3>
+<ol class="sources" start="25">
+  <li>Qwen2.5-1.5B-Instruct model card and config (Apache-2.0). <span class="url">https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct</span></li>
+  <li>Qwen2.5-7B-Instruct model card and config (Apache-2.0). <span class="url">https://huggingface.co/Qwen/Qwen2.5-7B-Instruct</span></li>
+  <li>DistilBERT base uncased (Apache-2.0). <span class="url">https://huggingface.co/distilbert/distilbert-base-uncased</span></li>
+  <li>GSM8K dataset (MIT). <span class="url">https://huggingface.co/datasets/openai/gsm8k</span></li>
+  <li>MMLU dataset (MIT). <span class="url">https://huggingface.co/datasets/cais/mmlu</span></li>
+  <li>MBPP dataset (CC BY 4.0). <span class="url">https://huggingface.co/datasets/google-research-datasets/mbpp</span></li>
+</ol>
+
+<h3>Repository evidence</h3>
+<ol class="sources" start="31">
+  <li>Commit plan and full scope. <span class="url">docs/COMMIT_PLAN.md · docs/PLAN.md · docs/RUNTIME_PROFILES.md · AGENTS.md</span></li>
+  <li>Day 1 status, decisions, environments, experiments. <span class="url">docs/STATUS.md · docs/DECISIONS.md · docs/ENVIRONMENT.md · docs/EXPERIMENTS.md · docs/MAC_MODELS.md</span></li>
+  <li>Raw Day 1 outputs. <span class="url">evidence/day1/mac-offline-20261027-1314.txt · evidence/day1/mac-doctor-20261027-1314.json</span></li>
+  <li>Source code and tests at commit 4e6f7e0. <span class="url">src/jev_gateway/ · tests/ · notebooks/ · config/</span></li>
+</ol>

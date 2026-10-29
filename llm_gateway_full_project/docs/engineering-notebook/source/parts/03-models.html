@@ -1,0 +1,107 @@
+<h1 id="part3"><span class="part-no">Part 3</span>What the models and programs are doing</h1>
+
+<p class="part-intro">The project involves six kinds of model and five kinds of program. Keeping clear which is which — weights, the software that runs them, and the application that decides what to ask — prevents most of the confusion that follows.</p>
+
+<h2 id="component-table">The components at a glance</h2>
+
+<table>
+  <thead><tr><th style="width:14%">Component</th><th style="width:15%">Kind</th><th style="width:15%">Runs where</th><th style="width:20%">Input → output</th><th>Role in the project</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Small model</td><td>Generation model (weights)</td><td>Mac via Ollama; Colab via vLLM</td><td>chat messages → text</td><td>Cheapest, fastest tier. Current candidate: Qwen2.5 1.5B Instruct (<code>qwen2.5:1.5b</code>).</td></tr>
+    <tr><td class="k">Medium model</td><td>Generation model</td><td>Mac via Ollama when memory permits; Colab via vLLM</td><td>chat messages → text</td><td>Middle tier for multi-step tasks. Candidate: Qwen2.5 7B Instruct (<code>qwen2.5:7b</code>).</td></tr>
+    <tr><td class="k">Frontier model</td><td>Generation model behind a paid API</td><td>Provider's servers</td><td>chat messages → text + usage</td><td>Highest-quality, most expensive tier. Model and provider not yet configured.</td></tr>
+    <tr><td class="k">Jev</td><td>Decision model behind an API</td><td>TypeSafe's servers</td><td>state + typed questions → typed answers + probabilities</td><td>Principal router and verifier (Days 3–4). Never generates the reply.</td></tr>
+    <tr><td class="k">DistilBERT</td><td>Classifier model, fine-tuned by the project</td><td>Trained on Colab; served on Mac CPU</td><td>prompt text → tier label + probabilities</td><td>Fallback router when Jev is unavailable; comparison baseline (Day 3).</td></tr>
+    <tr><td class="k">Embedding model</td><td>Encoder model</td><td>Mac</td><td>text → fixed-length vector</td><td>Finds similar past prompts for the semantic cache (Day 4).</td></tr>
+    <tr><td class="k">Ollama</td><td>Serving software</td><td>Mac (native app, port 11434)</td><td>HTTP requests → model execution</td><td>Downloads, loads, unloads and runs the local models; OpenAI-compatible endpoint.</td></tr>
+    <tr><td class="k">vLLM</td><td>Serving software</td><td>Colab NVIDIA GPU (port 8000)</td><td>HTTP requests → batched GPU execution</td><td>High-throughput serving for NVIDIA experiments (Day 1 notebook, Day 6 study).</td></tr>
+    <tr><td class="k">Gateway</td><td>Application code (this repo)</td><td>Mac, <code>127.0.0.1:8080</code></td><td>client request → backend call → response + trace</td><td>Validates, resolves a tier, forwards, streams, enforces caps, records.</td></tr>
+    <tr><td class="k">Client</td><td>Application code / tool</td><td>Mac</td><td>user intent → HTTP request</td><td><code>curl</code>, <code>jev smoke</code>, later the evaluation runner and load tests.</td></tr>
+    <tr><td class="k">Colab notebook</td><td>Experiment harness</td><td>Colab VM</td><td>uploaded source → server, requests, exported JSON</td><td>Runs the same committed source against vLLM; exports results; never a backend for the Mac.</td></tr>
+  </tbody>
+</table>
+
+<figure data-src="f10-layers" id="fig-layers"><figcaption>Three layers. Application code decides what to ask and records what happened; serving software and hosted services execute models; models are the trained weights. The same Qwen2.5 family is reached through two serving paths, Ollama on the Mac and vLLM on Colab.</figcaption></figure>
+
+<h2 id="weights-tokens">Weights, tokens and inference</h2>
+
+<p>A trained model is a large set of numbers called <b>weights</b> (or parameters). Qwen2.5 7B Instruct has about 7.6 billion of them; the 1.5B model about 1.5 billion. The weights are fixed after training; using the model does not change them.</p>
+
+<p>Models do not read characters directly. A <b>tokenizer</b> splits text into <b>tokens</b> — whole words, word pieces, punctuation — and maps each to an integer ID. "The gateway streams tokens." might become six or seven tokens. Prices, context limits and speeds are all counted in tokens, and different models' tokenizers split the same text differently, which is why the gateway's budget check estimates conservatively rather than counting exactly.</p>
+
+<p><b>Inference</b> means running the model forward on an input to get an output. For a generation model, the output of one forward pass is a probability distribution over the next token. The server picks a token (always the most likely one at temperature 0, or a random draw weighted by probability at higher temperatures), appends it, and repeats until it produces an end token or reaches <code>max_tokens</code>.</p>
+
+<h2 id="prefill-decode">Prefill and decode</h2>
+
+<p>A generation request happens in two phases with very different performance characteristics.</p>
+
+<figure data-src="f11-prefill-decode" id="fig-prefill-decode"><figcaption>Prefill processes the whole prompt at once and builds the KV cache; decode then produces one token per step, each step reading the weights and the growing cache.</figcaption></figure>
+
+<p><b>Prefill</b> processes every prompt token in one batched pass. Because many tokens share each read of the weights, prefill keeps the processor busy with arithmetic; its time grows with prompt length. It ends with the first output token, so prefill dominates the <em>time to first token</em>.</p>
+
+<p><b>Decode</b> generates the remaining tokens one at a time, because each new token depends on the previous one. Every decode step must stream essentially all the weights through the processor to produce a single token, so decode speed on one request is usually limited by memory bandwidth rather than arithmetic. This is why serving systems batch decode steps from many requests together: one read of the weights then produces a token for each request in the batch. vLLM's design centres on doing that efficiently; it is also where the Day 6 GPU experiment will look.</p>
+
+<div class="calc">Illustrative arithmetic, not a measurement
+prompt = 300 tokens,  output = 120 tokens
+if prefill takes 0.15 s and decode runs at 40 tokens/s:
+  time to first token ≈ queue + 0.15 s
+  remaining 119 tokens ≈ 119 / 40 = 2.98 s
+  end-to-end ≈ 0.15 + 2.98 ≈ 3.1 s   → output length, not prompt length, dominates</div>
+
+<h2 id="context-kv">Context windows and the KV cache</h2>
+
+<p>The <b>context window</b> is the maximum number of tokens — prompt plus generated output — a model can attend to in one request. Qwen2.5's published configuration allows 32,768 positions, but a serving runtime may allocate less: Ollama documents a default context of 4,096 tokens, adjustable with <code>OLLAMA_CONTEXT_LENGTH</code> or a Modelfile <span class="pill doc">Documented</span>. Text beyond the configured window is truncated or rejected, so a "fits the model" claim must name the runtime setting.</p>
+
+<p>During attention, each layer computes a <i>key</i> and a <i>value</i> vector for every token. Recomputing them for all earlier tokens at every decode step would be wasteful, so the server keeps them in the <b>KV cache</b>. The cache grows by a fixed amount per token, per concurrent request.</p>
+
+<div class="calc">KV cache per token = 2 (K and V) × layers × KV heads × head size × bytes per value
+Qwen2.5-7B-Instruct config: 28 layers, 4 KV heads, head size 3584/28 = 128, bf16 = 2 bytes
+  2 × 28 × 4 × 128 × 2 B = 57,344 B ≈ 56 KiB per token
+  × 4,096 tokens  ≈ 224 MiB per full-context request
+  × 32,768 tokens ≈ 1.75 GiB per full-context request
+Qwen2.5-1.5B-Instruct: 28 layers, 2 KV heads, head size 128 → 28 KiB per token, ≈ 112 MiB at 4,096
+(Configs from the Hugging Face model repositories. Runtimes may store the cache at lower precision.)</div>
+
+<p>Ollama notes that memory needed scales with <code>OLLAMA_NUM_PARALLEL × OLLAMA_CONTEXT_LENGTH</code>, which is this same arithmetic: allowing four parallel 4,096-token requests on the 7B model reserves roughly four times 224 MiB for the cache alone.</p>
+
+<h2 id="quantization">Quantization and approximate weight memory</h2>
+
+<p><b>Quantization</b> stores weights with fewer bits — 8 or 4 instead of 16 — trading a small amount of accuracy for less memory and less data to read per token. The first-order memory estimate is simple:</p>
+
+<div class="calc">weight bytes ≈ parameters × bits per weight ÷ 8
+Qwen2.5-7B: 7,615,616,512 params × 16 bits ÷ 8 ≈ 15.2 GB     × 4 bits ÷ 8 ≈ 3.8 GB
+Qwen2.5-1.5B: 1,543,714,304 params × 16 bits ÷ 8 ≈ 3.1 GB    × 4 bits ÷ 8 ≈ 0.77 GB
+Ollama's listed downloads: qwen2.5:7b 4.7 GB, qwen2.5:1.5b 986 MB — larger than pure 4-bit,
+because practical 4-bit formats keep some tensors at higher precision and add scales and metadata.</div>
+
+<figure data-src="f12-memory" id="fig-memory"><figcaption>First-order weight memory for the two candidate models at three precisions, against the Mac's 18 GB of unified memory. The bars are arithmetic, not measured residency.</figcaption></figure>
+
+<p>The Colab notebook serves <code>Qwen/Qwen2.5-1.5B-Instruct</code> from Hugging Face in its native 16-bit form, while the Mac serves Ollama's quantized build. They are the same model family but not the same artefact, so quality and speed results from the two environments are not interchangeable.</p>
+
+<h2 id="disk-vs-runtime">Why fitting on disk does not establish runtime feasibility</h2>
+
+<p>A 4.7 GB download proves only that the file fits on disk. At runtime the model also needs the KV cache for each active request, scratch buffers for intermediate activations, the runtime's own code and graph, and room for everything else on the machine. On Apple Silicon the CPU and GPU share one pool of unified memory, and macOS reserves part of it; Ollama may also place part of a model on the CPU if the GPU share is insufficient (its <code>ollama ps</code> output shows the split). The only trustworthy evidence is an observation: load the model, run a request at the intended context length, and read <code>ollama ps</code>, the <code>size_vram</code> field of <code>/api/ps</code>, and memory pressure in Activity Monitor. The repository records the download sizes and explicitly makes no residency claim yet.</p>
+
+<h2 id="cold-warm">Cold loading, warm execution and model switching</h2>
+
+<figure data-src="f13-cold-warm" id="fig-cold-warm"><figcaption>A cold request pays for loading weights before prefill; a warm request does not. When two models cannot both stay resident, switching tiers can mean unloading one and loading the other.</figcaption></figure>
+
+<p>A <b>cold</b> request arrives when the model is not in memory: the server must read gigabytes from disk and initialise the runtime before prefill begins. A <b>warm</b> request finds the model already loaded. By default Ollama keeps a model loaded for five minutes after its last use (the <code>keep_alive</code> setting), may keep up to three models loaded on CPU-based or single-GPU systems if they fit, and queues new requests while it unloads idle models when memory is short <span class="pill doc">Documented</span>.</p>
+
+<p>This matters twice. For measurement, the first request after a load is not representative, so benchmarks need a warm-up and must record load state. For routing, a policy that alternates between small and medium on a machine that can hold only one of them will pay load time repeatedly — a cost invisible in an evaluation that runs all small requests and then all medium ones.</p>
+
+<h2 id="bigger">Why a larger model is not automatically better on every question</h2>
+
+<ul>
+  <li><b>Averages hide per-prompt reversals.</b> A larger model with higher average accuracy can still miss prompts a smaller model gets right; the oracle table in Part 7 is built to expose such rows.</li>
+  <li><b>Format and length.</b> A model that explains at length may hit <code>max_tokens</code> before stating the final answer, which the scorer will record as truncated rather than correct. The gateway's default output cap is 256 tokens.</li>
+  <li><b>Different artefacts.</b> A heavily quantized larger model may lose more accuracy than a lightly quantized smaller one.</li>
+  <li><b>The question may be easy.</b> For simple facts and classification, extra capacity adds latency and cost without adding correctness.</li>
+  <li><b>Speed is part of quality.</b> An answer that arrives too late for its deadline is a failure, regardless of its content.</li>
+</ul>
+
+<h2 id="model-choice">Choosing model families: criteria, not conclusions</h2>
+
+<p>The original plan sets role targets — a small instruction model of about 1–3B parameters and a quantized medium model of about 7–8B — and leaves the specific choice to the hardware. The current candidates, Qwen2.5 1.5B and 7B Instruct, were selected after the disk and memory preflight. Both are published under the Apache-2.0 licence on their Hugging Face model pages, both are available as Ollama tags, and the same family can be served by vLLM in Colab, which keeps the Mac and NVIDIA paths comparable in kind.</p>
+
+<p>The choice remains conditional. A model should be replaced if it does not run acceptably on the actual Mac, if its runtime support changes, if its licence terms do not fit the intended use, or if newer documentation recommends a different checkpoint. The criteria, in order: (1) measured memory and latency on the target machine; (2) supported by Ollama on Apple Silicon and by vLLM on the allocated GPU; (3) an instruction-tuned chat template; (4) licence compatible with publishing results; (5) the same family available in both environments; (6) a model card that states context length and revision.</p>
