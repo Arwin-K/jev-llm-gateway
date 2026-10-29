@@ -17,3 +17,7 @@ Record actual decisions, context, alternatives, evidence, affected code/configur
 - Make project train/validation/test labels distinct from official source split names. A fixed seed and exact normalized-text grouping produce the 2,500-prompt target; semantic duplicate detection remains a later risk assessment.
 - Use Docker-only MBPP scoring with no host fallback. Confirmed local pass/fail/crash/timeout behavior; containers are risk reduction, not an absolute boundary.
 - Reuse only compatible completed results, preserving original identity and timestamps. Failures remain retryable. Reports require an explicit saved run file so failed attempts are not silently lost behind successful checkpoints.
+
+## Day 3 local classifier
+
+- The DistilBERT adapter loads only an artifact marked `trained_distilbert` with saved weights, tokenizer, labels, train/validation provenance, and matching backend model identities. Operators must also supply the generation-settings fingerprint from the training records as `JEV_ROUTER_TRAINING_FINGERPRINT`. The gateway does not infer that an arbitrary pretrained checkpoint is a trained fallback. CPU is the portable Mac default; MPS is an explicit optional device. No actual artifact or Mac classifier latency exists yet because training labels are unavailable.

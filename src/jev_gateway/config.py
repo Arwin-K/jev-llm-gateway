@@ -43,6 +43,7 @@ class Settings:
     frontier_max_usd: float = 0.0
     frontier_input_usd_per_million: float = 0.0
     frontier_output_usd_per_million: float = 0.0
+    router_training_fingerprint: str = ""
 
     def __post_init__(self):
         if not 0 < self.timeout_seconds <= 300:
@@ -88,4 +89,5 @@ def from_env():
         frontier_max_usd=number("JEV_FRONTIER_MAX_USD", "0"),
         frontier_input_usd_per_million=number("JEV_FRONTIER_INPUT_USD_PER_MILLION", "0"),
         frontier_output_usd_per_million=number("JEV_FRONTIER_OUTPUT_USD_PER_MILLION", "0"),
+        router_training_fingerprint=os.getenv("JEV_ROUTER_TRAINING_FINGERPRINT", ""),
     )
