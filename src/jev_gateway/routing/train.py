@@ -90,6 +90,12 @@ def train(train_path: Path, validation_path: Path, output: Path, *, revision: st
                               eval_dataset=Rows(validation), compute_metrics=metrics)
     trainer.train()
     evaluation = trainer.evaluate()
+    sample_texts = [training[0].text, validation[0].text]
+    model.eval()
+    with torch.inference_mode():
+        sample = tokenizer(sample_texts, truncation=True, padding='max_length',
+                           max_length=max_length, return_tensors='pt').to(model.device)
+        before_reload = torch.softmax(model(**sample).logits, dim=-1).cpu().tolist()
     trainer.save_model(str(output/'model'))
     tokenizer.save_pretrained(str(output/'model'))
     metadata = {'artifact_kind': 'trained_distilbert', 'base_model': 'distilbert-base-uncased',
@@ -105,6 +111,12 @@ def train(train_path: Path, validation_path: Path, output: Path, *, revision: st
                 'source_revisions': sorted({r.source_revision for r in training+validation}),
                 'dataset_revisions': sorted({r.dataset_revision for r in training+validation})}
     (output/'metadata.json').write_text(json.dumps(metadata, indent=2, sort_keys=True))
+    from .artifact import verify_reload
+    reloaded = verify_reload(output, sample_texts)
+    if any(abs(a-b) > 1e-3 for row_a, row_b in zip(before_reload, reloaded['probabilities'])
+           for a, b in zip(row_a, row_b)):
+        raise RuntimeError('artifact reload changed predictions')
+    (output/'reload_check.json').write_text(json.dumps(reloaded, indent=2))
     return metadata
 
 
