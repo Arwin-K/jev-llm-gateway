@@ -3,7 +3,7 @@
 `day1_vllm.ipynb` runs on an explicitly selected Colab GPU runtime. First create a source archive from a **committed** local revision:
 
 ```bash
-git archive --format=zip -o jev-source.zip HEAD llm_gateway_full_project
+git archive --format=zip -o jev-source.zip HEAD
 shasum -a 256 jev-source.zip
 ```
 

@@ -1,6 +1,6 @@
 # Evaluation workflow
 
-Run commands from `llm_gateway_full_project`. These steps separate offline preparation, real generation, private audit, and serving measurements.
+Run commands from the repository root. These steps separate offline preparation, real generation, private audit, and serving measurements.
 
 ## Prepare pinned sources and inspect splits
 

@@ -20,3 +20,5 @@ python3 build.py
 Without the build script, open `notebook.html` in Chrome, choose Print → Save as PDF, Letter size, margins "Default", and enable "Background graphics". Contents page numbers come only from `build.py`.
 
 In the source, figures are written as `<figure data-src="f01-architecture" id="...">` and cross-references as `<a class="xref" href="#id"></a>`; the build fills in numbers. Checkpoint cards use `<div class="cp">` with a `<dl>` of Understand / Change / Why here / Evidence / Common mistake / Recorded rows.
+
+This notebook is a preserved Day 1–2 teaching artifact. Its rendered pages describe the earlier nested project folder and checkpoint-style commit subjects. The active repository now keeps the package, tests, and docs at the Git root, with plain-language subjects and `day-one`/`day-two` branches. Use the root README and current workflow guides for executable commands.

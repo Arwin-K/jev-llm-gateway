@@ -11,7 +11,7 @@ The repository contains a working explicit-tier text gateway and evaluation tool
 
 ## First actions
 
-1. From `llm_gateway_full_project`, run `uv sync --locked --extra test` and `uv run pytest -q`.
+1. From the repository root, run `uv sync --locked --extra test` and `uv run pytest -q`.
 2. Install and start native Ollama, then run `uv run jev doctor`. Download candidate models only after checking available disk and memory.
 3. Read [the evaluation workflow](docs/EVALUATION_WORKFLOW.md) before running a benchmark. Paid calls require explicit credentials, rates, and positive caps.
 
