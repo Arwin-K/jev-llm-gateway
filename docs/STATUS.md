@@ -70,3 +70,7 @@ D3-16 measured only fixed/random decision overhead on this Mac; the raw run ID a
 Post-merge follow-up adds bounded validation decision collection and a calibration-report CLI. A local fixed-policy command produced one selection without a generation call; the matching calibration report correctly returned insufficient data. Jev decision rates now require an HTTPS source URL and effective date in addition to positive caps. These are additional substantive fixes after the 18 checkpoint commits.
 
 The post-merge follow-up suite passed 72 tests with one third-party Starlette deprecation warning; raw output is `evidence/day3/mac-offline-20261029-followup.txt`.
+
+## Day 4 block 1 — 2026-10-30 America/Toronto
+
+D4-01 adds a typed Jev Noul judgment for whether one generated answer satisfies its request and applicable instructions; no benchmark reference is sent. D4-02 adds explicit acceptance and verification-failure outcomes, with no implicit acceptance. D4-03 adds a finite buffered small→medium→frontier cascade that records each generation and judgment attempt. Focused tests use controlled fixtures. No live Jev or generator call was possible at this checkpoint because credentials and Ollama are unavailable.
