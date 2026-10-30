@@ -16,7 +16,7 @@ This table distinguishes implemented code from real backend verification. See [e
 | Quality, serving, calibration, and router comparison reports | Implemented | Offline metric tests; validation replay produced zero plottable points | Real model answers, router decisions, sourced costs |
 | Jev choice/success routing and DistilBERT fallback | Implemented; trained fallback artifact absent | Offline contract and failure tests; no live Jev or classifier run | Paid access, complete train/validation labels, Colab training, Mac artifact benchmark |
 | Prompted LLM and Strands Decider comparisons | Implemented adapters | Offline typed/prompt contract checks; no live model run | Ollama and pinned Strands checkpoint/runtime |
-| Verification cascades and semantic cache | Planned | None | Verifier and embedding/cache implementation |
+| Verification cascades and semantic cache | Implemented as optional buffered modes and local pinned cache path | Offline contract, persistence-fixture, and HTTP integration tests; no live Jev, embedding, FAISS, or generator run | Select validation thresholds, install pinned model/FAISS, configure paid gates, and measure real behavior |
 | Compose, Prometheus, Grafana, kind | Planned | Docker Engine and sandbox image checked only | Deployment and monitoring implementation |
 | Locust load and failure tests | Planned | None | Bounded workloads and actual runs |
 | Offline CI regression | Planned | Local offline suite passes | CI workflow and fixed regression set |

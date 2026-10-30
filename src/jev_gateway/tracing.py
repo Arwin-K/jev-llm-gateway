@@ -18,6 +18,7 @@ class RequestTrace:
         self.tier = tier
         self.backend_model = backend_model
         self.routing = None
+        self.execution = None
 
     def finish(self, status: str, usage: dict | None = None, cost_status: str = "unknown"):
         record = {
@@ -27,6 +28,7 @@ class RequestTrace:
             "tier": self.tier,
             "backend_model": self.backend_model,
             "routing": self.routing,
+            "execution": self.execution,
             "status": status,
             "usage": {key: usage.get(key) for key in ("prompt_tokens", "completion_tokens", "total_tokens")} if usage else None,
             "cost_status": cost_status,

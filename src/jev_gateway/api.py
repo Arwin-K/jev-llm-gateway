@@ -19,6 +19,11 @@ from .routing.admission import request_for
 from .routing.contracts import RoutingError, require_eligible
 from .routing.artifact import ArtifactError
 from .routing.factory import build, fallback
+from .routing.jev_client import JevClient
+from .execution.verifier import JevAnswerVerifier
+from .execution.integration import execute
+from .cache.check import JevCacheChecker
+from .cache.runtime import build_cache
 
 
 class Message(BaseModel):
@@ -34,10 +39,13 @@ class ChatRequest(BaseModel):
     stream: bool = False
     max_tokens: int | None = Field(default=None, ge=1, le=8192)
     temperature: float | None = Field(default=None, ge=0, le=2)
+    execution_mode: Literal["standard", "route_first", "cascade", "hybrid"] = "standard"
+    cache_mode: Literal["off", "verified", "similarity_only"] = "off"
 
 
 def create_app(settings: Settings | None = None, transport: BackendTransport | None = None,
-               router=None, fallback_router=None):
+               router=None, fallback_router=None, answer_verifier=None,
+               cache_runtime=None, cache_checker=None):
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         try:
@@ -45,6 +53,8 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
         finally:
             for closer in app.state.router_closers:
                 await closer.close()
+            if app.state.cache_runtime is not None:
+                app.state.cache_runtime[1].close()
             if transport is None:
                 await app.state.transport.close()
 
@@ -62,6 +72,21 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
             app.state.router_error = type(exc).__name__
     if fallback_router is None:
         app.state.fallback_router = fallback(app.state.settings)
+    jev_client=getattr(app.state.router,'client',None)
+    if jev_client is None and (answer_verifier is None or cache_checker is None):
+        jev_client=JevClient(app.state.settings)
+        app.state.router_closers.append(jev_client)
+    app.state.answer_verifier=answer_verifier or JevAnswerVerifier(jev_client)
+    app.state.cache_checker=cache_checker or JevCacheChecker(
+        jev_client,threshold=(app.state.settings.cache_verification_threshold
+                              if app.state.settings.cache_verification_threshold is not None else 1.0),
+        threshold_source=app.state.settings.cache_verification_threshold_source or 'unconfigured')
+    app.state.cache_runtime=cache_runtime
+    if cache_runtime is None and app.state.settings.cache_path:
+        try:
+            app.state.cache_runtime=build_cache(app.state.settings)
+        except (ValueError, ImportError, OSError, RuntimeError) as exc:
+            app.state.cache_error=type(exc).__name__
 
     @app.get("/healthz")
     async def health():
@@ -90,6 +115,12 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
         trace = RequestTrace(request.model, 'pending')
         tier = request.model
         deadline = time.monotonic() + settings.timeout_seconds
+        if request.execution_mode != 'standard' or request.cache_mode != 'off':
+            result,headers=await execute(app,request,trace,max_tokens=max_tokens,deadline=deadline)
+            response.headers['x-request-id']=trace.request_id
+            for name,value in headers.items():
+                response.headers[name]=value
+            return result
         if tier == 'auto':
             if app.state.router is None:
                 trace.finish('router_unavailable')

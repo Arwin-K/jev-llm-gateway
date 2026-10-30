@@ -70,3 +70,29 @@ D3-16 measured only fixed/random decision overhead on this Mac; the raw run ID a
 Post-merge follow-up adds bounded validation decision collection and a calibration-report CLI. A local fixed-policy command produced one selection without a generation call; the matching calibration report correctly returned insufficient data. Jev decision rates now require an HTTPS source URL and effective date in addition to positive caps. These are additional substantive fixes after the 18 checkpoint commits.
 
 The post-merge follow-up suite passed 72 tests with one third-party Starlette deprecation warning; raw output is `evidence/day3/mac-offline-20261029-followup.txt`.
+
+## Day 4 block 1 — 2026-10-30 America/Toronto
+
+D4-01 adds a typed Jev Noul judgment for whether one generated answer satisfies its request and applicable instructions; no benchmark reference is sent. D4-02 adds explicit acceptance and verification-failure outcomes, with no implicit acceptance. D4-03 adds a finite buffered small→medium→frontier cascade that records each generation and judgment attempt. Focused tests use controlled fixtures. No live Jev or generator call was possible at this checkpoint because credentials and Ollama are unavailable.
+
+## Day 4 block 2
+
+D4-04 composes explicit route-first, cascade-only, and route-then-verify hybrid modes. D4-05 introduces one cumulative request ledger for generation and Jev stages plus existing process admission guards; verified output remains buffered. D4-06 adds a validation comparison reader that matches accepted answer hashes and model/settings identity to independent Day 2 scores, and reports real end-to-end timing only from recorded executions. No complete real Day 4 execution records exist yet, so it has no validation quality result.
+
+## Day 4 block 3
+
+D4-07 reports verifier false acceptance, false rejection, wrong accepted fraction, coverage, and failures against independently scored validation answers. D4-08 adds an optional, pinned, local-files-only MiniLM encoder; no real model is installed. D4-09 adds a single-writer, checksum-validated FAISS persistence path with normalized cosine semantics. The current Mac venv lacks torch, sentence-transformers, NumPy, and FAISS, so embedding and native FAISS behavior remain unverified. Focused checks use fixture models/indexes only.
+
+## Day 4 block 4
+
+D4-10 hashes exact instructions, prior conversation, local namespace, generation settings, model/policy identities, and embedding revision into cache scope. D4-11 returns thresholded cosine candidates only after scope/freshness filtering; similarity is not answer validity. D4-12 asks a versioned Jev Noul applicability question for a scoped candidate and treats unavailable/malformed checks as a miss. Fixture tests confirm another scope's stored answer is never sent to Jev. There is no real embedding index or live Jev candidate check yet.
+
+## Day 4 block 5
+
+D4-13 gates insertion on accepted, fresh, compatible answers and provides eviction, invalidation, and reset. D4-14 adds 12 hand-authored grouped validation cases with answer-changing near misses. D4-15 reports retrieval coverage, accepted reuse, harmful reuse, exact-reference answer quality, failures, and known cost/latency separately by real or fixture origin. The current CLI preflight found zero real observations, so no cache threshold or quality result has been selected.
+
+## Day 4 block 6 and handoff
+
+D4-16 adds context/model/embedding drift, corrupt-index lock release, and verifier-outage regressions; earlier cache tests cover empty/restored indexes, namespace, expiry, and grouped near misses. D4-17 exposes optional buffered `route_first`, `cascade`, and `hybrid` execution with off/verified/experimental-similarity cache modes. It preserves legacy explicit-tier, auto, and SSE behavior under the default mode. Paid verification is gated by an explicit flag, configured Jev access, and positive cumulative caps. Offline HTTP fixtures verify cache-hit generation avoidance, candidate miss fallback, accepted-only insertion, escalation, and gates. D4-18 records the actual operating contract in `DAY4_HANDOFF.md`.
+
+The final offline suite passed 99 tests with one third-party Starlette warning; raw output is `evidence/day4/mac-offline-20261030-1838.txt`. Doctor reported both Ollama tiers unreachable and frontier unconfigured in `evidence/day4/mac-doctor-20261030-1838.json`. No real Jev, generator, embedding, FAISS, or end-to-end performance check succeeded. There are 18 substantive Day 4 checkpoint commits after this handoff commit. The held-out test remains unused.

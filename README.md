@@ -8,15 +8,15 @@ A reproducible study of three-tier language-model serving, answer quality, cost,
 
 > How much answer quality can a cost-aware gateway retain while using smaller models when possible, and what latency and spending overhead do routing, verification, and caching introduce?
 
-The gateway now supports automatic policy selection, typed Jev choice and success questions, a prompted small-model comparison, fixed and seeded-random baselines, and a local Strands typed-server adapter. The DistilBERT trainer and artifact-gated fallback are implemented but no trained artifact exists because real three-tier labels are absent. Verifier cascades, semantic caching, deployment, and controlled load studies remain future stages. The [project plan](docs/PLAN.md) describes their scope; it is not a claim that they have run.
+The gateway now supports automatic policy selection, typed Jev choice and success questions, a prompted small-model comparison, fixed and seeded-random baselines, and a local Strands typed-server adapter. The DistilBERT trainer and artifact-gated fallback are implemented but no trained artifact exists because real three-tier labels are absent. Optional verifier cascades and scoped semantic caching are implemented and offline-tested; their real model and cache performance remains unmeasured. Deployment and controlled load studies remain future stages. The [project plan](docs/PLAN.md) describes their scope; it is not a claim that they have run.
 
 ## Observed evidence
 
 - Pinned source preparation selected **2,500 prompts**: 1,100 GSM8K math, 1,000 MMLU choice, and 400 sanitized MBPP code tasks. Project splits are 1,500 train, 500 validation, and 500 held-out test. The committed [manifest index](docs/day2-manifest-index.jsonl) contains IDs and hashes, not private prompt text or answers.
-- The Day 3 offline suite passed **72 tests** at the last recorded check. Controlled code fixtures passed, failed, crashed, and timed out inside the Docker evaluator as expected.
+- The Day 4 offline suite passed **99 tests**. Controlled code fixtures passed, failed, crashed, and timed out inside the Docker evaluator as expected.
 - A bounded real validation check attempted one prompt on each local tier. Both returned backend errors because Ollama was unreachable. Frontier was unconfigured. **No model answer quality, live serving latency, or paid API cost has been measured.** The project test split is unused.
 
-See [the Day 2 handoff](docs/DAY2_HANDOFF.md) for the exact environment, commands, counts, and limitations.
+See [the Day 4 handoff](docs/DAY4_HANDOFF.md) for execution modes, configuration, exact checks, and limitations. The [Day 2 handoff](docs/DAY2_HANDOFF.md) records source and evaluator preparation.
 
 ## Quick start on Mac
 
@@ -37,6 +37,8 @@ uv run jev smoke --tier small
 ```
 
 `POST http://127.0.0.1:8080/v1/chat/completions` accepts text messages with `model` set to `small`, `medium`, `frontier`, or `auto`, plus optional `stream`, `max_tokens`, and `temperature`. `model=auto` uses the configured router and returns 503 when neither it nor a compatible trained fallback can decide. Tools, image, and audio inputs are not implemented. `/healthz` checks the process; `/readyz` does not prove a model is loaded. `jev doctor` checks backend availability. The frontier tier stays disabled without a model, key, current rates, and positive request, token, and USD caps. These application-side limits are not provider spending controls.
+
+Optional `execution_mode` (`route_first`, `cascade`, `hybrid`) and `cache_mode` (`verified`, experimental `similarity_only`) fields enable Day 4 buffered paths. They require explicit configuration; the default remains `standard` with cache `off`. See [Day 4 configuration and failure semantics](docs/DAY4_HANDOFF.md).
 
 ## Reproduce evaluation preparation
 
