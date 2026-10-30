@@ -62,6 +62,21 @@ class Settings:
     strands_model: str = ""
     strands_checkpoint: str = ""
     strands_device: str = "mps"
+    execution_paid_enabled: bool = False
+    execution_max_requests: int = 0
+    execution_max_tokens: int = 0
+    execution_max_usd: float = 0.0
+    verification_threshold: float | None = None
+    verification_threshold_source: str = ""
+    cache_path: str = ""
+    cache_embedding_revision: str = ""
+    cache_similarity_threshold: float | None = None
+    cache_similarity_threshold_source: str = ""
+    cache_verification_threshold: float | None = None
+    cache_verification_threshold_source: str = ""
+    cache_namespace: str = "local"
+    cache_ttl_seconds: int = 86400
+    cache_similarity_only_enabled: bool = False
 
     def __post_init__(self):
         if not 0 < self.timeout_seconds <= 300:
@@ -76,6 +91,15 @@ class Settings:
         if (min(self.frontier_max_requests, self.frontier_max_tokens, self.jev_max_requests, self.jev_max_tokens) < 0
             or self.frontier_max_usd < 0 or self.jev_max_usd < 0 or self.jev_decision_output_tokens < 1):
             raise ConfigError("frontier limits cannot be negative")
+        if self.execution_max_requests < 0 or self.execution_max_tokens < 0 or self.execution_max_usd < 0:
+            raise ConfigError("execution limits cannot be negative")
+        for value, source in ((self.verification_threshold,self.verification_threshold_source),
+                              (self.cache_similarity_threshold,self.cache_similarity_threshold_source),
+                              (self.cache_verification_threshold,self.cache_verification_threshold_source)):
+            if value is not None and (not 0 <= value <= 1 or not source):
+                raise ConfigError("configured threshold requires a [0,1] value and source")
+        if self.cache_ttl_seconds < 1 or not self.cache_namespace:
+            raise ConfigError("cache TTL and namespace must be positive/nonempty")
 
     @property
     def frontier_enabled(self):
@@ -97,6 +121,10 @@ class Settings:
 
 
 def from_env():
+    def optional_number(name):
+        value=os.getenv(name)
+        return None if value is None or value == "" else number(name,value)
+
     def integer(name, default):
         try:
             return int(os.getenv(name, default))
@@ -138,4 +166,19 @@ def from_env():
         strands_model=os.getenv("JEV_STRANDS_MODEL", ""),
         strands_checkpoint=os.getenv("JEV_STRANDS_CHECKPOINT", ""),
         strands_device=os.getenv("JEV_STRANDS_DEVICE", "mps"),
+        execution_paid_enabled=os.getenv("JEV_EXECUTION_PAID_ENABLED", "false").lower()=="true",
+        execution_max_requests=integer("JEV_EXECUTION_MAX_REQUESTS", "0"),
+        execution_max_tokens=integer("JEV_EXECUTION_MAX_TOKENS", "0"),
+        execution_max_usd=number("JEV_EXECUTION_MAX_USD", "0"),
+        verification_threshold=optional_number("JEV_VERIFICATION_THRESHOLD"),
+        verification_threshold_source=os.getenv("JEV_VERIFICATION_THRESHOLD_SOURCE", ""),
+        cache_path=os.getenv("JEV_CACHE_PATH", ""),
+        cache_embedding_revision=os.getenv("JEV_CACHE_EMBEDDING_REVISION", ""),
+        cache_similarity_threshold=optional_number("JEV_CACHE_SIMILARITY_THRESHOLD"),
+        cache_similarity_threshold_source=os.getenv("JEV_CACHE_SIMILARITY_THRESHOLD_SOURCE", ""),
+        cache_verification_threshold=optional_number("JEV_CACHE_VERIFICATION_THRESHOLD"),
+        cache_verification_threshold_source=os.getenv("JEV_CACHE_VERIFICATION_THRESHOLD_SOURCE", ""),
+        cache_namespace=os.getenv("JEV_CACHE_NAMESPACE", "local"),
+        cache_ttl_seconds=integer("JEV_CACHE_TTL_SECONDS", "86400"),
+        cache_similarity_only_enabled=os.getenv("JEV_CACHE_SIMILARITY_ONLY_ENABLED", "false").lower()=="true",
     )
