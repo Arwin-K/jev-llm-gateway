@@ -44,3 +44,5 @@ The first replay with the saved fixed-policy selection exposed a duplicate-key e
 ## Day 4 cache benchmark preparation — 2026-10-30 America/Toronto
 
 `data/cache_benchmark_v1.jsonl` contains 12 hand-authored validation cases in four seed groups: four true paraphrases, four near misses that change a number, entity, or base constraint, and four unrelated queries. Related cases share a group ID and seed entry. These are small controlled examples, not model-generated observations or a held-out quality estimate; no project test prompt or answer was used.
+
+Day 4 cache comparison preflight: the CLI read the 12 hand-authored cases and an intentionally empty private observation file (`runs/day4-cache-observations-empty-20261030.jsonl`). It wrote `runs/day4-cache-report-empty-20261030.json` with six mode/origin coverage rows and zero real observations. It measured no embedding retrieval, Jev check, generator answer, latency, usage, or cost. A fixture unit test demonstrates how harmful reuse denominators are computed; its numbers are not empirical cache performance.

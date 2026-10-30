@@ -86,3 +86,7 @@ D4-07 reports verifier false acceptance, false rejection, wrong accepted fractio
 ## Day 4 block 4
 
 D4-10 hashes exact instructions, prior conversation, local namespace, generation settings, model/policy identities, and embedding revision into cache scope. D4-11 returns thresholded cosine candidates only after scope/freshness filtering; similarity is not answer validity. D4-12 asks a versioned Jev Noul applicability question for a scoped candidate and treats unavailable/malformed checks as a miss. Fixture tests confirm another scope's stored answer is never sent to Jev. There is no real embedding index or live Jev candidate check yet.
+
+## Day 4 block 5
+
+D4-13 gates insertion on accepted, fresh, compatible answers and provides eviction, invalidation, and reset. D4-14 adds 12 hand-authored grouped validation cases with answer-changing near misses. D4-15 reports retrieval coverage, accepted reuse, harmful reuse, exact-reference answer quality, failures, and known cost/latency separately by real or fixture origin. The current CLI preflight found zero real observations, so no cache threshold or quality result has been selected.
