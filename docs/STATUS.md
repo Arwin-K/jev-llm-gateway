@@ -74,3 +74,7 @@ The post-merge follow-up suite passed 72 tests with one third-party Starlette de
 ## Day 4 block 1 — 2026-10-30 America/Toronto
 
 D4-01 adds a typed Jev Noul judgment for whether one generated answer satisfies its request and applicable instructions; no benchmark reference is sent. D4-02 adds explicit acceptance and verification-failure outcomes, with no implicit acceptance. D4-03 adds a finite buffered small→medium→frontier cascade that records each generation and judgment attempt. Focused tests use controlled fixtures. No live Jev or generator call was possible at this checkpoint because credentials and Ollama are unavailable.
+
+## Day 4 block 2
+
+D4-04 composes explicit route-first, cascade-only, and route-then-verify hybrid modes. D4-05 introduces one cumulative request ledger for generation and Jev stages plus existing process admission guards; verified output remains buffered. D4-06 adds a validation comparison reader that matches accepted answer hashes and model/settings identity to independent Day 2 scores, and reports real end-to-end timing only from recorded executions. No complete real Day 4 execution records exist yet, so it has no validation quality result.
