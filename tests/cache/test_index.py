@@ -9,6 +9,7 @@ class FakeIndex:
     @property
     def ntotal(self): return len(self.vectors)
     def add(self,vectors): self.vectors.extend(vectors)
+    def reconstruct(self,i): return self.vectors[i]
     def search(self,queries,k):
         scores=[sum(a*b for a,b in zip(queries[0],v)) for v in self.vectors]
         order=sorted(range(len(scores)),key=lambda i:-scores[i])[:k]

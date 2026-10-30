@@ -39,3 +39,5 @@ Record actual decisions, context, alternatives, evidence, affected code/configur
 ## Day 4 cache scope
 
 - Cache scope hashes exact system/developer instructions, prior conversation, configured local namespace, policy/model catalog identity, generation settings, and embedding revision. Only the final user message varies for semantic retrieval. The namespace is a local configuration partition, not an authentication system. Entry scope, expiry, acceptance, and embedding identity are checked before stored question/answer text can be sent to Jev. Default reuse requires a verified accepted entry; unverified reuse is a separately labeled experimental mode.
+
+- Cache insertion requires an accepted nonempty answer, compatible embedding identity, and a future expiry. Verified acceptance is the default storage gate; unverified storage requires an explicit experimental flag. Invalidation and reset rebuild a new FAISS generation and atomically move the current pointer. Eviction removes the oldest entries at the configured cap. Rejected, partial, cancelled, and failed outputs do not enter insertion.
