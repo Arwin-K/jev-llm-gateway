@@ -78,3 +78,7 @@ D4-01 adds a typed Jev Noul judgment for whether one generated answer satisfies 
 ## Day 4 block 2
 
 D4-04 composes explicit route-first, cascade-only, and route-then-verify hybrid modes. D4-05 introduces one cumulative request ledger for generation and Jev stages plus existing process admission guards; verified output remains buffered. D4-06 adds a validation comparison reader that matches accepted answer hashes and model/settings identity to independent Day 2 scores, and reports real end-to-end timing only from recorded executions. No complete real Day 4 execution records exist yet, so it has no validation quality result.
+
+## Day 4 block 3
+
+D4-07 reports verifier false acceptance, false rejection, wrong accepted fraction, coverage, and failures against independently scored validation answers. D4-08 adds an optional, pinned, local-files-only MiniLM encoder; no real model is installed. D4-09 adds a single-writer, checksum-validated FAISS persistence path with normalized cosine semantics. The current Mac venv lacks torch, sentence-transformers, NumPy, and FAISS, so embedding and native FAISS behavior remain unverified. Focused checks use fixture models/indexes only.
