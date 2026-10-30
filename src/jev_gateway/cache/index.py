@@ -45,7 +45,11 @@ class FaissAnswerIndex:
             raise IndexUnavailable('cache has another writer') from exc
         self.index=self.faiss.IndexFlatIP(dimension)
         self.entries=[]
-        self.load()
+        try:
+            self.load()
+        except BaseException:
+            self.close()
+            raise
 
     def close(self):
         fcntl.flock(self.lock_file.fileno(),fcntl.LOCK_UN)
