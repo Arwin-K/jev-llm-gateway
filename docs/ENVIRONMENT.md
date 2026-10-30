@@ -26,3 +26,7 @@ The official [Strands Decider inference guide](https://github.com/strands-labs/s
 ## Day 3 Mac check — 2026-10-29 America/Toronto
 
 `jev doctor` still returned `ConnectError` for `qwen2.5:1.5b` and `qwen2.5:7b`; frontier was unconfigured. `ollama` and `uv` were absent from PATH. The available fixed/random decision benchmark ran on macOS 26.5.2 arm64 with no model loaded; run ID and latency results are in `EXPERIMENTS.md`. Process `ru_maxrss` was 31,424,512 bytes before and after that benchmark, a process high-water mark rather than per-policy allocation. Colab, Jev, Strands, and DistilBERT model paths were not measured.
+
+## Day 4 embedding preflight — 2026-10-30 America/Toronto
+
+The core Mac venv has no `torch`, `transformers`, `sentence_transformers`, or `faiss` import. No model weight download or real embedding inference was attempted. The optional adapter requires an immutable revision of [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2), whose model card states Apache-2.0 and 384 dimensions; it defaults to local-files-only CPU loading and checks the loaded model's sequence length and normalized output. The [Sentence Transformers API](https://www.sbert.net/docs/package_reference/sentence_transformer/model.html) documents revision pinning, local-files-only loading, and normalized encoding. Sources checked 2026-10-30. Fixture tests do not establish Mac package or model compatibility.
