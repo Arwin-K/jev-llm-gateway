@@ -82,3 +82,7 @@ D4-04 composes explicit route-first, cascade-only, and route-then-verify hybrid 
 ## Day 4 block 3
 
 D4-07 reports verifier false acceptance, false rejection, wrong accepted fraction, coverage, and failures against independently scored validation answers. D4-08 adds an optional, pinned, local-files-only MiniLM encoder; no real model is installed. D4-09 adds a single-writer, checksum-validated FAISS persistence path with normalized cosine semantics. The current Mac venv lacks torch, sentence-transformers, NumPy, and FAISS, so embedding and native FAISS behavior remain unverified. Focused checks use fixture models/indexes only.
+
+## Day 4 block 4
+
+D4-10 hashes exact instructions, prior conversation, local namespace, generation settings, model/policy identities, and embedding revision into cache scope. D4-11 returns thresholded cosine candidates only after scope/freshness filtering; similarity is not answer validity. D4-12 asks a versioned Jev Noul applicability question for a scoped candidate and treats unavailable/malformed checks as a miss. Fixture tests confirm another scope's stored answer is never sent to Jev. There is no real embedding index or live Jev candidate check yet.
