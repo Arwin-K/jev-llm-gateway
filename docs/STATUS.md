@@ -90,3 +90,9 @@ D4-10 hashes exact instructions, prior conversation, local namespace, generation
 ## Day 4 block 5
 
 D4-13 gates insertion on accepted, fresh, compatible answers and provides eviction, invalidation, and reset. D4-14 adds 12 hand-authored grouped validation cases with answer-changing near misses. D4-15 reports retrieval coverage, accepted reuse, harmful reuse, exact-reference answer quality, failures, and known cost/latency separately by real or fixture origin. The current CLI preflight found zero real observations, so no cache threshold or quality result has been selected.
+
+## Day 4 block 6 and handoff
+
+D4-16 adds context/model/embedding drift, corrupt-index lock release, and verifier-outage regressions; earlier cache tests cover empty/restored indexes, namespace, expiry, and grouped near misses. D4-17 exposes optional buffered `route_first`, `cascade`, and `hybrid` execution with off/verified/experimental-similarity cache modes. It preserves legacy explicit-tier, auto, and SSE behavior under the default mode. Paid verification is gated by an explicit flag, configured Jev access, and positive cumulative caps. Offline HTTP fixtures verify cache-hit generation avoidance, candidate miss fallback, accepted-only insertion, escalation, and gates. D4-18 records the actual operating contract in `DAY4_HANDOFF.md`.
+
+The final offline suite passed 99 tests with one third-party Starlette warning; raw output is `evidence/day4/mac-offline-20261030-1838.txt`. Doctor reported both Ollama tiers unreachable and frontier unconfigured in `evidence/day4/mac-doctor-20261030-1838.json`. No real Jev, generator, embedding, FAISS, or end-to-end performance check succeeded. There are 18 substantive Day 4 checkpoint commits after this handoff commit. The held-out test remains unused.

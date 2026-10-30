@@ -34,3 +34,7 @@ The core Mac venv has no `torch`, `transformers`, `sentence_transformers`, or `f
 ## Day 4 FAISS preflight — 2026-10-30 America/Toronto
 
 `faiss` and NumPy are absent from the core Mac venv, so no native ARM import, save/reload, or search timing is claimed. The optional index uses `IndexFlatIP` over unit-normalized float32 vectors, making its inner-product score cosine similarity under the [official FAISS metric guidance](https://github.com/facebookresearch/faiss/wiki/MetricType-and-distances). The [FAISS I/O guide](https://github.com/facebookresearch/faiss/wiki/Index-IO%2C-cloning-and-hyper-parameter-tuning) documents `write_index`/`read_index`. A fake index tests this repository's version-pointer, checksum, and metadata mapping code only. A process-lifetime file lock prevents a second writer; deployment must not assume shared mutable cache state across replicas. Sources checked 2026-10-30.
+
+## Day 4 final Mac check — 2026-10-30 America/Toronto
+
+The project venv ran 99 offline tests successfully. `jev doctor` again reported `ConnectError` for both Ollama tiers and `frontier.configured=false`; evidence is in `evidence/day4/`. The new HTTP integration tests used `httpx.MockTransport` and controlled Jev/cache fixtures, not provider requests. The cache's optional native dependencies and pinned model weights remain absent, so the runtime cache initialization and physical index behavior need a separate Mac validation run after installation.

@@ -1,0 +1,17 @@
+{
+  "frontier": {
+    "configured": false
+  },
+  "tiers": {
+    "small": {
+      "model": "qwen2.5:1.5b",
+      "available": false,
+      "reason": "ConnectError"
+    },
+    "medium": {
+      "model": "qwen2.5:7b",
+      "available": false,
+      "reason": "ConnectError"
+    }
+  }
+}
