@@ -1,0 +1,28 @@
+{
+  "run_id": "day5-20261031T194858Z",
+  "scenario": "steady",
+  "host": "http://127.0.0.1:8080",
+  "base_users": 1,
+  "requested_multiplier": 1,
+  "duration_seconds": 600,
+  "max_requests": 2,
+  "max_tokens": 32,
+  "output_tokens": 16,
+  "max_usd": 0.0,
+  "paid_enabled": false,
+  "stream": false,
+  "execution_mode": "standard",
+  "cache_mode": "off",
+  "mix": {
+    "small": 1.0
+  },
+  "wait_seconds": 0.1,
+  "placement": "mac-host",
+  "model_condition": "unverified",
+  "gateway_container": "jev-gateway-gateway-1",
+  "arrival_model": "closed_loop_users",
+  "status": "interrupted_or_failed",
+  "started_at": "2026-10-31T19:48:58.653583+00:00",
+  "exit_code": 1,
+  "finished_at": "2026-10-31T19:49:00.537936+00:00"
+}

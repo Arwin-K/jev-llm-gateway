@@ -91,7 +91,8 @@ def main():
                 "JEV_LOAD_MAX_REQUESTS": str(args.max_requests), "JEV_LOAD_MAX_TOKENS": str(args.max_tokens),
                 "JEV_LOAD_OUTPUT_TOKENS": str(args.output_tokens), "JEV_LOAD_MIX": json.dumps(mix),
                 "JEV_LOAD_STREAM": str(args.stream).lower(), "JEV_LOAD_EXECUTION_MODE": args.execution_mode,
-                "JEV_LOAD_CACHE_MODE": args.cache_mode, "JEV_LOAD_WAIT_SECONDS": str(args.wait_seconds)})
+                "JEV_LOAD_CACHE_MODE": args.cache_mode, "JEV_LOAD_WAIT_SECONDS": str(args.wait_seconds),
+                "JEV_LOAD_RAW_EVENTS": str((args.output / "requests.jsonl").resolve())})
     command = ["locust", "-f", str(Path(__file__).with_name("locustfile.py")), "--headless",
                "--host", args.host, "--csv", str(args.output / "locust"), "--csv-full-history"]
     from resources import sample

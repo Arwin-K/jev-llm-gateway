@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import math
 import re
 from datetime import datetime
 from pathlib import Path
@@ -25,19 +26,39 @@ def summarize(path: Path):
     duration = (datetime.fromisoformat(manifest["finished_at"]) -
                 datetime.fromisoformat(manifest["started_at"])).total_seconds()
     result["actual_duration_seconds"] = duration
+    events_path = path / "requests.jsonl"
+    events = [json.loads(line) for line in events_path.read_text().splitlines()] if events_path.exists() else []
     rows = read_rows(path / "locust_stats.csv")
     aggregate = next((row for row in rows if row.get("Name") == "Aggregated"), None)
-    if aggregate is None:
+    if aggregate is None and not events:
         result["evidence_state"] = "missing_aggregate_stats"
         return result
-    count = int(aggregate["Request Count"])
-    failures = int(aggregate["Failure Count"])
+    if events:
+        count = len(events)
+        failures = sum(bool(event["failed"]) for event in events)
+        latencies = sorted(float(event["response_time_ms"]) for event in events)
+        def percentile(p):
+            return latencies[max(0, math.ceil(p * count) - 1)]
+        median, p95, p99 = percentile(.5), percentile(.95), percentile(.99)
+        result["measurement_source"] = "per_request_events"
+        result["http_status_counts"] = {str(status): sum(event.get("status_code") == status for event in events)
+                                        for status in sorted({event.get("status_code") for event in events
+                                                              if event.get("status_code") is not None})}
+        if aggregate is not None and int(aggregate["Request Count"]) != count:
+            result["periodic_csv_count_mismatch"] = int(aggregate["Request Count"])
+    else:
+        count = int(aggregate["Request Count"])
+        failures = int(aggregate["Failure Count"])
+        median = float(aggregate["Median Response Time"])
+        p95 = float(aggregate["95%"]) if aggregate.get("95%") not in {None, "", "N/A"} else None
+        p99 = float(aggregate["99%"]) if aggregate.get("99%") not in {None, "", "N/A"} else None
+        result["measurement_source"] = "periodic_aggregate_csv"
     result.update({"requests": count, "failures": failures,
                    "achieved_requests_per_second": count / duration if duration > 0 else None,
                    "failure_fraction": failures / count if count else None,
-                   "median_response_ms": float(aggregate["Median Response Time"]),
-                   "p95_response_ms": float(aggregate["95%"]) if aggregate.get("95%") else None,
-                   "p99_response_ms": float(aggregate["99%"]) if aggregate.get("99%") else None,
+                   "median_response_ms": median,
+                   "p95_response_ms": p95,
+                   "p99_response_ms": p99,
                    "evidence_state": "complete_interval" if duration >= manifest["duration_seconds"]
                    else "shorter_than_planned"})
     if manifest["scenario"] == "spike":

@@ -62,3 +62,25 @@ def test_soak_resource_summary_keeps_actual_sample_count(tmp_path: Path):
                               for value in ("100MiB / 8GiB", "110MiB / 8GiB")) + "\n")
     result = module.summarize_resources(path)
     assert result == {"samples": 2, "memory_mib": {"first": 100, "last": 110, "maximum": 110}}
+
+
+def test_short_run_uses_raw_events_when_periodic_csv_is_stale(tmp_path: Path):
+    (tmp_path / "manifest.json").write_text(json.dumps({
+        "run_id": "fixture", "scenario": "steady", "status": "interrupted_or_failed",
+        "duration_seconds": 600, "arrival_model": "closed_loop_users",
+        "started_at": "2026-10-31T12:00:00+00:00",
+        "finished_at": "2026-10-31T12:00:02+00:00"}))
+    with (tmp_path / "locust_stats.csv").open("w", newline="") as stream:
+        writer = csv.DictWriter(stream, ["Name", "Request Count", "Failure Count",
+                                          "Median Response Time", "95%", "99%"])
+        writer.writeheader()
+        writer.writerow({"Name": "Aggregated", "Request Count": 0, "Failure Count": 0,
+                         "Median Response Time": 0, "95%": "N/A", "99%": "N/A"})
+    (tmp_path / "requests.jsonl").write_text("\n".join(json.dumps({
+        "status_code": 502, "failed": True, "response_time_ms": latency})
+        for latency in (10, 20)) + "\n")
+    report = summarize(tmp_path)
+    assert report["requests"] == 2 and report["failures"] == 2
+    assert report["p95_response_ms"] == 20
+    assert report["periodic_csv_count_mismatch"] == 0
+    assert report["evidence_state"] == "shorter_than_planned"

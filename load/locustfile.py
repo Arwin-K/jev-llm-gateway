@@ -2,8 +2,9 @@
 import json
 import os
 import threading
+from datetime import datetime, timezone
 
-from locust import HttpUser, LoadTestShape, between, task
+from locust import HttpUser, LoadTestShape, between, events, task
 
 
 SCENARIO = os.environ["JEV_LOAD_SCENARIO"]
@@ -19,6 +20,21 @@ WAIT = float(os.environ["JEV_LOAD_WAIT_SECONDS"])
 _lock = threading.Lock()
 _requests = 0
 _reserved_tokens = 0
+RAW_EVENTS = os.environ["JEV_LOAD_RAW_EVENTS"]
+
+
+@events.request.add_listener
+def record_request(request_type, name, response_time, response_length, response, context,
+                   exception, **kwargs):
+    item = {"timestamp": datetime.now(timezone.utc).isoformat(),
+            "type": request_type, "name": name, "response_time_ms": response_time,
+            "response_length": response_length,
+            "status_code": getattr(response, "status_code", None),
+            "failed": exception is not None,
+            "error_category": type(exception).__name__ if exception else None}
+    with _lock:
+        with open(RAW_EVENTS, "a") as output:
+            output.write(json.dumps(item) + "\n")
 
 
 def reserve():
