@@ -78,6 +78,11 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
     if jev_client is None and (answer_verifier is None or cache_checker is None):
         jev_client=JevClient(app.state.settings)
         app.state.router_closers.append(jev_client)
+    if isinstance(jev_client, JevClient):
+        def breaker_transition(state):
+            app.state.metrics.breaker_state = {"closed": 0, "half_open": 1, "open": 2}[state]
+            app.state.metrics.inc("jev_breaker_transitions_total", (state,))
+        jev_client.breaker.on_transition = breaker_transition
     app.state.answer_verifier=answer_verifier or JevAnswerVerifier(jev_client)
     app.state.cache_checker=cache_checker or JevCacheChecker(
         jev_client,threshold=(app.state.settings.cache_verification_threshold

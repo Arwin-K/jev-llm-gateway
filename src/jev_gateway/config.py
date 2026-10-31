@@ -52,6 +52,8 @@ class Settings:
     jev_input_usd_per_million: float = 0.0
     jev_output_usd_per_million: float = 0.0
     jev_decision_output_tokens: int = 256
+    jev_breaker_failures: int = 3
+    jev_breaker_cooldown_seconds: float = 30.
     jev_rate_source_url: str = ""
     jev_rate_effective_date: str = ""
     router_policy: str = "jev-choice"
@@ -93,6 +95,8 @@ class Settings:
             raise ConfigError("frontier limits cannot be negative")
         if self.execution_max_requests < 0 or self.execution_max_tokens < 0 or self.execution_max_usd < 0:
             raise ConfigError("execution limits cannot be negative")
+        if self.jev_breaker_failures < 1 or self.jev_breaker_cooldown_seconds <= 0:
+            raise ConfigError("Jev breaker threshold and cooldown must be positive")
         for value, source in ((self.verification_threshold,self.verification_threshold_source),
                               (self.cache_similarity_threshold,self.cache_similarity_threshold_source),
                               (self.cache_verification_threshold,self.cache_verification_threshold_source)):
@@ -156,6 +160,8 @@ def from_env():
         jev_input_usd_per_million=number("JEV_DECISION_INPUT_USD_PER_MILLION", "0"),
         jev_output_usd_per_million=number("JEV_DECISION_OUTPUT_USD_PER_MILLION", "0"),
         jev_decision_output_tokens=integer("JEV_DECISION_OUTPUT_TOKENS", "256"),
+        jev_breaker_failures=integer("JEV_BREAKER_FAILURES", "3"),
+        jev_breaker_cooldown_seconds=number("JEV_BREAKER_COOLDOWN_SECONDS", "30"),
         jev_rate_source_url=os.getenv("JEV_DECISION_RATE_SOURCE_URL", ""),
         jev_rate_effective_date=os.getenv("JEV_DECISION_RATE_EFFECTIVE_DATE", ""),
         router_policy=os.getenv("JEV_ROUTER_POLICY", "jev-choice"),

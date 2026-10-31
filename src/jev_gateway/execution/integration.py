@@ -34,7 +34,8 @@ async def execute(app, request, trace, *, max_tokens: int, deadline: float):
     if cache_mode=='similarity_only' and not settings.cache_similarity_only_enabled:
         raise HTTPException(503,'experimental similarity-only reuse is disabled')
     paid=(mode in {'cascade','hybrid'} or cache_mode=='verified' or
-          mode=='route_first' and getattr(app.state.router,'name','').startswith('jev-'))
+          mode=='route_first' and settings.jev_enabled and
+          getattr(app.state.router,'name','').startswith('jev-'))
     if paid and not _paid_ready(settings):
         raise HTTPException(503,'paid execution requires explicit enablement, Jev configuration, and positive run caps')
     if mode in {'cascade','hybrid'} and settings.verification_threshold is None:
@@ -100,9 +101,10 @@ async def execute(app, request, trace, *, max_tokens: int, deadline: float):
     cascade=CascadeEngine(generator,verifier,acceptance,
                           {tier:settings.backend(tier).model for tier in ('small','medium','frontier')})
     router=BudgetedRouter(app.state.router,budget) if app.state.router is not None else None
+    fallback_router=BudgetedRouter(app.state.fallback_router,budget) if app.state.fallback_router is not None else None
     execution=ExecutionRequest(trace.request_id,messages,max_tokens,request.temperature,
                                routing.eligible_tiers,deadline)
-    result=await ModeExecutor(router,cascade).run(mode,execution,routing if mode!='cascade' else None)
+    result=await ModeExecutor(router,cascade,fallback_router).run(mode,execution,routing if mode!='cascade' else None)
     outcome=result.execution
     trace.execution={'mode':mode,'cache':cache_state,'status':outcome.status,
                      'attempts':[{'tier':a.tier,'outcome':a.outcome,'error_category':a.error_category,
@@ -115,6 +117,7 @@ async def execute(app, request, trace, *, max_tokens: int, deadline: float):
     if result.decision:
         trace.routing={'policy':result.decision.policy,'version':result.decision.version,
                        'outcome':result.decision.outcome,'duration_ms':result.decision.duration_ms,
+                       'fallback_reason':result.decision.fallback_reason,
                        'usage':dict(result.decision.usage)}
     if outcome.response is None or outcome.accepted_tier is None:
         trace.finish(outcome.status)
