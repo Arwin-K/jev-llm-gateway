@@ -1,0 +1,23 @@
+name: Offline regression
+on:
+  push:
+  pull_request:
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.12'
+      - name: Install locked core and tests
+        run: uv sync --locked --extra test
+      - name: Syntax and focused lint checks
+        run: |
+          uv run python -m compileall -q src load scripts tests
+          git diff --check
+          uvx ruff@0.14.0 check --select E4,E9,F src/jev_gateway/admission.py src/jev_gateway/failover.py src/jev_gateway/observability.py src/jev_gateway/routing/breaker.py load scripts/kind_replacement.py tests/test_admission.py tests/test_failover.py tests/test_observability.py tests/test_readiness.py tests/test_load_report.py tests/test_load_runner.py tests/test_ci_regression_prompts.py tests/routing/test_breaker.py tests/routing/test_outage_integration.py
+      - name: Offline regression suite
+        run: uv run pytest -q
+      - name: Build package
+        run: uv build

@@ -1,0 +1,405 @@
+{
+  "provenance": "hand-authored synthetic CI contract cases; no benchmark or held-out data",
+  "cases": [
+    {
+      "id": "ci-01",
+      "group": "small",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 1: return a short answer."
+    },
+    {
+      "id": "ci-02",
+      "group": "small",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 2: return a short answer."
+    },
+    {
+      "id": "ci-03",
+      "group": "small",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 3: return a short answer."
+    },
+    {
+      "id": "ci-04",
+      "group": "small",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 4: return a short answer."
+    },
+    {
+      "id": "ci-05",
+      "group": "small",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 5: return a short answer."
+    },
+    {
+      "id": "ci-06",
+      "group": "small",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 6: return a short answer."
+    },
+    {
+      "id": "ci-07",
+      "group": "small",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 7: return a short answer."
+    },
+    {
+      "id": "ci-08",
+      "group": "small",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 8: return a short answer."
+    },
+    {
+      "id": "ci-09",
+      "group": "small",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 9: return a short answer."
+    },
+    {
+      "id": "ci-10",
+      "group": "small",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 10: return a short answer."
+    },
+    {
+      "id": "ci-11",
+      "group": "medium",
+      "model": "medium",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 11: return a short answer."
+    },
+    {
+      "id": "ci-12",
+      "group": "medium",
+      "model": "medium",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 12: return a short answer."
+    },
+    {
+      "id": "ci-13",
+      "group": "medium",
+      "model": "medium",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 13: return a short answer."
+    },
+    {
+      "id": "ci-14",
+      "group": "medium",
+      "model": "medium",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 14: return a short answer."
+    },
+    {
+      "id": "ci-15",
+      "group": "medium",
+      "model": "medium",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 15: return a short answer."
+    },
+    {
+      "id": "ci-16",
+      "group": "medium",
+      "model": "medium",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 16: return a short answer."
+    },
+    {
+      "id": "ci-17",
+      "group": "medium",
+      "model": "medium",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 17: return a short answer."
+    },
+    {
+      "id": "ci-18",
+      "group": "medium",
+      "model": "medium",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 18: return a short answer."
+    },
+    {
+      "id": "ci-19",
+      "group": "medium",
+      "model": "medium",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 19: return a short answer."
+    },
+    {
+      "id": "ci-20",
+      "group": "medium",
+      "model": "medium",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 20: return a short answer."
+    },
+    {
+      "id": "ci-21",
+      "group": "auto",
+      "model": "auto",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 21: return a short answer."
+    },
+    {
+      "id": "ci-22",
+      "group": "auto",
+      "model": "auto",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 22: return a short answer."
+    },
+    {
+      "id": "ci-23",
+      "group": "auto",
+      "model": "auto",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 23: return a short answer."
+    },
+    {
+      "id": "ci-24",
+      "group": "auto",
+      "model": "auto",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 24: return a short answer."
+    },
+    {
+      "id": "ci-25",
+      "group": "auto",
+      "model": "auto",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 25: return a short answer."
+    },
+    {
+      "id": "ci-26",
+      "group": "auto",
+      "model": "auto",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 26: return a short answer."
+    },
+    {
+      "id": "ci-27",
+      "group": "auto",
+      "model": "auto",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 27: return a short answer."
+    },
+    {
+      "id": "ci-28",
+      "group": "auto",
+      "model": "auto",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 28: return a short answer."
+    },
+    {
+      "id": "ci-29",
+      "group": "auto",
+      "model": "auto",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 29: return a short answer."
+    },
+    {
+      "id": "ci-30",
+      "group": "auto",
+      "model": "auto",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 30: return a short answer."
+    },
+    {
+      "id": "ci-31",
+      "group": "route_first",
+      "model": "auto",
+      "execution_mode": "route_first",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 31: return a short answer."
+    },
+    {
+      "id": "ci-32",
+      "group": "route_first",
+      "model": "auto",
+      "execution_mode": "route_first",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 32: return a short answer."
+    },
+    {
+      "id": "ci-33",
+      "group": "route_first",
+      "model": "auto",
+      "execution_mode": "route_first",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 33: return a short answer."
+    },
+    {
+      "id": "ci-34",
+      "group": "route_first",
+      "model": "auto",
+      "execution_mode": "route_first",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 34: return a short answer."
+    },
+    {
+      "id": "ci-35",
+      "group": "route_first",
+      "model": "auto",
+      "execution_mode": "route_first",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 35: return a short answer."
+    },
+    {
+      "id": "ci-36",
+      "group": "route_first",
+      "model": "auto",
+      "execution_mode": "route_first",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 36: return a short answer."
+    },
+    {
+      "id": "ci-37",
+      "group": "route_first",
+      "model": "auto",
+      "execution_mode": "route_first",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 37: return a short answer."
+    },
+    {
+      "id": "ci-38",
+      "group": "route_first",
+      "model": "auto",
+      "execution_mode": "route_first",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 38: return a short answer."
+    },
+    {
+      "id": "ci-39",
+      "group": "route_first",
+      "model": "auto",
+      "execution_mode": "route_first",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 39: return a short answer."
+    },
+    {
+      "id": "ci-40",
+      "group": "route_first",
+      "model": "auto",
+      "execution_mode": "route_first",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 40: return a short answer."
+    },
+    {
+      "id": "ci-41",
+      "group": "over_limit",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 8192,
+      "message": "Controlled CI prompt 41: return a short answer."
+    },
+    {
+      "id": "ci-42",
+      "group": "over_limit",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 8192,
+      "message": "Controlled CI prompt 42: return a short answer."
+    },
+    {
+      "id": "ci-43",
+      "group": "over_limit",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 8192,
+      "message": "Controlled CI prompt 43: return a short answer."
+    },
+    {
+      "id": "ci-44",
+      "group": "over_limit",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 8192,
+      "message": "Controlled CI prompt 44: return a short answer."
+    },
+    {
+      "id": "ci-45",
+      "group": "over_limit",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 8192,
+      "message": "Controlled CI prompt 45: return a short answer."
+    },
+    {
+      "id": "ci-46",
+      "group": "backend_unavailable",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 46: return a short answer."
+    },
+    {
+      "id": "ci-47",
+      "group": "backend_unavailable",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 47: return a short answer."
+    },
+    {
+      "id": "ci-48",
+      "group": "backend_unavailable",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 48: return a short answer."
+    },
+    {
+      "id": "ci-49",
+      "group": "backend_unavailable",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 49: return a short answer."
+    },
+    {
+      "id": "ci-50",
+      "group": "backend_unavailable",
+      "model": "small",
+      "execution_mode": "standard",
+      "max_tokens": 16,
+      "message": "Controlled CI prompt 50: return a short answer."
+    }
+  ]
+}
