@@ -50,3 +50,15 @@ def test_spike_ratio_uses_observed_rates_not_user_multiplier(tmp_path: Path):
     assert spike["mean_observed_users"]["spike"] == 5
     assert spike["rate_ratio"] == 3
     assert spike["fivefold_rate_observed"] is False
+
+
+def test_soak_resource_summary_keeps_actual_sample_count(tmp_path: Path):
+    from importlib.util import spec_from_file_location, module_from_spec
+    spec = spec_from_file_location("resource_report", Path(__file__).parents[1] / "load" / "report.py")
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    path = tmp_path / "gateway-resources.jsonl"
+    path.write_text("\n".join(json.dumps({"exit_code": 0, "raw": json.dumps({"MemUsage": value})})
+                              for value in ("100MiB / 8GiB", "110MiB / 8GiB")) + "\n")
+    result = module.summarize_resources(path)
+    assert result == {"samples": 2, "memory_mib": {"first": 100, "last": 110, "maximum": 110}}

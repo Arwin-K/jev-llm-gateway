@@ -2,6 +2,7 @@
 import argparse
 import csv
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -41,7 +42,30 @@ def summarize(path: Path):
                    else "shorter_than_planned"})
     if manifest["scenario"] == "spike":
         result["spike"] = summarize_spike(path, manifest)
+    if manifest["scenario"] == "soak":
+        result["soak_resources"] = summarize_resources(path / "gateway-resources.jsonl")
     return result
+
+
+def summarize_resources(path):
+    if not path.exists():
+        return {"samples": 0, "memory_mib": None}
+    values = []
+    with path.open() as stream:
+        for line in stream:
+            sample = json.loads(line)
+            if sample.get("exit_code") != 0:
+                continue
+            try:
+                raw = json.loads(sample["raw"])
+                match = re.match(r"\s*([0-9.]+)(KiB|MiB|GiB)", raw["MemUsage"])
+                if match:
+                    multiplier = {"KiB": 1 / 1024, "MiB": 1, "GiB": 1024}[match.group(2)]
+                    values.append(float(match.group(1)) * multiplier)
+            except (ValueError, KeyError, TypeError):
+                continue
+    return {"samples": len(values), "memory_mib": {
+        "first": values[0], "last": values[-1], "maximum": max(values)} if values else None}
 
 
 def summarize_spike(path: Path, manifest):

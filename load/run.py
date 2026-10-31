@@ -3,6 +3,7 @@ import argparse
 import json
 import os
 import subprocess
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,6 +25,7 @@ def main():
     parser.add_argument("--wait-seconds", type=float, default=1.)
     parser.add_argument("--placement", required=True)
     parser.add_argument("--model-condition", choices=("cold", "warm", "unverified"), required=True)
+    parser.add_argument("--gateway-container", default="jev-gateway-gateway-1")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
@@ -70,6 +72,7 @@ def main():
                 "execution_mode": args.execution_mode, "cache_mode": args.cache_mode,
                 "mix": mix, "wait_seconds": args.wait_seconds,
                 "placement": args.placement, "model_condition": args.model_condition,
+                "gateway_container": args.gateway_container,
                 "arrival_model": "closed_loop_users", "status": "pending"}
     if not args.execute:
         print(json.dumps(manifest, indent=2))
@@ -86,8 +89,17 @@ def main():
                 "JEV_LOAD_CACHE_MODE": args.cache_mode, "JEV_LOAD_WAIT_SECONDS": str(args.wait_seconds)})
     command = ["locust", "-f", str(Path(__file__).with_name("locustfile.py")), "--headless",
                "--host", args.host, "--csv", str(args.output / "locust"), "--csv-full-history"]
-    with (args.output / "locust.log").open("w") as log:
-        completed = subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=False)
+    from resources import sample
+    stop = threading.Event()
+    sampler = threading.Thread(target=sample, args=(args.gateway_container,
+        args.output / "gateway-resources.jsonl", stop), daemon=True)
+    sampler.start()
+    try:
+        with (args.output / "locust.log").open("w") as log:
+            completed = subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=False)
+    finally:
+        stop.set()
+        sampler.join(timeout=12)
     manifest["status"] = "finished" if completed.returncode == 0 else "interrupted_or_failed"
     manifest["exit_code"] = completed.returncode
     manifest["finished_at"] = datetime.now(timezone.utc).isoformat()
