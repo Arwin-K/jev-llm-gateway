@@ -26,6 +26,7 @@ from .cache.check import JevCacheChecker
 from .cache.runtime import build_cache
 from .observability import Metrics, metrics_response
 from .admission import AdmissionGate, AdmissionRejected
+from .failover import alternate_tier, availability_failure
 
 
 class Message(BaseModel):
@@ -163,6 +164,7 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
             raise HTTPException(status_code=422, detail="max_tokens exceeds server policy")
         trace = RequestTrace(request.model, 'pending', observer=app.state.metrics.trace)
         tier = request.model
+        routing_request = None
         deadline = http_request.state.deadline_at
         if request.execution_mode != 'standard' or request.cache_mode != 'off':
             result,headers=await execute(app,request,trace,max_tokens=max_tokens,deadline=deadline)
@@ -266,21 +268,45 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
                     headers['x-jev-policy'] = trace.routing['policy']
                     headers['x-jev-routing-outcome'] = trace.routing['outcome']
                 return StreamingResponse(chunks(), media_type="text/event-stream", headers=headers)
-            result = await asyncio.wait_for(app.state.transport.complete(backend, payload),
-                                            timeout=max(.001, deadline-time.monotonic()))
+            try:
+                result = await asyncio.wait_for(app.state.transport.complete(backend, payload),
+                                                timeout=max(.001, deadline-time.monotonic()))
+            except (httpx.RequestError, httpx.HTTPStatusError) as original_error:
+                alternate = (alternate_tier(tier, routing_request.eligible_tiers)
+                             if settings.availability_failover_enabled and request.model == "auto" and
+                             routing_request is not None and availability_failure(original_error) and
+                             time.monotonic() < deadline else None)
+                if alternate is None:
+                    raise
+                alternate_backend = settings.backend(alternate)
+                trace.execution = {"mode": "standard", "cache": "off", "failover": {
+                    "original_tier": tier, "original_model": backend.model,
+                    "failure": type(original_error).__name__, "alternate_tier": alternate,
+                    "alternate_model": alternate_backend.model}, "attempts": [
+                    {"tier": tier, "outcome": "generation_error", "duration_ms":
+                     (time.perf_counter() - generation_started) * 1000}]}
+                payload["model"] = alternate_backend.model
+                generation_started = time.perf_counter()
+                result = await asyncio.wait_for(app.state.transport.complete(alternate_backend, payload),
+                                                timeout=max(.001, deadline-time.monotonic()))
+                tier, backend = alternate, alternate_backend
+                trace.tier, trace.backend_model = tier, backend.model
         except (httpx.TimeoutException, asyncio.TimeoutError) as exc:
-            trace.execution = {"mode": "standard", "cache": "off", "attempts": [
+            trace.execution = {**(trace.execution or {}), "mode": "standard", "cache": "off", "attempts": [
+                *(trace.execution or {}).get("attempts", []),
                 {"tier": tier, "outcome": "generation_error", "duration_ms":
                  (time.perf_counter() - generation_started) * 1000}]}
             trace.finish("timeout")
             raise HTTPException(status_code=504, detail="backend deadline exceeded") from exc
         except (httpx.HTTPStatusError, httpx.RequestError, ValueError) as exc:
-            trace.execution = {"mode": "standard", "cache": "off", "attempts": [
+            trace.execution = {**(trace.execution or {}), "mode": "standard", "cache": "off", "attempts": [
+                *(trace.execution or {}).get("attempts", []),
                 {"tier": tier, "outcome": "generation_error", "duration_ms":
                  (time.perf_counter() - generation_started) * 1000}]}
             trace.finish("backend_error")
             raise HTTPException(status_code=502, detail="backend request failed") from exc
-        trace.execution = {"mode": "standard", "cache": "off", "attempts": [
+        trace.execution = {**(trace.execution or {}), "mode": "standard", "cache": "off", "attempts": [
+            *(trace.execution or {}).get("attempts", []),
             {"tier": tier, "outcome": "generated", "duration_ms":
              (time.perf_counter() - generation_started) * 1000}]}
         trace.finish("ok", result.get("usage"), "reserved" if tier == "frontier" else "unpriced")
