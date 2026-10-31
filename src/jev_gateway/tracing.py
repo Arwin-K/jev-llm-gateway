@@ -11,7 +11,7 @@ logger = logging.getLogger("jev_gateway.trace")
 
 
 class RequestTrace:
-    def __init__(self, tier: str, backend_model: str):
+    def __init__(self, tier: str, backend_model: str, observer=None):
         self.request_id = uuid.uuid4().hex
         self.started_monotonic = time.monotonic()
         self.started_at = datetime.now(timezone.utc).isoformat()
@@ -19,6 +19,7 @@ class RequestTrace:
         self.backend_model = backend_model
         self.routing = None
         self.execution = None
+        self.observer = observer
 
     def finish(self, status: str, usage: dict | None = None, cost_status: str = "unknown"):
         record = {
@@ -34,4 +35,6 @@ class RequestTrace:
             "cost_status": cost_status,
         }
         logger.info(json.dumps(record, separators=(",", ":")))
+        if self.observer is not None:
+            self.observer(record)
         return record

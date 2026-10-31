@@ -6,7 +6,7 @@ import time
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 import httpx
 from pydantic import BaseModel, ConfigDict, Field
@@ -24,6 +24,7 @@ from .execution.verifier import JevAnswerVerifier
 from .execution.integration import execute
 from .cache.check import JevCacheChecker
 from .cache.runtime import build_cache
+from .observability import Metrics, metrics_response
 
 
 class Message(BaseModel):
@@ -60,6 +61,7 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
 
     app = FastAPI(title="Jev gateway", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings or from_env()
+    app.state.metrics = Metrics()
     app.state.transport = transport or BackendTransport(app.state.settings.timeout_seconds)
     app.state.budget = FrontierBudget(app.state.settings)
     app.state.router = router
@@ -97,6 +99,35 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
         # Process readiness; backend availability is reported per tier by doctor.
         return {"status": "ready", "backend_availability": "unchecked"}
 
+    @app.get("/metrics")
+    async def metrics():
+        return metrics_response(app.state.metrics)
+
+    @app.middleware("http")
+    async def observe_http(request, call_next):
+        if request.url.path != "/v1/chat/completions":
+            return await call_next(request)
+        began = time.monotonic()
+        app.state.metrics.start_request()
+        try:
+            result = await call_next(request)
+        except BaseException:
+            app.state.metrics.end_request(getattr(request.state, "execution_mode", "standard"),
+                                          500, time.monotonic() - began)
+            raise
+        body = result.body_iterator
+
+        async def observed_body():
+            try:
+                async for chunk in body:
+                    yield chunk
+            finally:
+                app.state.metrics.end_request(getattr(request.state, "execution_mode", "standard"),
+                                              result.status_code, time.monotonic() - began)
+
+        result.body_iterator = observed_body()
+        return result
+
     @app.get("/v1/models")
     async def models():
         s = app.state.settings
@@ -107,12 +138,13 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
         ]}
 
     @app.post("/v1/chat/completions")
-    async def chat(request: ChatRequest, response: Response):
+    async def chat(request: ChatRequest, response: Response, http_request: Request):
+        http_request.state.execution_mode = request.execution_mode
         settings = app.state.settings
         max_tokens = request.max_tokens or settings.max_output_tokens
         if max_tokens > settings.max_output_tokens:
             raise HTTPException(status_code=422, detail="max_tokens exceeds server policy")
-        trace = RequestTrace(request.model, 'pending')
+        trace = RequestTrace(request.model, 'pending', observer=app.state.metrics.trace)
         tier = request.model
         deadline = time.monotonic() + settings.timeout_seconds
         if request.execution_mode != 'standard' or request.cache_mode != 'off':
@@ -183,6 +215,7 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
             except BudgetExceeded as exc:
                 raise HTTPException(status_code=429, detail=str(exc)) from exc
         try:
+            generation_started = time.perf_counter()
             if request.stream:
                 upstream = await asyncio.wait_for(app.state.transport.open_stream(backend, payload),
                                                   timeout=max(.001, deadline-time.monotonic()))
@@ -190,10 +223,21 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
                 async def chunks():
                     try:
                         async with asyncio.timeout(max(.001, deadline-time.monotonic())):
+                            first_output = True
                             async for part in upstream.aiter_raw():
+                                if first_output:
+                                    app.state.metrics.observe("jev_first_output_seconds",
+                                                              time.perf_counter() - generation_started)
+                                    first_output = False
                                 yield part
+                        trace.execution = {"mode": "standard", "cache": "off", "attempts": [
+                            {"tier": tier, "outcome": "generated", "duration_ms":
+                             (time.perf_counter() - generation_started) * 1000}]}
                         trace.finish("ok", cost_status="reserved" if tier == "frontier" else "unpriced")
                     except BaseException:
+                        trace.execution = {"mode": "standard", "cache": "off", "attempts": [
+                            {"tier": tier, "outcome": "generation_error", "duration_ms":
+                             (time.perf_counter() - generation_started) * 1000}]}
                         trace.finish("stream_interrupted")
                         raise
                     finally:
@@ -208,11 +252,20 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
             result = await asyncio.wait_for(app.state.transport.complete(backend, payload),
                                             timeout=max(.001, deadline-time.monotonic()))
         except (httpx.TimeoutException, asyncio.TimeoutError) as exc:
+            trace.execution = {"mode": "standard", "cache": "off", "attempts": [
+                {"tier": tier, "outcome": "generation_error", "duration_ms":
+                 (time.perf_counter() - generation_started) * 1000}]}
             trace.finish("timeout")
             raise HTTPException(status_code=504, detail="backend deadline exceeded") from exc
         except (httpx.HTTPStatusError, httpx.RequestError, ValueError) as exc:
+            trace.execution = {"mode": "standard", "cache": "off", "attempts": [
+                {"tier": tier, "outcome": "generation_error", "duration_ms":
+                 (time.perf_counter() - generation_started) * 1000}]}
             trace.finish("backend_error")
             raise HTTPException(status_code=502, detail="backend request failed") from exc
+        trace.execution = {"mode": "standard", "cache": "off", "attempts": [
+            {"tier": tier, "outcome": "generated", "duration_ms":
+             (time.perf_counter() - generation_started) * 1000}]}
         trace.finish("ok", result.get("usage"), "reserved" if tier == "frontier" else "unpriced")
         response.headers["x-request-id"] = trace.request_id
         response.headers["x-jev-tier"] = tier

@@ -106,6 +106,7 @@ async def execute(app, request, trace, *, max_tokens: int, deadline: float):
     outcome=result.execution
     trace.execution={'mode':mode,'cache':cache_state,'status':outcome.status,
                      'attempts':[{'tier':a.tier,'outcome':a.outcome,'error_category':a.error_category,
+                                  'duration_ms':a.duration_ms,
                                   'verification_probability':a.verification.probability if a.verification else None}
                                  for a in outcome.attempts],
                      'stage_count':budget.requests,'reserved_tokens':budget.tokens,
