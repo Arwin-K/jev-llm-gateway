@@ -38,13 +38,7 @@ class Metrics:
                 if seconds <= bucket:
                     histogram["buckets"][index] += 1
 
-    def start_request(self):
-        with self.lock:
-            self.active += 1
-
     def end_request(self, mode, status, elapsed):
-        with self.lock:
-            self.active -= 1
         self.inc("jev_client_requests_total", (bounded(mode, MODES), str(status)))
         self.observe("jev_request_duration_seconds", elapsed, (bounded(mode, MODES),))
 
@@ -120,7 +114,8 @@ class Metrics:
                     lines.append(f"{name}{{{fields}}} {value}" if fields else f"{name} {value}")
         for name, keys in (("jev_request_duration_seconds", ("mode",)),
                            ("jev_stage_duration_seconds", ("stage",)),
-                           ("jev_first_output_seconds", ())):
+                           ("jev_first_output_seconds", ()),
+                           ("jev_queue_duration_seconds", ())):
             lines.append(f"# TYPE {name} histogram")
             for (metric, labels), values in sorted(histograms.items()):
                 if metric != name:

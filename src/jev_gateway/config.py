@@ -39,6 +39,8 @@ class Settings:
     frontier: Backend
     timeout_seconds: float = 60.0
     max_output_tokens: int = 256
+    max_active_requests: int = 8
+    max_queued_requests: int = 16
     frontier_max_requests: int = 0
     frontier_max_tokens: int = 0
     frontier_max_usd: float = 0.0
@@ -90,6 +92,8 @@ class Settings:
                 raise ConfigError("Jev rate effective date must be ISO format") from exc
         if not 1 <= self.max_output_tokens <= 8192:
             raise ConfigError("max_output_tokens must be between 1 and 8192")
+        if self.max_active_requests < 1 or self.max_queued_requests < 0:
+            raise ConfigError("admission limits must allow active work and a nonnegative queue")
         if (min(self.frontier_max_requests, self.frontier_max_tokens, self.jev_max_requests, self.jev_max_tokens) < 0
             or self.frontier_max_usd < 0 or self.jev_max_usd < 0 or self.jev_decision_output_tokens < 1):
             raise ConfigError("frontier limits cannot be negative")
@@ -147,6 +151,8 @@ def from_env():
         frontier=Backend("frontier", os.getenv("JEV_FRONTIER_MODEL") or "UNCONFIGURED", os.getenv("JEV_FRONTIER_URL", "https://api.openai.com/v1"), "JEV_FRONTIER_API_KEY", max_context_tokens=integer("JEV_FRONTIER_CONTEXT_TOKENS", "4096")),
         timeout_seconds=number("JEV_TIMEOUT_SECONDS", "60"),
         max_output_tokens=integer("JEV_MAX_OUTPUT_TOKENS", "256"),
+        max_active_requests=integer("JEV_MAX_ACTIVE_REQUESTS", "8"),
+        max_queued_requests=integer("JEV_MAX_QUEUED_REQUESTS", "16"),
         frontier_max_requests=integer("JEV_FRONTIER_MAX_REQUESTS", "0"),
         frontier_max_tokens=integer("JEV_FRONTIER_MAX_TOKENS", "0"),
         frontier_max_usd=number("JEV_FRONTIER_MAX_USD", "0"),

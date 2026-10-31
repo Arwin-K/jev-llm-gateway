@@ -7,7 +7,7 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -25,6 +25,7 @@ from .execution.integration import execute
 from .cache.check import JevCacheChecker
 from .cache.runtime import build_cache
 from .observability import Metrics, metrics_response
+from .admission import AdmissionGate, AdmissionRejected
 
 
 class Message(BaseModel):
@@ -62,6 +63,8 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
     app = FastAPI(title="Jev gateway", version="0.1.0", lifespan=lifespan)
     app.state.settings = settings or from_env()
     app.state.metrics = Metrics()
+    app.state.admission = AdmissionGate(app.state.settings.max_active_requests,
+                                        app.state.settings.max_queued_requests, app.state.metrics)
     app.state.transport = transport or BackendTransport(app.state.settings.timeout_seconds)
     app.state.budget = FrontierBudget(app.state.settings)
     app.state.router = router
@@ -113,12 +116,20 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
         if request.url.path != "/v1/chat/completions":
             return await call_next(request)
         began = time.monotonic()
-        app.state.metrics.start_request()
+        request.state.deadline_at = began + app.state.settings.timeout_seconds
+        try:
+            await app.state.admission.acquire(request.state.deadline_at)
+        except AdmissionRejected as exc:
+            status = 429 if exc.reason == "queue_full" else 504
+            app.state.metrics.inc("jev_admission_rejections_total", (exc.reason,))
+            app.state.metrics.end_request("standard", status, time.monotonic() - began)
+            return JSONResponse({"detail": "request admission rejected"}, status_code=status)
         try:
             result = await call_next(request)
         except BaseException:
             app.state.metrics.end_request(getattr(request.state, "execution_mode", "standard"),
                                           500, time.monotonic() - began)
+            await app.state.admission.release()
             raise
         body = result.body_iterator
 
@@ -129,6 +140,7 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
             finally:
                 app.state.metrics.end_request(getattr(request.state, "execution_mode", "standard"),
                                               result.status_code, time.monotonic() - began)
+                await app.state.admission.release()
 
         result.body_iterator = observed_body()
         return result
@@ -151,7 +163,7 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
             raise HTTPException(status_code=422, detail="max_tokens exceeds server policy")
         trace = RequestTrace(request.model, 'pending', observer=app.state.metrics.trace)
         tier = request.model
-        deadline = time.monotonic() + settings.timeout_seconds
+        deadline = http_request.state.deadline_at
         if request.execution_mode != 'standard' or request.cache_mode != 'off':
             result,headers=await execute(app,request,trace,max_tokens=max_tokens,deadline=deadline)
             response.headers['x-request-id']=trace.request_id
