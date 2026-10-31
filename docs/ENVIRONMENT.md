@@ -38,3 +38,11 @@ The core Mac venv has no `torch`, `transformers`, `sentence_transformers`, or `f
 ## Day 4 final Mac check — 2026-10-30 America/Toronto
 
 The project venv ran 99 offline tests successfully. `jev doctor` again reported `ConnectError` for both Ollama tiers and `frontier.configured=false`; evidence is in `evidence/day4/`. The new HTTP integration tests used `httpx.MockTransport` and controlled Jev/cache fixtures, not provider requests. The cache's optional native dependencies and pinned model weights remain absent, so the runtime cache initialization and physical index behavior need a separate Mac validation run after installation.
+
+## Day 5 Mac deployment check — 2026-10-31 America/Toronto
+
+Observed `arm64`; the earlier hardware inventory identifies an M3 Pro with 18 GB unified memory. Docker Engine 29.6.2 was reachable with 8,321,372,160 bytes assigned to the daemon. Disk available fell from about 13 GiB at initial check to 5.8 GiB during kind testing; after the named cluster and its unused node image were removed, it was 8.3 GiB. Existing unrelated Docker containers and images were left intact. The project Compose containers were stopped with their two monitoring volumes retained.
+
+The locked `python:3.12.7-slim-bookworm` ARM gateway image built and passed its actual `/healthz` container check. Compose used Prometheus v3.9.0 and Grafana 12.2.0 on loopback ports. `promtool` accepted the scrape configuration and four recording rules; the gateway target was up, and Grafana provisioned its dashboard. The kind v0.33.0 ARM CLI was downloaded to temporary storage and matched its official SHA-256. Its pinned Kubernetes v1.37.0 node image ran a project-only cluster with two ready gateway pods. The cluster and node image were removed after evidence collection.
+
+Both the container and a pod resolved `host.docker.internal` for the Mac, but a request to native Ollama failed with `Network is unreachable`; in-pod `jev doctor` returned `ConnectError` for both local tiers and frontier unconfigured. The native `ollama` command and trained DistilBERT artifact remain absent. Locust 2.47.0 was installed into a temporary Python 3.14.5 venv and ran a two-request failure-path check; it has not run a real model workload. No Colab GPU, paid provider, MiniLM, native FAISS, or real model residency was available.
