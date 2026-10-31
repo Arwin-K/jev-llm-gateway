@@ -50,14 +50,19 @@ def main():
                 parser.error(f"{name} must be positive for paid-capable load")
         if os.getenv("JEV_EXECUTION_PAID_ENABLED", "false").lower() != "true":
             parser.error("JEV_EXECUTION_PAID_ENABLED must be true for paid-capable load")
-        if args.max_usd > float(os.environ["JEV_EXECUTION_MAX_USD"]):
-            parser.error("run USD cap must not exceed the gateway process USD cap")
-        for name in (("JEV_FRONTIER_MAX_USD",) if "frontier" in mix else ()) + (
+        provider_caps = []
+        frontier_configured = bool(os.getenv("JEV_FRONTIER_MODEL") and os.getenv("JEV_FRONTIER_API_KEY"))
+        may_reach_frontier = "frontier" in mix or frontier_configured and (
+            "auto" in mix or args.execution_mode in {"cascade", "hybrid"})
+        for name in (("JEV_FRONTIER_MAX_USD",) if may_reach_frontier else ()) + (
             ("JEV_DECISION_MAX_USD",) if args.execution_mode in {"cascade", "hybrid"} or
             args.cache_mode == "verified" or "auto" in mix else ()):
             configured = float(os.getenv(name, "0"))
-            if configured <= 0 or configured > args.max_usd:
-                parser.error(f"{name} must be positive and no greater than the run USD cap")
+            if configured <= 0:
+                parser.error(f"{name} must be positive")
+            provider_caps.append(configured)
+        if sum(provider_caps) > args.max_usd:
+            parser.error("sum of configured provider process USD caps exceeds the run USD ceiling")
     if args.max_requests * args.output_tokens > args.max_tokens:
         parser.error("max-tokens must cover all planned output reservations")
     if args.output.exists():
