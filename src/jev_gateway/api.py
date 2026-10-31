@@ -105,7 +105,11 @@ def create_app(settings: Settings | None = None, transport: BackendTransport | N
 
     @app.get("/readyz")
     async def readiness():
-        # Process readiness; backend availability is reported per tier by doctor.
+        if app.state.settings.router_policy == "distilbert" and app.state.router is None:
+            raise HTTPException(503, "configured trained router unavailable")
+        if app.state.settings.require_trained_fallback and app.state.fallback_router is None:
+            raise HTTPException(503, "required trained fallback unavailable")
+        # Backend availability is reported per tier by doctor, not inferred here.
         return {"status": "ready", "backend_availability": "unchecked"}
 
     @app.get("/metrics")

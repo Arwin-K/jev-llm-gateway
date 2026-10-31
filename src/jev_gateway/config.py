@@ -42,6 +42,7 @@ class Settings:
     max_active_requests: int = 8
     max_queued_requests: int = 16
     availability_failover_enabled: bool = False
+    require_trained_fallback: bool = False
     frontier_max_requests: int = 0
     frontier_max_tokens: int = 0
     frontier_max_usd: float = 0.0
@@ -155,6 +156,7 @@ def from_env():
         max_active_requests=integer("JEV_MAX_ACTIVE_REQUESTS", "8"),
         max_queued_requests=integer("JEV_MAX_QUEUED_REQUESTS", "16"),
         availability_failover_enabled=os.getenv("JEV_AVAILABILITY_FAILOVER_ENABLED", "false").lower()=="true",
+        require_trained_fallback=os.getenv("JEV_REQUIRE_TRAINED_FALLBACK", "false").lower()=="true",
         frontier_max_requests=integer("JEV_FRONTIER_MAX_REQUESTS", "0"),
         frontier_max_tokens=integer("JEV_FRONTIER_MAX_TOKENS", "0"),
         frontier_max_usd=number("JEV_FRONTIER_MAX_USD", "0"),
