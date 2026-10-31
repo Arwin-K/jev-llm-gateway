@@ -76,6 +76,7 @@ def main():
         return
     args.output.mkdir(parents=True)
     manifest["status"] = "started"
+    manifest["started_at"] = datetime.now(timezone.utc).isoformat()
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     env = dict(os.environ)
     env.update({"JEV_LOAD_SCENARIO": args.scenario, "JEV_LOAD_USERS": str(args.base_users),
