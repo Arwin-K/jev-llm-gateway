@@ -45,8 +45,9 @@ def main(argv=None):
     serving.add_argument("--paid-enabled", action="store_true")
     args = parser.parse_args(argv)
     if args.command == "serve":
+        import os
         import uvicorn
-        uvicorn.run("jev_gateway.api:app", host="127.0.0.1", port=8080)
+        uvicorn.run("jev_gateway.api:app", host=os.getenv("JEV_BIND_HOST", "127.0.0.1"), port=8080)
     elif args.command == "doctor":
         from .diagnostics import doctor
         return doctor()
