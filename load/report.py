@@ -39,7 +39,46 @@ def summarize(path: Path):
                    "p99_response_ms": float(aggregate["99%"]) if aggregate.get("99%") else None,
                    "evidence_state": "complete_interval" if duration >= manifest["duration_seconds"]
                    else "shorter_than_planned"})
+    if manifest["scenario"] == "spike":
+        result["spike"] = summarize_spike(path, manifest)
     return result
+
+
+def summarize_spike(path: Path, manifest):
+    started = datetime.fromisoformat(manifest["started_at"]).timestamp()
+    phases = {"baseline": [], "spike": [], "recovery": []}
+    users = {phase: [] for phase in phases}
+    failures = {phase: [] for phase in phases}
+    for row in read_rows(path / "locust_stats_history.csv"):
+        if row.get("Name") != "Aggregated":
+            continue
+        try:
+            try:
+                stamp = float(row["Timestamp"])
+            except ValueError:
+                stamp = datetime.fromisoformat(row["Timestamp"]).timestamp()
+            elapsed = stamp - started
+            rate = float(row["Requests/s"])
+            failure_rate = float(row["Failures/s"])
+            user_count = int(row["User Count"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        phase = "baseline" if elapsed < 120 else "spike" if elapsed < 240 else "recovery" if elapsed < 360 else None
+        if phase is not None and elapsed >= 0:
+            phases[phase].append(rate)
+            users[phase].append(user_count)
+            failures[phase].append(failure_rate)
+    mean_rates = {phase: sum(values) / len(values) if values else None for phase, values in phases.items()}
+    mean_users = {phase: sum(values) / len(values) if values else None for phase, values in users.items()}
+    mean_failures = {phase: sum(values) / len(values) if values else None for phase, values in failures.items()}
+    baseline, spike = mean_rates["baseline"], mean_rates["spike"]
+    ratio = spike / baseline if baseline and spike is not None else None
+    return {"mean_observed_requests_per_second": mean_rates,
+            "mean_observed_users": mean_users,
+            "mean_observed_failures_per_second": mean_failures,
+            "rate_ratio": ratio,
+            "fivefold_rate_observed": ratio >= 5 if ratio is not None else None,
+            "phase_sample_counts": {phase: len(values) for phase, values in phases.items()}}
 
 
 def main():
