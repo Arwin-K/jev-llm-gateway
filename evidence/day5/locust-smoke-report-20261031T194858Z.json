@@ -1,0 +1,21 @@
+{
+  "run_id": "day5-20261031T194858Z",
+  "scenario": "steady",
+  "status": "interrupted_or_failed",
+  "planned_duration_seconds": 600,
+  "arrival_model": "closed_loop_users",
+  "actual_duration_seconds": 1.884353,
+  "measurement_source": "per_request_events",
+  "http_status_counts": {
+    "502": 2
+  },
+  "periodic_csv_count_mismatch": 0,
+  "requests": 2,
+  "failures": 2,
+  "achieved_requests_per_second": 1.0613722588071344,
+  "failure_fraction": 1.0,
+  "median_response_ms": 13.427124824374914,
+  "p95_response_ms": 25.324583053588867,
+  "p99_response_ms": 25.324583053588867,
+  "evidence_state": "shorter_than_planned"
+}

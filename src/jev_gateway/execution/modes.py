@@ -1,7 +1,7 @@
 """Explicit route-first, cascade-only, and route-then-verify modes."""
 import asyncio
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from jev_gateway.routing.contracts import Decision, RoutingRequest, require_eligible
 from .cascade import CascadeEngine, CascadeResult, ExecutionRequest, GenerationAttempt
@@ -15,26 +15,41 @@ class ModeResult:
 
 
 class ModeExecutor:
-    def __init__(self, router, cascade: CascadeEngine):
+    def __init__(self, router, cascade: CascadeEngine, fallback_router=None):
         self.router = router
         self.cascade = cascade
+        self.fallback_router = fallback_router
 
     async def run(self, mode: str, request: ExecutionRequest, routing: RoutingRequest | None = None) -> ModeResult:
         if mode not in {'route_first','cascade','hybrid'}:
             raise ValueError('unknown execution mode')
         if mode == 'cascade':
             return ModeResult(mode,None,await self.cascade.run(request))
-        if routing is None or self.router is None:
-            raise ValueError('router and routing request required')
+        if routing is None:
+            raise ValueError('routing request required')
         remaining=request.deadline_at-time.monotonic()
         if remaining <= 0:
             return ModeResult(mode,None,CascadeResult('deadline_exceeded',None,None,[]))
         try:
+            if self.router is None:
+                raise ValueError('primary router unavailable')
             decision=require_eligible(await asyncio.wait_for(self.router.decide(routing),remaining),routing)
         except asyncio.CancelledError:
             raise
-        except Exception:
-            return ModeResult(mode,None,CascadeResult('routing_failed',None,None,[]))
+        except Exception as exc:
+            if self.fallback_router is None:
+                return ModeResult(mode,None,CascadeResult('routing_failed',None,None,[]))
+            remaining=request.deadline_at-time.monotonic()
+            if remaining <= 0:
+                return ModeResult(mode,None,CascadeResult('deadline_exceeded',None,None,[]))
+            try:
+                decision=require_eligible(await asyncio.wait_for(
+                    self.fallback_router.decide(routing),remaining),routing)
+                decision=replace(decision,outcome='fallback_selected',fallback_reason=type(exc).__name__)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                return ModeResult(mode,None,CascadeResult('routing_failed',None,None,[]))
         if mode == 'hybrid':
             return ModeResult(mode,decision,await self.cascade.run(request,start_tier=decision.tier))
         remaining=request.deadline_at-time.monotonic()

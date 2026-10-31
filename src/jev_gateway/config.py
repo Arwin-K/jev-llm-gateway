@@ -39,6 +39,10 @@ class Settings:
     frontier: Backend
     timeout_seconds: float = 60.0
     max_output_tokens: int = 256
+    max_active_requests: int = 8
+    max_queued_requests: int = 16
+    availability_failover_enabled: bool = False
+    require_trained_fallback: bool = False
     frontier_max_requests: int = 0
     frontier_max_tokens: int = 0
     frontier_max_usd: float = 0.0
@@ -52,6 +56,8 @@ class Settings:
     jev_input_usd_per_million: float = 0.0
     jev_output_usd_per_million: float = 0.0
     jev_decision_output_tokens: int = 256
+    jev_breaker_failures: int = 3
+    jev_breaker_cooldown_seconds: float = 30.
     jev_rate_source_url: str = ""
     jev_rate_effective_date: str = ""
     router_policy: str = "jev-choice"
@@ -88,11 +94,15 @@ class Settings:
                 raise ConfigError("Jev rate effective date must be ISO format") from exc
         if not 1 <= self.max_output_tokens <= 8192:
             raise ConfigError("max_output_tokens must be between 1 and 8192")
+        if self.max_active_requests < 1 or self.max_queued_requests < 0:
+            raise ConfigError("admission limits must allow active work and a nonnegative queue")
         if (min(self.frontier_max_requests, self.frontier_max_tokens, self.jev_max_requests, self.jev_max_tokens) < 0
             or self.frontier_max_usd < 0 or self.jev_max_usd < 0 or self.jev_decision_output_tokens < 1):
             raise ConfigError("frontier limits cannot be negative")
         if self.execution_max_requests < 0 or self.execution_max_tokens < 0 or self.execution_max_usd < 0:
             raise ConfigError("execution limits cannot be negative")
+        if self.jev_breaker_failures < 1 or self.jev_breaker_cooldown_seconds <= 0:
+            raise ConfigError("Jev breaker threshold and cooldown must be positive")
         for value, source in ((self.verification_threshold,self.verification_threshold_source),
                               (self.cache_similarity_threshold,self.cache_similarity_threshold_source),
                               (self.cache_verification_threshold,self.cache_verification_threshold_source)):
@@ -143,6 +153,10 @@ def from_env():
         frontier=Backend("frontier", os.getenv("JEV_FRONTIER_MODEL") or "UNCONFIGURED", os.getenv("JEV_FRONTIER_URL", "https://api.openai.com/v1"), "JEV_FRONTIER_API_KEY", max_context_tokens=integer("JEV_FRONTIER_CONTEXT_TOKENS", "4096")),
         timeout_seconds=number("JEV_TIMEOUT_SECONDS", "60"),
         max_output_tokens=integer("JEV_MAX_OUTPUT_TOKENS", "256"),
+        max_active_requests=integer("JEV_MAX_ACTIVE_REQUESTS", "8"),
+        max_queued_requests=integer("JEV_MAX_QUEUED_REQUESTS", "16"),
+        availability_failover_enabled=os.getenv("JEV_AVAILABILITY_FAILOVER_ENABLED", "false").lower()=="true",
+        require_trained_fallback=os.getenv("JEV_REQUIRE_TRAINED_FALLBACK", "false").lower()=="true",
         frontier_max_requests=integer("JEV_FRONTIER_MAX_REQUESTS", "0"),
         frontier_max_tokens=integer("JEV_FRONTIER_MAX_TOKENS", "0"),
         frontier_max_usd=number("JEV_FRONTIER_MAX_USD", "0"),
@@ -156,6 +170,8 @@ def from_env():
         jev_input_usd_per_million=number("JEV_DECISION_INPUT_USD_PER_MILLION", "0"),
         jev_output_usd_per_million=number("JEV_DECISION_OUTPUT_USD_PER_MILLION", "0"),
         jev_decision_output_tokens=integer("JEV_DECISION_OUTPUT_TOKENS", "256"),
+        jev_breaker_failures=integer("JEV_BREAKER_FAILURES", "3"),
+        jev_breaker_cooldown_seconds=number("JEV_BREAKER_COOLDOWN_SECONDS", "30"),
         jev_rate_source_url=os.getenv("JEV_DECISION_RATE_SOURCE_URL", ""),
         jev_rate_effective_date=os.getenv("JEV_DECISION_RATE_EFFECTIVE_DATE", ""),
         router_policy=os.getenv("JEV_ROUTER_POLICY", "jev-choice"),

@@ -8,15 +8,15 @@ A reproducible study of three-tier language-model serving, answer quality, cost,
 
 > How much answer quality can a cost-aware gateway retain while using smaller models when possible, and what latency and spending overhead do routing, verification, and caching introduce?
 
-The gateway now supports automatic policy selection, typed Jev choice and success questions, a prompted small-model comparison, fixed and seeded-random baselines, and a local Strands typed-server adapter. The DistilBERT trainer and artifact-gated fallback are implemented but no trained artifact exists because real three-tier labels are absent. Optional verifier cascades and scoped semantic caching are implemented and offline-tested; their real model and cache performance remains unmeasured. Deployment and controlled load studies remain future stages. The [project plan](docs/PLAN.md) describes their scope; it is not a claim that they have run.
+The gateway now supports automatic policy selection, typed Jev choice and success questions, a prompted small-model comparison, fixed and seeded-random baselines, and a local Strands typed-server adapter. The DistilBERT trainer and artifact-gated fallback are implemented but no trained artifact exists because real three-tier labels are absent. Optional verifier cascades and scoped semantic caching are implemented and offline-tested; their real model and cache performance remains unmeasured. Day 5 adds an ARM container, local Compose monitoring, a bounded load runner, and a tested kind deployment. Sustained real inference load remains pending because native Ollama is unreachable. The [project plan](docs/PLAN.md) describes the remaining scope.
 
 ## Observed evidence
 
 - Pinned source preparation selected **2,500 prompts**: 1,100 GSM8K math, 1,000 MMLU choice, and 400 sanitized MBPP code tasks. Project splits are 1,500 train, 500 validation, and 500 held-out test. The committed [manifest index](docs/day2-manifest-index.jsonl) contains IDs and hashes, not private prompt text or answers.
-- The Day 4 offline suite passed **99 tests**. Controlled code fixtures passed, failed, crashed, and timed out inside the Docker evaluator as expected.
+- The Day 5 offline suite passed **119 tests**. The ARM gateway image served health checks; Prometheus scraped it; Grafana provisioned 14 panels. A bounded in-cluster pod replacement returned 39 HTTP 200 responses and one connection error across 40 API requests. This was application traffic without generation.
 - A bounded real validation check attempted one prompt on each local tier. Both returned backend errors because Ollama was unreachable. Frontier was unconfigured. **No model answer quality, live serving latency, or paid API cost has been measured.** The project test split is unused.
 
-See [the Day 4 handoff](docs/DAY4_HANDOFF.md) for execution modes, configuration, exact checks, and limitations. The [Day 2 handoff](docs/DAY2_HANDOFF.md) records source and evaluator preparation.
+See [the Day 5 handoff](docs/DAY5_HANDOFF.md) for deployment commands, actual checks, and limitations. [Day 4](docs/DAY4_HANDOFF.md) covers verification and cache behavior; [Day 2](docs/DAY2_HANDOFF.md) records source and evaluator preparation.
 
 ## Quick start on Mac
 
@@ -39,6 +39,8 @@ uv run jev smoke --tier small
 `POST http://127.0.0.1:8080/v1/chat/completions` accepts text messages with `model` set to `small`, `medium`, `frontier`, or `auto`, plus optional `stream`, `max_tokens`, and `temperature`. `model=auto` uses the configured router and returns 503 when neither it nor a compatible trained fallback can decide. Tools, image, and audio inputs are not implemented. `/healthz` checks the process; `/readyz` does not prove a model is loaded. `jev doctor` checks backend availability. The frontier tier stays disabled without a model, key, current rates, and positive request, token, and USD caps. These application-side limits are not provider spending controls.
 
 Optional `execution_mode` (`route_first`, `cascade`, `hybrid`) and `cache_mode` (`verified`, experimental `similarity_only`) fields enable Day 4 buffered paths. They require explicit configuration; the default remains `standard` with cache `off`. See [Day 4 configuration and failure semantics](docs/DAY4_HANDOFF.md).
+
+For local deployment, `docker compose up -d --build` starts the gateway, Prometheus, and Grafana on loopback ports 8080, 9090, and 3000. `/metrics` exposes bounded aggregate series; detailed request stages stay in secret-free traces. The default Compose and kind profiles keep generation in native Ollama and paid calls disabled. Run `docker compose down` to stop without deleting monitoring data. The [Day 5 runbook](docs/DAY5_HANDOFF.md) explains backend connectivity, kind, load scenarios, and what readiness actually checks.
 
 ## Reproduce evaluation preparation
 
@@ -72,4 +74,4 @@ Generated code is scored only in a constrained Docker container; containers redu
 
 ## Branch milestones
 
-The `day-one` and `day-two` branches preserve the gateway and evaluation foundations. The local `day-three` branch contains automatic routing and comparison infrastructure. These changes are integrated through explicit local merge commits. See [the history guide](docs/HISTORY.md) for the graph and checkpoint lookup.
+The `day-one` through `day-five` branches preserve the staged implementation. Changes are integrated through explicit local merge commits. See [the history guide](docs/HISTORY.md) for the graph and checkpoint lookup.

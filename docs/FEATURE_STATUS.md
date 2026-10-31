@@ -17,8 +17,8 @@ This table distinguishes implemented code from real backend verification. See [e
 | Jev choice/success routing and DistilBERT fallback | Implemented; trained fallback artifact absent | Offline contract and failure tests; no live Jev or classifier run | Paid access, complete train/validation labels, Colab training, Mac artifact benchmark |
 | Prompted LLM and Strands Decider comparisons | Implemented adapters | Offline typed/prompt contract checks; no live model run | Ollama and pinned Strands checkpoint/runtime |
 | Verification cascades and semantic cache | Implemented as optional buffered modes and local pinned cache path | Offline contract, persistence-fixture, and HTTP integration tests; no live Jev, embedding, FAISS, or generator run | Select validation thresholds, install pinned model/FAISS, configure paid gates, and measure real behavior |
-| Compose, Prometheus, Grafana, kind | Planned | Docker Engine and sandbox image checked only | Deployment and monitoring implementation |
-| Locust load and failure tests | Planned | None | Bounded workloads and actual runs |
-| Offline CI regression | Planned | Local offline suite passes | CI workflow and fixed regression set |
+| Compose, Prometheus, Grafana, kind | Implemented local profiles | ARM image health, Compose scrape up, 14-panel Grafana provisioning, two kind pods ready; native Ollama unavailable from container/pod | Real backend connectivity and model residency; repeated multi-replica observation |
+| Locust load and failure tests | Bounded scenarios and raw-event reporter implemented | Two-request backend-failure wiring check; pod replacement 39/40 successful API requests; Jev outage offline fixture | Ten-minute real steady, two-minute fivefold-rate spike, one-hour soak, live Jev outage |
+| Offline CI regression | Workflow and 50 synthetic fixed HTTP cases implemented | Local 118-test suite and focused lint pass | Remote CI execution and clean-checkout confirmation |
 | NVIDIA profiling and final report | Planned | None | Colab allocation, experiments, frozen held-out evaluation |
 | Public release | Not requested | None | Destination and explicit publishing instruction |

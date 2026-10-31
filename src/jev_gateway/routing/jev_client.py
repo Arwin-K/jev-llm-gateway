@@ -12,6 +12,7 @@ import httpx
 
 from jev_gateway.config import Settings
 from .contracts import RoutingError
+from .breaker import JevCircuitBreaker, JevUnavailable
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,8 @@ class JevClient:
         self.requests = 0
         self.tokens = 0
         self.usd = 0.0
+        self.breaker = JevCircuitBreaker(settings.jev_breaker_failures,
+                                         settings.jev_breaker_cooldown_seconds)
 
     async def close(self):
         await self.client.aclose()
@@ -49,25 +52,29 @@ class JevClient:
         reserved_tokens = input_units + self.settings.jev_decision_output_tokens
         reserved_usd = (input_units*self.settings.jev_input_usd_per_million +
                         self.settings.jev_decision_output_tokens*self.settings.jev_output_usd_per_million)/1_000_000
-        async with self.lock:
-            if (self.requests+1 > self.settings.jev_max_requests or
-                self.tokens+reserved_tokens > self.settings.jev_max_tokens or
-                self.usd+reserved_usd > self.settings.jev_max_usd):
-                raise RoutingError('Jev decision exceeds configured process budget')
-            self.requests += 1
-            self.tokens += reserved_tokens
-            self.usd += reserved_usd
         start = time.perf_counter()
         try:
-            response = await self.client.post('/v1/systemone', json=body, timeout=timeout,
-                                              headers={'authorization': f'Bearer {os.environ["TYPESAFE_API_KEY"]}'})
-            response.raise_for_status()
-            data = response.json()
-            if not isinstance(data.get('answers'), dict) or set(data['answers']) != set(questions):
-                raise ValueError('answer keys do not match questions')
+            async def send():
+                async with self.lock:
+                    if (self.requests+1 > self.settings.jev_max_requests or
+                        self.tokens+reserved_tokens > self.settings.jev_max_tokens or
+                        self.usd+reserved_usd > self.settings.jev_max_usd):
+                        raise RoutingError('Jev decision exceeds configured process budget')
+                    self.requests += 1
+                    self.tokens += reserved_tokens
+                    self.usd += reserved_usd
+                response = await self.client.post('/v1/systemone', json=body, timeout=timeout,
+                                                  headers={'authorization': f'Bearer {os.environ["TYPESAFE_API_KEY"]}'})
+                response.raise_for_status()
+                data = response.json()
+                if not isinstance(data.get('answers'), dict) or set(data['answers']) != set(questions):
+                    raise ValueError('answer keys do not match questions')
+                return data
+
+            data = await self.breaker.call(send)
             usage = data.get('usage') or {}
             return JevReply(str(data['model']), data['answers'],
                             {k:v for k,v in usage.items() if k in {'input_tokens','output_tokens'} and isinstance(v,int)},
                             (time.perf_counter()-start)*1000)
-        except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+        except (httpx.HTTPError, ValueError, KeyError, TypeError, JevUnavailable) as exc:
             raise RoutingError('Jev decision request failed or returned invalid data') from exc

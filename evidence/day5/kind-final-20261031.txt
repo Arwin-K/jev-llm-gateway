@@ -1,0 +1,6 @@
+NAME                               READY   STATUS    RESTARTS   AGE   IP            NODE                             NOMINATED NODE   READINESS GATES
+pod/jev-gateway-588584699c-7zngr   1/1     Running   0          10s   10.244.0.11   jev-gateway-day5-control-plane   <none>           <none>
+pod/jev-gateway-588584699c-v2lsp   1/1     Running   0          14s   10.244.0.10   jev-gateway-day5-control-plane   <none>           <none>
+
+NAME                  TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE     SELECTOR
+service/jev-gateway   ClusterIP   10.96.162.250   <none>        8080/TCP   7m46s   app=jev-gateway

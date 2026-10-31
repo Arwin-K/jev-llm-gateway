@@ -1,0 +1,26 @@
+{
+  "uid": "jev-gateway-ops",
+  "title": "Jev gateway operations",
+  "tags": ["jev", "gateway"],
+  "timezone": "browser",
+  "schemaVersion": 42,
+  "version": 1,
+  "refresh": "15s",
+  "time": {"from": "now-1h", "to": "now"},
+  "panels": [
+    {"id": 1, "title": "Client requests / second (5m)", "type": "timeseries", "gridPos": {"x": 0, "y": 0, "w": 12, "h": 7}, "targets": [{"expr": "sum by (status) (rate(jev_client_requests_total[5m]))", "legendFormat": "HTTP {{status}}"}], "fieldConfig": {"defaults": {"unit": "reqps"}}},
+    {"id": 2, "title": "Request latency p50 / p95 (5m, seconds)", "type": "timeseries", "gridPos": {"x": 12, "y": 0, "w": 12, "h": 7}, "targets": [{"expr": "jev:request_p50_seconds5m", "legendFormat": "p50"}, {"expr": "jev:request_p95_seconds5m", "legendFormat": "p95"}], "fieldConfig": {"defaults": {"unit": "s"}}},
+    {"id": 3, "title": "First output p95 (5m, streaming only)", "type": "timeseries", "gridPos": {"x": 0, "y": 7, "w": 12, "h": 7}, "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(jev_first_output_seconds_bucket[5m])))", "legendFormat": "p95"}], "fieldConfig": {"defaults": {"unit": "s"}}},
+    {"id": 4, "title": "Stage p95 (5m, seconds)", "type": "timeseries", "gridPos": {"x": 12, "y": 7, "w": 12, "h": 7}, "targets": [{"expr": "histogram_quantile(0.95, sum by (stage, le) (rate(jev_stage_duration_seconds_bucket[5m])))", "legendFormat": "{{stage}}"}], "fieldConfig": {"defaults": {"unit": "s"}}},
+    {"id": 5, "title": "Selected tier / second (5m)", "type": "timeseries", "gridPos": {"x": 0, "y": 14, "w": 12, "h": 7}, "targets": [{"expr": "sum by (tier) (rate(jev_selected_tier_total[5m]))", "legendFormat": "{{tier}}"}], "fieldConfig": {"defaults": {"unit": "reqps"}}},
+    {"id": 6, "title": "Generation attempts / second (5m)", "type": "timeseries", "gridPos": {"x": 12, "y": 14, "w": 12, "h": 7}, "targets": [{"expr": "sum by (tier, outcome) (rate(jev_generation_attempts_total[5m]))", "legendFormat": "{{tier}} {{outcome}}"}], "fieldConfig": {"defaults": {"unit": "reqps"}}},
+    {"id": 7, "title": "Cache outcomes / second (5m)", "type": "timeseries", "gridPos": {"x": 0, "y": 21, "w": 12, "h": 7}, "targets": [{"expr": "sum by (outcome) (rate(jev_cache_outcomes_total[5m]))", "legendFormat": "{{outcome}}"}], "fieldConfig": {"defaults": {"unit": "reqps"}}},
+    {"id": 8, "title": "Verification outcomes / second (5m)", "type": "timeseries", "gridPos": {"x": 12, "y": 21, "w": 12, "h": 7}, "targets": [{"expr": "sum by (outcome) (rate(jev_verification_outcomes_total[5m]))", "legendFormat": "{{outcome}}"}], "fieldConfig": {"defaults": {"unit": "reqps"}}},
+    {"id": 9, "title": "Jev breaker (0 closed, 1 probe, 2 open)", "type": "timeseries", "gridPos": {"x": 0, "y": 28, "w": 12, "h": 7}, "targets": [{"expr": "max(jev_breaker_state)", "legendFormat": "state"}, {"expr": "sum(rate(jev_routing_decisions_total{fallback=\"yes\"}[5m]))", "legendFormat": "routing fallback / s"}], "fieldConfig": {"defaults": {"unit": "short"}}},
+    {"id": 10, "title": "Active and queued requests", "type": "timeseries", "gridPos": {"x": 12, "y": 28, "w": 12, "h": 7}, "targets": [{"expr": "sum(jev_active_requests)", "legendFormat": "active"}, {"expr": "sum(jev_queued_requests)", "legendFormat": "queued"}], "fieldConfig": {"defaults": {"unit": "short"}}},
+    {"id": 11, "title": "Admission rejections / second (5m)", "type": "timeseries", "gridPos": {"x": 0, "y": 35, "w": 12, "h": 7}, "targets": [{"expr": "sum by (reason) (rate(jev_admission_rejections_total[5m]))", "legendFormat": "{{reason}}"}], "fieldConfig": {"defaults": {"unit": "reqps"}}},
+    {"id": 12, "title": "Known tokens / second (5m)", "type": "timeseries", "gridPos": {"x": 12, "y": 35, "w": 12, "h": 7}, "targets": [{"expr": "sum by (kind) (rate(jev_known_tokens_total[5m]))", "legendFormat": "{{kind}}"}], "fieldConfig": {"defaults": {"unit": "short"}}},
+    {"id": 13, "title": "Estimated API reservation USD / second (5m)", "type": "timeseries", "gridPos": {"x": 0, "y": 42, "w": 12, "h": 7}, "targets": [{"expr": "sum(rate(jev_estimated_reserved_usd_total[5m]))", "legendFormat": "estimated reservation"}], "fieldConfig": {"defaults": {"unit": "currencyUSD"}}},
+    {"id": 14, "title": "Cost coverage / second (5m; unknown is not zero)", "type": "timeseries", "gridPos": {"x": 12, "y": 42, "w": 12, "h": 7}, "targets": [{"expr": "sum by (status) (rate(jev_cost_coverage_total[5m]))", "legendFormat": "{{status}}"}], "fieldConfig": {"defaults": {"unit": "reqps"}}}
+  ]
+}
