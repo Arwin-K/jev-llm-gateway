@@ -1,0 +1,14 @@
+{
+  "schema": "jev.day6.clean_clone.v1",
+  "source": "local day-six branch through e1e61fa",
+  "checkout": "/tmp/jev-day6-clean",
+  "python": "3.14.5",
+  "fresh_environment": "/tmp/jev-day6-clean-venv",
+  "editable_install_with_test_extra": "passed",
+  "offline_tests": "127 passed, 1 third-party Starlette warning, 1.03 seconds",
+  "loopback_health": "HTTP 200, {\"status\":\"ok\"}",
+  "sandbox_bind_without_escalation": "operation not permitted",
+  "real_model_request": "pending: native Ollama unavailable",
+  "private_runs_in_clean_clone": false,
+  "remote_ci": "not executed"
+}

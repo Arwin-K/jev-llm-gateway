@@ -1,0 +1,12 @@
+{
+  "schema": "jev.day6.serving.v1",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "model_revision": "REPLACE_WITH_RESOLVED_COMMIT",
+  "tokenizer_revision": "REPLACE_WITH_RESOLVED_COMMIT",
+  "dtype": "float16",
+  "max_model_len": 2048,
+  "max_num_seqs": 16,
+  "max_num_batched_tokens": 4096,
+  "prefix_caching": false,
+  "max_output_tokens": 64
+}

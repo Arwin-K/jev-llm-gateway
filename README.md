@@ -16,7 +16,7 @@ The gateway now supports automatic policy selection, typed Jev choice and succes
 - The Day 5 offline suite passed **119 tests**. The ARM gateway image served health checks; Prometheus scraped it; Grafana provisioned 14 panels. A bounded in-cluster pod replacement returned 39 HTTP 200 responses and one connection error across 40 API requests. This was application traffic without generation.
 - A bounded real validation check attempted one prompt on each local tier. Both returned backend errors because Ollama was unreachable. Frontier was unconfigured. **No model answer quality, live serving latency, or paid API cost has been measured.** The project test split is unused.
 
-See [the Day 5 handoff](docs/DAY5_HANDOFF.md) for deployment commands, actual checks, and limitations. [Day 4](docs/DAY4_HANDOFF.md) covers verification and cache behavior; [Day 2](docs/DAY2_HANDOFF.md) records source and evaluator preparation.
+See [the Day 6 protocol](docs/DAY6_PROTOCOL.md) for the frozen-evaluation gate and Colab performance procedure. [Day 5](docs/DAY5_HANDOFF.md) covers deployment checks; [Day 4](docs/DAY4_HANDOFF.md) covers verification and caching.
 
 ## Quick start on Mac
 
@@ -51,6 +51,24 @@ uv run jev eval-run --split validation --tier small --tier medium --max-prompts 
 ```
 
 The runner prints a private run-file path for `jev eval-report` and `jev eval-audit`. Normal offline checks do not download datasets or call paid APIs. [The evaluation workflow](docs/EVALUATION_WORKFLOW.md) covers resumption, audits, sourced rates, held-out test policy, and serving baselines.
+
+## Five-minute local walkthrough
+
+This walkthrough needs Python 3.11–3.14 and the repository checkout. It exercises the installed package and offline evidence path; a real answer also needs native Ollama and an already downloaded small model. Initial model downloads can take longer than five minutes.
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -e '.[test]'
+.venv/bin/jev doctor
+.venv/bin/pytest -q
+.venv/bin/python -m jev_gateway.day6.freeze \
+  --manifest runs/day2-manifest.jsonl \
+  --results runs/day2-run-8debb816c7474f559ab5197df9c1fea6.jsonl \
+  --freeze-config config/day6-freeze-draft.json \
+  --output runs/day6-freeze-audit-local.json
+```
+
+The private `runs/` inputs above are present in this working checkout, but **not in a clean clone**. For a clean clone, run `jev eval-prepare` first to regenerate the private manifest, and supply an actual result file from `jev eval-run`; the frozen audit will remain closed until complete real coverage exists. To try one real request after `jev doctor` confirms the small tier, start `.venv/bin/jev serve` in one terminal and run `.venv/bin/jev smoke --tier small` in another. The smoke command is bounded and does not use paid services. See [the Day 6 reproduction guide](docs/DAY6_REPRO.md) for clean-checkout commands, Compose/kind paths, figures, and Colab artifacts.
 
 ## Repository layout
 

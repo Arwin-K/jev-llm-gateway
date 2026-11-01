@@ -1,0 +1,11 @@
+{
+  "schema": "jev.day6.final_package_check.v1",
+  "wheel_sha256": "4ef16105f355b15913489114726b10f3d6a63c789884dab99de0e2fa32c9d2ec",
+  "wheel_bytes": 105494,
+  "wheel_members": 85,
+  "cuda_or_torch_named_members": [],
+  "install": "reinstalled final wheel in isolated standard-dependency venv",
+  "cli_help": "passed",
+  "day6_imports": "passed",
+  "python_compileall": "passed"
+}

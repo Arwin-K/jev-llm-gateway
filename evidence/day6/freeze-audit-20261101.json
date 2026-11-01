@@ -1,0 +1,52 @@
+{
+  "coverage_shortfalls": [
+    "train/small",
+    "train/medium",
+    "train/frontier",
+    "validation/small",
+    "validation/medium",
+    "validation/frontier"
+  ],
+  "freeze_config_sha256": "39f429b2b16be7f4e75aa0e5d809d29978461a85f5a14ccf6d6dce13f2eaad03",
+  "incompatible_records": [],
+  "manifest_counts": {
+    "test": 500,
+    "train": 1500,
+    "validation": 500
+  },
+  "manifest_sha256": "11b997a02bb910c6a85a45c7a8135b5513ad8a1a836ee43c5e5ffec795d72a37",
+  "missing_freeze_fields": [
+    "model_identities",
+    "tokenizer_identities",
+    "generation_settings",
+    "router_artifact",
+    "router_preprocessing",
+    "jev_questions",
+    "backend_descriptions",
+    "thresholds",
+    "fallback_rules",
+    "scoring_rules",
+    "source_revision"
+  ],
+  "ready_for_test": false,
+  "required_scored_observations": {
+    "train/frontier": 1500,
+    "train/medium": 1500,
+    "train/small": 1500,
+    "validation/frontier": 500,
+    "validation/medium": 500,
+    "validation/small": 500
+  },
+  "result_sha256": [
+    "5847a7a7321e3486213c6e1d05325749b67817901fdf7ac7df27ff3f3b6a2009"
+  ],
+  "schema": "jev.day6.freeze_audit.v1",
+  "scored_observations": {
+    "train/frontier": 0,
+    "train/medium": 0,
+    "train/small": 0,
+    "validation/frontier": 0,
+    "validation/medium": 0,
+    "validation/small": 0
+  }
+}
