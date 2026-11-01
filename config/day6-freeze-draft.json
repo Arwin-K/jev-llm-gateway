@@ -1,0 +1,14 @@
+{
+  "model_identities": null,
+  "tokenizer_identities": null,
+  "generation_settings": null,
+  "router_artifact": null,
+  "router_preprocessing": null,
+  "jev_questions": null,
+  "backend_descriptions": null,
+  "thresholds": null,
+  "fallback_rules": null,
+  "scoring_rules": null,
+  "source_revision": null,
+  "note": "Draft only. No held-out test execution is authorized by this file."
+}
