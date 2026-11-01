@@ -1,0 +1,76 @@
+{
+  "cache": {
+    "disabled": {
+      "comparison_compatible": false,
+      "observed": 0,
+      "scored": 0
+    },
+    "similarity_only": {
+      "comparison_compatible": false,
+      "observed": 0,
+      "scored": 0
+    },
+    "verified": {
+      "comparison_compatible": false,
+      "observed": 0,
+      "scored": 0
+    }
+  },
+  "cache_report_sha256": "e8e675f986460179e6aad0eed6f20d4bc24f78a5f2741aa7c1c30422746d77db",
+  "held_out_composed_comparison": "pending",
+  "real_quality_comparison_ready": false,
+  "router_report_sha256": "4c9e80a48541dd0f80c8c4b9691b23b3ffa02c1fb8c2e8327eeb5d94d63889e4",
+  "routing": {
+    "always-frontier": {
+      "missing_result": 500,
+      "scored": 0,
+      "selected": 500
+    },
+    "always-medium": {
+      "missing_result": 499,
+      "scored": 0,
+      "selected": 500
+    },
+    "always-small": {
+      "missing_result": 499,
+      "scored": 0,
+      "selected": 500
+    },
+    "distilbert": {
+      "missing_result": 0,
+      "scored": 0,
+      "selected": 0
+    },
+    "jev-choice": {
+      "missing_result": 0,
+      "scored": 0,
+      "selected": 0
+    },
+    "jev-threshold": {
+      "missing_result": 0,
+      "scored": 0,
+      "selected": 0
+    },
+    "observed-hindsight-oracle": {
+      "missing_result": 0,
+      "scored": 0,
+      "selected": 0
+    },
+    "prompted-small": {
+      "missing_result": 0,
+      "scored": 0,
+      "selected": 0
+    },
+    "seeded-random-17": {
+      "missing_result": 499,
+      "scored": 0,
+      "selected": 500
+    },
+    "strands-decider": {
+      "missing_result": 0,
+      "scored": 0,
+      "selected": 0
+    }
+  },
+  "schema": "jev.day6.system_audit.v1"
+}
