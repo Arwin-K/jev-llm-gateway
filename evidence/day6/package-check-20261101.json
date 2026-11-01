@@ -1,0 +1,38 @@
+{
+  "schema": "jev.day6.package_check.v1",
+  "wheel_sha256": "fc23bb2602fbfc06b0eb8af979be0b0a157fa31f88577b5dd94b9faeeba42463",
+  "wheel_bytes": 105149,
+  "fresh_venv": "/tmp/jev-day6-fresh",
+  "python": "3.14.5",
+  "install": "wheel with standard dependencies; successful",
+  "cli_help_exit": 0,
+  "cli_commands": [
+    "serve",
+    "doctor",
+    "smoke",
+    "eval-prepare",
+    "eval-run",
+    "eval-report",
+    "eval-audit",
+    "eval-serving"
+  ],
+  "doctor_exit": 1,
+  "doctor": {
+    "frontier": {
+      "configured": false
+    },
+    "tiers": {
+      "small": {
+        "model": "qwen2.5:1.5b",
+        "available": false,
+        "reason": "ConnectError"
+      },
+      "medium": {
+        "model": "qwen2.5:7b",
+        "available": false,
+        "reason": "ConnectError"
+      }
+    }
+  },
+  "cuda_dependency_required": false
+}
