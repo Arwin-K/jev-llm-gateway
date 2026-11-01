@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import statistics
+import subprocess
 import time
 import uuid
 from datetime import datetime, timezone
@@ -11,6 +12,17 @@ from pathlib import Path
 import httpx
 
 from .common import digest, read_json, write_new
+
+
+def gpu_snapshot() -> dict:
+    try:
+        result = subprocess.run(['nvidia-smi', '--query-gpu=memory.used,utilization.gpu',
+                                 '--format=csv,noheader,nounits'], capture_output=True,
+                                text=True, timeout=5)
+        return {'values': result.stdout.strip().splitlines() if result.returncode == 0 else None,
+                'error': result.stderr.strip() if result.returncode else None}
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        return {'values': None, 'error': type(exc).__name__}
 
 
 async def run(workload: Path, config: Path, *, endpoint: str, concurrency: int,
@@ -26,6 +38,7 @@ async def run(workload: Path, config: Path, *, endpoint: str, concurrency: int,
         raise ValueError('resolve serving identity and output cap before running')
     semaphore = asyncio.Semaphore(concurrency)
     records = []
+    gpu_before = gpu_snapshot()
     async with httpx.AsyncClient(timeout=timeout) as client:
         async def request(case, phase):
             async with semaphore:
@@ -57,6 +70,7 @@ async def run(workload: Path, config: Path, *, endpoint: str, concurrency: int,
                 await asyncio.sleep(interval)
         await asyncio.gather(*tasks)
         duration = time.perf_counter() - start
+    gpu_after = gpu_snapshot()
     measured = [r for r in records if r['phase'] == 'measured']
     ok = sorted(r['latency_ms'] for r in measured if r['status'] == 'ok')
     percentile = lambda fraction: ok[min(len(ok)-1, int((len(ok)-1)*fraction))] if ok else None
@@ -68,6 +82,7 @@ async def run(workload: Path, config: Path, *, endpoint: str, concurrency: int,
             'arrival': 'fixed_interval' if interval else 'burst', 'interval_seconds': interval,
             'concurrency_cap': concurrency, 'warmup_requests': warmup, 'timeout_seconds': timeout,
             'duration_seconds': duration, 'request_count': len(measured), 'success_count': len(ok),
+            'gpu_snapshot_before': gpu_before, 'gpu_snapshot_after': gpu_after,
             'error_count': len(measured)-len(ok), 'throughput_success_per_second': len(ok)/duration,
             'latency_ms': {'p50': percentile(.5), 'p95': percentile(.95), 'mean': statistics.mean(ok) if ok else None},
             'records': records}
