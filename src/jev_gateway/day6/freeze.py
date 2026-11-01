@@ -21,6 +21,7 @@ def audit(manifest: Path, results: list[Path], freeze_config: Path) -> dict:
         row = json.loads(line)
         split_ids[row['split']].add(row['prompt_id'])
     coverage = {(split, tier): set() for split in ('train', 'validation') for tier in TIERS}
+    identities = {tier: set() for tier in TIERS}
     incompatible = []
     for path in results:
         for line in path.read_text().splitlines():
@@ -37,16 +38,28 @@ def audit(manifest: Path, results: list[Path], freeze_config: Path) -> dict:
                 continue
             if row.get('score') is not None and row.get('outcome') in ('correct', 'incorrect'):
                 coverage[(split, row['tier'])].add(row['prompt_id'])
+                identities[row['tier']].add((row.get('model'), row.get('model_revision'),
+                                            row.get('settings_fingerprint'), row.get('template_fingerprint')))
     needed = {f'{split}/{tier}': len(split_ids[split]) for split in ('train', 'validation') for tier in TIERS}
     observed = {key: len(coverage[tuple(key.split('/'))]) for key in needed}
     short = [key for key in needed if observed[key] < needed[key]]
+    identity_issues = []
+    for tier in TIERS:
+        if len(identities[tier]) > 1:
+            identity_issues.append(f'{tier}: mixed model, settings, or template identities')
+        if len(identities[tier]) == 1 and config.get('model_identities') and config.get('generation_settings'):
+            model, revision, settings, template = next(iter(identities[tier]))
+            if config['model_identities'].get(tier) != {'model': model, 'revision': revision} or \
+               config['generation_settings'].get(tier) != {'fingerprint': settings, 'template': template}:
+                identity_issues.append(f'{tier}: records disagree with freeze configuration')
     return {'schema': 'jev.day6.freeze_audit.v1', 'manifest_sha256': digest(manifest),
             'freeze_config_sha256': digest(freeze_config), 'result_sha256': [digest(p) for p in results],
             'manifest_counts': {split: len(ids) for split, ids in split_ids.items()},
             'required_scored_observations': needed, 'scored_observations': observed,
             'missing_freeze_fields': missing, 'coverage_shortfalls': short,
+            'identity_issues': identity_issues,
             'incompatible_records': sorted(set(incompatible)),
-            'ready_for_test': not (missing or short or incompatible)}
+            'ready_for_test': not (missing or short or incompatible or identity_issues)}
 
 
 def main(argv=None):

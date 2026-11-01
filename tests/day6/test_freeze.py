@@ -17,3 +17,16 @@ def test_freeze_audit_counts_unique_scored_prompts_and_stays_closed(tmp_path):
     assert report['scored_observations']['validation/small'] == 1
     assert not report['ready_for_test']
     assert report['manifest_counts']['test'] == 1
+
+
+def test_freeze_audit_flags_mixed_generation_identity(tmp_path):
+    manifest = tmp_path / 'manifest.jsonl'
+    manifest.write_text(json.dumps({'split': 'validation', 'prompt_id': 'one'})+'\n')
+    results = tmp_path / 'results.jsonl'
+    rows = [{'split': 'validation', 'prompt_id': 'one', 'tier': 'small', 'execution': 'real',
+             'score': 1, 'outcome': 'correct', 'model': model, 'settings_fingerprint': 'same'}
+            for model in ('old', 'new')]
+    results.write_text(''.join(json.dumps(row)+'\n' for row in rows))
+    config = tmp_path / 'config.json'
+    config.write_text('{}')
+    assert 'small: mixed model, settings, or template identities' in audit(manifest, [results], config)['identity_issues']
