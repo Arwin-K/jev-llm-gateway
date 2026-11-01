@@ -26,7 +26,8 @@ def gpu_snapshot() -> dict:
 
 
 async def run(workload: Path, config: Path, *, endpoint: str, concurrency: int,
-              interval: float, warmup: int, timeout: float, label: str) -> dict:
+              interval: float, warmup: int, timeout: float, label: str,
+              diagnostic_only: bool = False) -> dict:
     if concurrency < 1 or warmup < 0 or interval < 0 or timeout <= 0:
         raise ValueError('invalid benchmark limits')
     if not endpoint.startswith('http://127.0.0.1:') and not endpoint.startswith('http://localhost:'):
@@ -77,6 +78,7 @@ async def run(workload: Path, config: Path, *, endpoint: str, concurrency: int,
     return {'schema': 'jev.day6.benchmark.v1', 'run_id': uuid.uuid4().hex,
             'recorded_at_utc': datetime.now(timezone.utc).isoformat(),
             'label': label, 'origin': 'live_client' if ok else 'live_client_no_success',
+            'diagnostic_only': diagnostic_only,
             'workload_sha256': digest(workload), 'config_sha256': digest(config),
             'endpoint': endpoint, 'client_host': __import__('platform').node(),
             'arrival': 'fixed_interval' if interval else 'burst', 'interval_seconds': interval,
@@ -99,10 +101,12 @@ def main(argv=None):
     parser.add_argument('--warmup', type=int, default=4)
     parser.add_argument('--timeout', type=float, default=60)
     parser.add_argument('--label', required=True)
+    parser.add_argument('--diagnostic-only', action='store_true')
     args = parser.parse_args(argv)
     result = asyncio.run(run(args.workload, args.config, endpoint=args.endpoint,
                              concurrency=args.concurrency, interval=args.interval,
-                             warmup=args.warmup, timeout=args.timeout, label=args.label))
+                             warmup=args.warmup, timeout=args.timeout, label=args.label,
+                             diagnostic_only=args.diagnostic_only))
     write_new(args.output, result)
 
 
