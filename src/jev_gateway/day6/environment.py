@@ -4,6 +4,7 @@ import argparse
 import importlib.metadata
 import os
 import platform
+import re
 import subprocess
 import sys
 import uuid
@@ -13,7 +14,10 @@ from pathlib import Path
 from .common import digest, write_new
 
 
-def capture(source_archive: Path, model: str, model_revision: str, dtype: str, config: Path) -> dict:
+def capture(source_archive: Path, source_revision: str, model: str,
+            model_revision: str, dtype: str, config: Path) -> dict:
+    if not re.fullmatch(r'[0-9a-f]{40}', source_revision):
+        raise ValueError('source revision must be a full Git commit hash')
     for path in (source_archive, config):
         if not path.is_file():
             raise FileNotFoundError(path)
@@ -36,6 +40,7 @@ def capture(source_archive: Path, model: str, model_revision: str, dtype: str, c
         'host': platform.node(), 'platform': platform.platform(), 'python': sys.version,
         'gpu': gpu_lines, 'gpu_error': gpu_error, 'packages': packages,
         'source_archive_sha256': digest(source_archive), 'config_sha256': digest(config),
+        'source_revision': source_revision,
         'model': model, 'model_revision': model_revision, 'dtype': dtype,
         'cuda_visible_devices': os.getenv('CUDA_VISIBLE_DEVICES'),
     }
@@ -44,13 +49,15 @@ def capture(source_archive: Path, model: str, model_revision: str, dtype: str, c
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--source-archive', required=True, type=Path)
+    parser.add_argument('--source-revision', required=True)
     parser.add_argument('--config', required=True, type=Path)
     parser.add_argument('--model', required=True)
     parser.add_argument('--model-revision', required=True)
     parser.add_argument('--dtype', required=True)
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args(argv)
-    write_new(args.output, capture(args.source_archive, args.model, args.model_revision, args.dtype, args.config))
+    write_new(args.output, capture(args.source_archive, args.source_revision,
+                                   args.model, args.model_revision, args.dtype, args.config))
 
 
 if __name__ == '__main__':
