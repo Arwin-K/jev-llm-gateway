@@ -52,23 +52,7 @@ uv run jev eval-run --split validation --tier small --tier medium --max-prompts 
 
 The runner prints a private run-file path for `jev eval-report` and `jev eval-audit`. Normal offline checks do not download datasets or call paid APIs. [The evaluation workflow](docs/EVALUATION_WORKFLOW.md) covers resumption, audits, sourced rates, held-out test policy, and serving baselines.
 
-## Five-minute local walkthrough
-
-This walkthrough needs Python 3.11–3.14 and the repository checkout. It exercises the installed package and offline evidence path; a real answer also needs native Ollama and an already downloaded small model. Initial model downloads can take longer than five minutes.
-
-```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -e '.[test]'
-.venv/bin/jev doctor
-.venv/bin/pytest -q
-.venv/bin/python -m jev_gateway.day6.freeze \
-  --manifest runs/day2-manifest.jsonl \
-  --results runs/day2-run-8debb816c7474f559ab5197df9c1fea6.jsonl \
-  --freeze-config config/day6-freeze-draft.json \
-  --output runs/day6-freeze-audit-local.json
-```
-
-The private `runs/` inputs above are present in this working checkout, but **not in a clean clone**. For a clean clone, run `jev eval-prepare` first to regenerate the private manifest, and supply an actual result file from `jev eval-run`; the frozen audit will remain closed until complete real coverage exists. To try one real request after `jev doctor` confirms the small tier, start `.venv/bin/jev serve` in one terminal and run `.venv/bin/jev smoke --tier small` in another. The smoke command is bounded and does not use paid services. See [the Day 6 reproduction guide](docs/DAY6_REPRO.md) for clean-checkout commands, Compose/kind paths, figures, and Colab artifacts.
+For clean-checkout validation, real-backend smoke checks, Compose/kind paths, figures, and Colab artifacts, follow [the Day 6 reproduction guide](docs/DAY6_REPRO.md).
 
 ## Repository layout
 
@@ -80,8 +64,8 @@ notebooks/             Separate Colab GPU serving experiment
 scripts/               Explicit real checks and dataset preparation
 docs/                  Architecture, methods, status, decisions, experiments, and notebook
 evidence/              Committed sanitized engineering checks
-prompts/               Original staged project instructions
-runs/, data/           Ignored private outputs and source snapshots
+runs/                  Ignored private evaluation outputs
+data/                  Benchmark index and local source snapshots
 ```
 
 The [Day 3 handoff](docs/DAY3_HANDOFF.md) gives routing, training, calibration, and comparison commands with current blockers. The [Colab notebook guide](notebooks/README.md) explains how to archive a committed source revision. A notebook runtime is not a permanent Mac service dependency. The [development guide](docs/DEVELOPMENT.md) explains module boundaries and testing. [Contributing](CONTRIBUTING.md) describes evidence and review expectations.
