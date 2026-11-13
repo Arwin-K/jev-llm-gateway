@@ -1,0 +1,77 @@
+{
+  "run_id": "mac-live-smoke-20261113T184458-0500",
+  "host": "M3 MacBook, 18 GiB unified memory (hw.memsize 19327352832)",
+  "ollama_version": "0.40.16",
+  "ollama_list": {
+    "qwen2.5:7b": "845dbda0ea48 4.7 GB",
+    "qwen2.5:1.5b": "65ec06548149 986 MB"
+  },
+  "doctor": {
+    "frontier": {
+      "configured": false
+    },
+    "tiers": {
+      "small": {
+        "model": "qwen2.5:1.5b",
+        "installed": true,
+        "runtime": "native-ollama-mac",
+        "loaded_models": [
+          {
+            "name": "qwen2.5:1.5b",
+            "size_vram": 1169371954,
+            "expires_at": "2026-11-13T18:52:30.971197-05:00"
+          },
+          {
+            "name": "qwen2.5:7b",
+            "size_vram": 4755397016,
+            "expires_at": "2026-11-13T18:50:04.357074-05:00"
+          }
+        ]
+      },
+      "medium": {
+        "model": "qwen2.5:7b",
+        "installed": true,
+        "runtime": "native-ollama-mac",
+        "loaded_models": [
+          {
+            "name": "qwen2.5:1.5b",
+            "size_vram": 1169371954,
+            "expires_at": "2026-11-13T18:52:30.971197-05:00"
+          },
+          {
+            "name": "qwen2.5:7b",
+            "size_vram": 4755397016,
+            "expires_at": "2026-11-13T18:50:04.357074-05:00"
+          }
+        ]
+      }
+    }
+  },
+  "smoke": {
+    "small": {
+      "tier": "small",
+      "request_id": "ecd6c8d76a91406ab64b146e309867b4",
+      "backend_model": "qwen2.5:1.5b",
+      "answer": "Hello! How can I assist you today?",
+      "wall_seconds_incl_cold_load": 1.72,
+      "ollama_ps": "qwen2.5:1.5b 1.2 GB 100% GPU context 4096 llamacpp"
+    },
+    "medium": {
+      "tier": "medium",
+      "request_id": "50f4533074c04d91aed064be35ebfe55",
+      "backend_model": "qwen2.5:7b",
+      "answer": "Hello!",
+      "wall_seconds_incl_cold_load": 3.85,
+      "ollama_ps": "qwen2.5:7b 4.8 GB 100% GPU context 4096 llamacpp"
+    }
+  },
+  "observations": [
+    "After the medium request, ollama ps listed only qwen2.5:7b; the small model was no longer resident (default Ollama settings).",
+    "Wall times are single cold-start CLI measurements, not latency distributions.",
+    "memory_pressure reported system-wide free percentage 26% immediately after the medium request."
+  ],
+  "not_verified": [
+    "Docker daemon not running: code-task scoring blocked",
+    "frontier and Jev unconfigured; no paid call"
+  ]
+}
