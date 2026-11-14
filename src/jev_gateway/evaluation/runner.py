@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from .records import Attempt, Result, Outcome
 from .checkpoint import key as checkpoint_key
 from .cost import attach_cost
-from .scoring import score_math, score_choice, score_code
+from .scoring import format_compliant, score_math, score_choice, score_code
 
 
 def settings_fingerprint(limits):
@@ -68,7 +68,7 @@ async def evaluate_one(prompt, tier, run_id, settings, transport, budget, limits
     backend=settings.backend(tier)
     payload={'model':backend.model,'messages':[{'role':'user','content':prompt.prompt}],'max_tokens':limits.output_tokens,'temperature':limits.temperature,'stream':False}
     settings_fp=settings_fingerprint(limits)
-    began=datetime.now(timezone.utc); attempts=[]; raw=None; score=None; parsed=None; error=None; model=backend.model; usage={}
+    began=datetime.now(timezone.utc); attempts=[]; raw=None; compliant=None; score=None; parsed=None; error=None; model=backend.model; usage={}
     outcome=Outcome.BLOCKED
     for _ in range(limits.retries+1):
         if not await budget.reserve(prompt.prompt,tier,settings):
@@ -92,13 +92,14 @@ async def evaluate_one(prompt, tier, run_id, settings, transport, budget, limits
             elif prompt.task=='choice': scored=score_choice(raw,prompt.reference,reply['choices'][0].get('finish_reason')=='length')
             elif prompt.task=='code': scored=score_code(raw,prompt.tests,prompt.test_imports,executor=executor) if executor else score_code(raw,prompt.tests,prompt.test_imports)
             else: raise ValueError('unsupported task')
+            compliant=format_compliant(prompt.task,raw,prompt.reference,reply['choices'][0].get('finish_reason')=='length')
             outcome=Outcome(scored['outcome']); parsed=scored['parsed_answer']; score=scored['score']; error=scored.get('error_category')
         except Exception:
             outcome=Outcome.EVALUATOR_ERROR; error='scorer_exception'
         attempts.append(Attempt(started_at=start,ended_at=end,outcome=outcome,prompt_tokens=usage.get('prompt_tokens'),completion_tokens=usage.get('completion_tokens')))
         break
     ended=datetime.now(timezone.utc)
-    return Result(run_id=run_id,prompt_id=prompt.prompt_id,task=prompt.task,split=prompt.split,dataset_revision=prompt.dataset_revision,source_revision=prompt.source_revision,template_fingerprint=prompt.template_fingerprint,settings_fingerprint=settings_fp,tier=tier,backend=backend.base_url,model=model,raw_response=raw,parsed_answer=parsed,score=score,outcome=outcome,error_category=error,started_at=began,ended_at=ended,prompt_tokens=usage.get('prompt_tokens'),completion_tokens=usage.get('completion_tokens'),execution='real',attempts=tuple(attempts))
+    return Result(run_id=run_id,prompt_id=prompt.prompt_id,task=prompt.task,split=prompt.split,dataset_revision=prompt.dataset_revision,source_revision=prompt.source_revision,template_fingerprint=prompt.template_fingerprint,settings_fingerprint=settings_fp,tier=tier,backend=backend.base_url,model=model,raw_response=raw,parsed_answer=parsed,score=score,outcome=outcome,error_category=error,started_at=began,ended_at=ended,prompt_tokens=usage.get('prompt_tokens'),completion_tokens=usage.get('completion_tokens'),execution='real',format_compliant=compliant,attempts=tuple(attempts))
 
 
 async def evaluate_batch(prompts, tiers, run_id, settings, transport, limits, paid_enabled=False, executor=None, checkpoints=None, rates=None):

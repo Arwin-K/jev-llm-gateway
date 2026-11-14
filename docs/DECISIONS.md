@@ -65,6 +65,18 @@ Record actual decisions, context, alternatives, evidence, affected code/configur
 - Cost reconciliation keeps recorded charges, sourced dated API estimates, modeled allocated GPU capacity, and unknown stages separate. Unknown rejected attempts prevent a complete total claim. A local package health check cannot substitute for a successful model or provider request.
 - The project has no declared license. The local technical report and portfolio notes are drafts, not a publication instruction. A public release requires rights review, complete real experiments appropriate to its claims, and a specified destination.
 
-## Open — answer format for GSM8K/MMLU scoring (2026-11-13)
+## Answer-format templates v2 and final-answer scoring (2026-11-13)
 
-The first live pilot scored 0 of 10 because local models do not end with a bare `Answer: <number>` line (`evidence/day7/answer-format-probe-20261113.txt`). Options: keep the strict scorer and report format failures as failures; move the instruction after the question and raise output tokens to 512; and/or extend the parser to accept a final-line `Answer:` marker with units, currency and thousands separators plus a single final `\boxed{}`, while still rejecting responses with no marker or conflicting markers. Any change alters the template or scorer identity and must be fixed before the train/validation runs used for routing. Not yet decided.
+**Status:** decided and implemented; supersedes the open entry recorded earlier the same day.
+
+The first live pilot scored 0 of 10 because local models rarely end with a bare `Answer: <number>` line (`evidence/day7/answer-format-probe-20261113.txt`). A ten-prompt MBPP probe also showed the hidden-test protocol mostly measured whether the model guessed the function name: 2/10 passed without the name and 7/10 with it.
+
+Decision:
+
+- **Templates v2.** Math and choice put the format instruction after the content (`Answer: <number>` / `Answer: <letter>`). Code prompts name the one non-builtin function the hidden tests call (399 of 400 selected tasks); tests stay private. v1 templates remain in code and reproduce the v1 manifest byte for byte (SHA-256 `11b997a0…`, preserved at `runs/day2-manifest-v1.jsonl`).
+- **Selection is template-independent.** Deduplication, selection and split assignment always use the v1 rendering; `eval-prepare --previous` refuses any change in prompt IDs or splits. The v2 manifest (`d92b9f0a…`) has the same 2,500 IDs, splits and group IDs.
+- **Final-answer scoring.** Math accepts every `Answer:` marker and `\boxed{}` when they agree on one number, allowing units, currency and thousands separators; it rejects no marker, further digits after the number, or conflicting values. Choice accepts decorated `Answer: X` lines but rejects option lists and lowercase words. Code accepts exactly one fenced block even with surrounding explanation; several blocks remain ambiguous.
+- **Strict compliance is kept, not hidden.** Each result records `format_compliant` from the v1 strict reader (or code-only output), and `eval-report` shows `strict_format_rate`.
+- **Output limit.** `eval-run` defaults to 512 output tokens; 256 truncated a pilot answer.
+
+Results recorded under v1 templates have different template fingerprints and are excluded from routing labels by the existing identity checks.

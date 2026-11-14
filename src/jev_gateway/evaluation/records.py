@@ -81,6 +81,8 @@ class Result(BaseModel):
     charge_usd: float | None = Field(default=None, ge=0)
     execution: str = 'real'
     reuse_of: str | None = None
+    # Whether the strict v1 answer-format scorer could read the response; None if not applicable or not recorded.
+    format_compliant: bool | None = None
     attempts: tuple[Attempt, ...] = ()
 
     @model_validator(mode='after')

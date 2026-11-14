@@ -30,7 +30,9 @@ def _saved(path):
 
 def execute(args):
     if args.command=='eval-prepare':
+        import sys
         from runpy import run_path
+        sys.argv=['prepare_day2.py']+(['--offline'] if getattr(args,'offline',False) else [])+(['--previous',args.previous] if getattr(args,'previous',None) else [])
         run_path('scripts/prepare_day2.py',run_name='__main__')
         return 0
     if args.command=='eval-run':

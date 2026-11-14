@@ -5,7 +5,7 @@ import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from .datasets import gsm8k, mmlu, mbpp, read_jsonl
+from .datasets import TEMPLATE_VERSION, gsm8k, mmlu, mbpp, read_jsonl
 from .records import Prompt
 
 SEED = 'jev-day2-2026-10-28-v1'
@@ -22,12 +22,23 @@ def _group(prompt):
     return prompt.task + ':' + hashlib.sha256(text.encode()).hexdigest()
 
 
-def build(source_dir: Path):
-    pools = {
-        'math': [gsm8k(row, row['source_index']) for row in read_jsonl(source_dir / 'gsm8k-train.jsonl')],
-        'choice': [mmlu(row, row['source_index']) for row in read_jsonl(source_dir / 'mmlu-test.jsonl')],
-        'code': [mbpp(row) for row in read_jsonl(source_dir / 'mbpp-sanitized.jsonl')],
+def _pools(source_dir: Path, version):
+    return {
+        'math': [gsm8k(row, row['source_index'], version=version) for row in read_jsonl(source_dir / 'gsm8k-train.jsonl')],
+        'choice': [mmlu(row, row['source_index'], version=version) for row in read_jsonl(source_dir / 'mmlu-test.jsonl')],
+        'code': [mbpp(row, version=version) for row in read_jsonl(source_dir / 'mbpp-sanitized.jsonl')],
     }
+
+
+def build(source_dir: Path, version=TEMPLATE_VERSION):
+    """Select and split on v1 text, then render the requested template.
+
+    Deduplication, selection and split assignment always use the v1 rendering, so a template
+    revision can change prompt wording but never which prompts are sampled or their split.
+    Group IDs therefore keep their v1 values across template versions.
+    """
+    pools = _pools(source_dir, 'v1')
+    rendered = {p.prompt_id: p for task in _pools(source_dir, version).values() for p in task} if version != 'v1' else None
     output = []
     for task, prompts in pools.items():
         groups = defaultdict(list)
@@ -40,7 +51,8 @@ def build(source_dir: Path):
         for i, prompt in enumerate(selected):
             n = TARGETS[task]
             split = 'train' if i < n * 0.6 else 'validation' if i < n * 0.8 else 'test'
-            output.append(prompt.model_copy(update={'split': split, 'group_id': _group(prompt)}))
+            chosen = rendered[prompt.prompt_id] if rendered else prompt
+            output.append(chosen.model_copy(update={'split': split, 'group_id': _group(prompt)}))
     validate(output)
     return sorted(output, key=lambda p: p.prompt_id)
 
@@ -70,6 +82,20 @@ def save(prompts, path: Path):
         if path.read_text()!=content: raise FileExistsError('frozen manifest differs')
         return
     path.write_text(content)
+
+
+def same_assignment(previous, current):
+    """Template revisions must not move any prompt between splits or change the selected IDs."""
+    before = {p.prompt_id: p.split for p in previous}
+    after = {p.prompt_id: p.split for p in current}
+    if before != after:
+        moved = sorted(k for k in before.keys() | after.keys() if before.get(k) != after.get(k))
+        raise ValueError(f'split assignment changed for {len(moved)} prompts, e.g. {moved[:3]}')
+
+
+def load_all(path: Path):
+    """Every split, for integrity checks only; never use this to read test prompts for development."""
+    return [Prompt.model_validate_json(line) for line in path.read_text().splitlines()]
 
 
 def load(path: Path, split='validation', allow_test=False):

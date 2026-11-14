@@ -41,3 +41,12 @@ def test_reported_usage_overrun_stops_future_admission():
         await budget.reconcile('small',settings,{'prompt_tokens':1001,'completion_tokens':1})
         assert not await budget.reserve('x','small',settings)
     asyncio.run(check())
+
+
+def test_runner_records_strict_format_compliance():
+    class Decorated(FakeTransport):
+        async def complete(self,backend,payload):
+            return {'model':backend.model,'choices':[{'message':{'content':'Answer: 2 apples'},'finish_reason':'stop'}],'usage':{}}
+    prompt=gsm8k({'question':'1+1?', 'answer':'#### 2'},0).model_copy(update={'split':'validation'})
+    result=asyncio.run(evaluate_one(prompt,'small','r',from_env(),Decorated(),RunBudget(RunLimits(1,1000,0)),RunLimits(1,1000,0)))
+    assert result.outcome=='correct' and result.format_compliant is False
