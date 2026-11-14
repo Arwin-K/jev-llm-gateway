@@ -9,4 +9,4 @@ Keep implementation claims tied to code, tests, and saved evidence. Start with [
 5. Never run generated code directly on the host. Preserve the Docker-only scoring path and explicit blocked status when isolation is unavailable.
 6. Update documentation and the feature/evidence ledger when behavior or verification changes. Separate implemented code, mocked checks, real checks, and pending access.
 
-The repository currently has no declared project license. Do not add or infer one from benchmark or dependency licenses without an explicit project decision.
+The project source is released under the [MIT License](LICENSE). That license covers this repository's code and documentation only. Benchmark datasets (GSM8K, MMLU, sanitized MBPP), model weights and provider outputs keep their own terms; they are downloaded explicitly and are not redistributed here.
