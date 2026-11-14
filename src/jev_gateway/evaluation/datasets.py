@@ -1,4 +1,6 @@
 """Adapters for source rows. Acquisition is explicit and revision checked."""
+import ast
+import builtins
 import hashlib
 import json
 import urllib.parse
@@ -10,22 +12,42 @@ from .records import Prompt
 GSM_REV = '740312add88f781978c0658806c59bc2815b9866'
 MMLU_REV = 'c30699e8356da336a370243923dbaf21066bb9fe'
 MBPP_REV = '1ae1fded5c616deb6b4652818588577e8fca0f06'
-TEMPLATES = {'math': 'gsm8k-zero-shot-v1', 'choice': 'mmlu-zero-shot-v1', 'code': 'mbpp-zero-shot-no-tests-v1'}
+TEMPLATES_BY_VERSION = {
+    # v1 placed the format instruction first and gave no function name; kept so v1 manifests stay reproducible.
+    'v1': {'math': 'gsm8k-zero-shot-v1', 'choice': 'mmlu-zero-shot-v1', 'code': 'mbpp-zero-shot-no-tests-v1'},
+    # v2 moves the format instruction after the content and names the function the hidden tests call.
+    'v2': {'math': 'gsm8k-zero-shot-final-line-v2', 'choice': 'mmlu-zero-shot-final-line-v2', 'code': 'mbpp-zero-shot-named-function-v2'},
+}
+TEMPLATE_VERSION = 'v2'
+TEMPLATES = TEMPLATES_BY_VERSION[TEMPLATE_VERSION]
+_BUILTINS = frozenset(dir(builtins))
 
 
 def fingerprint(s):
     return hashlib.sha256(s.encode()).hexdigest()
 
 
-def gsm8k(row, index, source_split='train'):
+def required_function(tests):
+    """The single non-builtin function the tests call by bare name, or None if absent or ambiguous."""
+    names = set()
+    for test in tests:
+        try:
+            tree = ast.parse(test)
+        except SyntaxError:
+            return None
+        names |= {node.func.id for node in ast.walk(tree) if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id not in _BUILTINS}
+    return names.pop() if len(names) == 1 else None
+
+
+def gsm8k(row, index, source_split='train', version=TEMPLATE_VERSION):
     answer = row['answer'].rsplit('####', 1)
     if len(answer) != 2 or not answer[1].strip():
         raise ValueError('GSM8K final answer marker missing')
     question = row['question'].strip()
-    return Prompt(prompt_id=f'gsm8k:{source_split}:{index}', task='math', split='unassigned', dataset='openai/gsm8k/main', dataset_revision=GSM_REV, source_revision=GSM_REV, source_split=source_split, source_id=str(index), group_id='gsm8k:'+fingerprint(question.casefold()), template_fingerprint=fingerprint(TEMPLATES['math']), prompt=f'Solve the problem. End with Answer: <number>.\n\n{question}', reference=answer[1].strip(), answer_provenance='answer field after final #### marker')
+    return Prompt(prompt_id=f'gsm8k:{source_split}:{index}', task='math', split='unassigned', dataset='openai/gsm8k/main', dataset_revision=GSM_REV, source_revision=GSM_REV, source_split=source_split, source_id=str(index), group_id='gsm8k:'+fingerprint(question.casefold()), template_fingerprint=fingerprint(TEMPLATES_BY_VERSION[version]['math']), prompt=f'Solve the problem. End with Answer: <number>.\n\n{question}' if version == 'v1' else f'Solve the problem.\n\n{question}\n\nAfter your working, write the final line exactly as: Answer: <number>', reference=answer[1].strip(), answer_provenance='answer field after final #### marker')
 
 
-def mmlu(row, index, source_split='test'):
+def mmlu(row, index, source_split='test', version=TEMPLATE_VERSION):
     choices = row['choices']
     answer = row['answer']
     if len(choices) != 4 or not isinstance(answer, int) or not 0 <= answer < 4:
@@ -33,17 +55,22 @@ def mmlu(row, index, source_split='test'):
     question = row['question'].strip()
     subject = row['subject']
     options = '\n'.join(f'{letter}. {choice}' for letter, choice in zip('ABCD', choices))
-    prompt = f'Choose the best answer. Reply with Answer: A, B, C, or D.\nSubject: {subject}\nQuestion: {question}\n{options}'
-    return Prompt(prompt_id=f'mmlu:{source_split}:{subject}:{index}', task='choice', split='unassigned', dataset='cais/mmlu/all', dataset_revision=MMLU_REV, source_revision=MMLU_REV, source_split=source_split, source_id=str(index), group_id='mmlu:'+fingerprint(question.casefold()), template_fingerprint=fingerprint(TEMPLATES['choice']), prompt=prompt, reference='ABCD'[answer], answer_provenance='zero-based answer index mapped to unchanged A-D choice order')
+    if version == 'v1':
+        prompt = f'Choose the best answer. Reply with Answer: A, B, C, or D.\nSubject: {subject}\nQuestion: {question}\n{options}'
+    else:
+        prompt = f'Choose the best answer.\nSubject: {subject}\nQuestion: {question}\n{options}\n\nRespond with one final line exactly as: Answer: <letter>'
+    return Prompt(prompt_id=f'mmlu:{source_split}:{subject}:{index}', task='choice', split='unassigned', dataset='cais/mmlu/all', dataset_revision=MMLU_REV, source_revision=MMLU_REV, source_split=source_split, source_id=str(index), group_id='mmlu:'+fingerprint(question.casefold()), template_fingerprint=fingerprint(TEMPLATES_BY_VERSION[version]['choice']), prompt=prompt, reference='ABCD'[answer], answer_provenance='zero-based answer index mapped to unchanged A-D choice order')
 
 
-def mbpp(row):
+def mbpp(row, version=TEMPLATE_VERSION):
     task_id = int(row['task_id'])
     description = row['prompt'].strip()
     tests = tuple(row['test_list'])
     if not tests:
         raise ValueError('MBPP task has no tests')
-    return Prompt(prompt_id=f'mbpp:{task_id}', task='code', split='unassigned', dataset='google-research/mbpp/sanitized', dataset_revision=MBPP_REV, source_revision=MBPP_REV, source_split='sanitized', source_id=str(task_id), group_id='mbpp:'+str(task_id), template_fingerprint=fingerprint(TEMPLATES['code']), prompt=f'Write Python code for this task. Return code only.\n\n{description}', reference=None, tests=tests, test_imports=tuple(row.get('test_imports', ())), answer_provenance='sanitized-mbpp.json test_list; reference solution excluded')
+    name = required_function(tests) if version != 'v1' else None
+    instruction = f'Write Python code for this task. Define a function named `{name}`. Return code only.' if name else 'Write Python code for this task. Return code only.'
+    return Prompt(prompt_id=f'mbpp:{task_id}', task='code', split='unassigned', dataset='google-research/mbpp/sanitized', dataset_revision=MBPP_REV, source_revision=MBPP_REV, source_split='sanitized', source_id=str(task_id), group_id='mbpp:'+str(task_id), template_fingerprint=fingerprint(TEMPLATES_BY_VERSION[version]['code']), prompt=f'{instruction}\n\n{description}', reference=None, tests=tests, test_imports=tuple(row.get('test_imports', ())), answer_provenance='sanitized-mbpp.json test_list; reference solution excluded')
 
 
 def _json(url):
