@@ -115,3 +115,8 @@ The fresh wheel installed in a separate Python 3.14 venv without CUDA. A local c
 ## 2026-11-13 America/Toronto — first live local models
 
 Native Ollama now serves `qwen2.5:1.5b` and `qwen2.5:7b`; `jev smoke` returned real answers for both tiers through the gateway, the first successful live generation in this project. A 10-prompt validation pilot scored zero because every math answer failed the strict answer-format parser. Full train/validation runs are paused on that open decision (`DECISIONS.md`). Docker must be running before code tasks can be scored. Frontier, Jev, DistilBERT training, Colab GPU and the held-out test are unchanged.
+
+
+## 2026-11-16 — testing entry points
+
+Added a Make-based local/CI entry point for the existing locked test extra: `make setup-test`, `make verify`, `make build`, and optional `make compose-config`. `make verify` compiles all project Python paths then runs the full offline pytest suite. Compose validation parses configuration only; it does not start services. Local verification used the existing Python 3.14.5 `.venv`: **141 passed**, with one third-party Starlette deprecation warning; syntax compilation and Compose configuration validation also passed. Raw pytest output: `evidence/testing/offline-suite-20261116.txt`. CI now uses the same setup, compile, test, and package-build targets. No live provider, paid API, model evaluation, or external service was used. `uv` is not currently on this Mac's PATH, so a fresh environment still needs uv installed before `make setup-test`; the existing `.venv` is already test-ready.

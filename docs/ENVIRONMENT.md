@@ -56,3 +56,8 @@ The existing `.venv` has test dependencies but no `pip` or `ruff`; system Python
 ## 2026-11-13 Mac update
 
 Native Ollama 0.40.16 is installed at `/usr/local/bin/ollama` with `qwen2.5:1.5b` (986 MB download) and `qwen2.5:7b` (4.7 GB). Both run 100% on the GPU through the llama.cpp runner with a 4,096-token context. With default Ollama settings only one of the two stayed resident after sequential requests. Disk had 67 GiB free before the pulls. The Docker daemon was not running at this check. Evidence: `evidence/day7/mac-live-smoke-20261113.json`.
+
+
+## 2026-11-16 local test environment
+
+The existing project `.venv` uses Python 3.14.5 and pytest 9.1.1 and successfully ran the full offline suite. The `uv` executable is not on this Mac's PATH, so `make setup-test` was not run here; the current venv already contains the locked core/test runtime needed for `make verify`. A fresh checkout should install uv, then run `make setup-test`. Docker Compose configuration validation passed without starting containers. This check did not contact Ollama, Jev, frontier providers, Colab, or any model service.

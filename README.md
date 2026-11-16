@@ -23,10 +23,12 @@ See [the Day 6 protocol](docs/DAY6_PROTOCOL.md) for the frozen-evaluation gate a
 Install [uv](https://docs.astral.sh/uv/) and [native Ollama](https://docs.ollama.com/macos). Review disk space and available memory before pulling models.
 
 ```bash
-uv sync --locked --extra test
-uv run pytest -q
+make setup-test
+make verify
 uv run jev doctor
 ```
+
+`make verify` compiles the gateway, load tools, scripts, and tests, then runs the complete offline pytest suite. It does not contact model providers or download datasets. To check the Docker Compose deployment file without starting containers, run `make compose-config`; use `make build` to build the Python package. If you do not use `uv`, create a fresh virtual environment and install the same extra with `python3 -m venv .venv` followed by `.venv/bin/python -m pip install -e '.[test]'`, then run `.venv/bin/python -m compileall -q src load scripts tests` and `.venv/bin/pytest -q`.
 
 The configured candidate tags are `qwen2.5:1.5b` and `qwen2.5:7b`. Once Ollama is running and the models are installed, start the gateway and make an explicit-tier request:
 

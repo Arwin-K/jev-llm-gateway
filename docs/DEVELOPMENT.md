@@ -3,11 +3,13 @@
 ## Install and test
 
 ```bash
-uv sync --locked --extra test
-uv run pytest -q
+make setup-test
+make verify
 ```
 
-Add `--extra evaluation` only when preparing pinned Parquet datasets. Core gateway installation does not include Torch, CUDA, vLLM, or the Parquet reader. The last full offline suite passed 36 tests with one third-party Starlette deprecation warning. Offline tests use controlled transports and fixtures; they do not prove a real model is loaded or that a Colab GPU run succeeded. Live checks are explicit commands in [the evaluation workflow](EVALUATION_WORKFLOW.md).
+`make verify` runs syntax compilation and the full offline suite. `make compose-config` validates the Compose file when Docker Compose is installed without starting containers or opening ports. `make build` builds the distributable package. The locked test extra contains only pytest and anyio; install evaluation, training, and embedding dependencies only for the task that needs them.
+
+Add `--extra evaluation` only when preparing pinned Parquet datasets. Core gateway installation does not include Torch, CUDA, vLLM, or the Parquet reader. The latest local full offline suite passed 141 tests with one third-party Starlette deprecation warning; its raw output is recorded in `evidence/testing/offline-suite-20261116.txt`. Offline tests use controlled transports and fixtures; they do not prove a real model is loaded or that a Colab GPU run succeeded. Live checks are explicit commands in [the evaluation workflow](EVALUATION_WORKFLOW.md).
 
 ## Code layout
 
