@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import json
 
 
 BASE = [sys.executable, "load/run.py", "--scenario", "steady", "--base-users", "1",
@@ -31,3 +32,17 @@ def test_paid_run_ceiling_covers_provider_process_caps(monkeypatch):
                                     "--max-usd", "1"], capture_output=True, text=True)
     assert result.returncode != 0
     assert "provider process USD caps exceeds" in result.stderr
+
+
+def test_missing_locust_writes_terminal_manifest(tmp_path):
+    output = tmp_path / "load-run"
+    command = [sys.executable, "load/run.py", "--scenario", "steady", "--base-users", "1",
+               "--max-requests", "1", "--max-tokens", "32", "--output-tokens", "32",
+               "--placement", "mac-host", "--model-condition", "unverified",
+               "--output", str(output), "--execute"]
+    result = subprocess.run(command, capture_output=True, text=True, env={"PATH": ""})
+    manifest = json.loads((output / "manifest.json").read_text())
+    assert result.returncode == 127
+    assert manifest["status"] == "launch_failed"
+    assert manifest["launch_error"] == "FileNotFoundError"
+    assert "finished_at" in manifest

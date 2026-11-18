@@ -102,15 +102,24 @@ def main():
     sampler.start()
     try:
         with (args.output / "locust.log").open("w") as log:
-            completed = subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=False)
+            try:
+                completed = subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT, check=False)
+                exit_code = completed.returncode
+            except OSError as exc:
+                # Preserve a terminal manifest when Locust cannot be launched
+                # (for example, when the optional load extra is not installed).
+                manifest["status"] = "launch_failed"
+                manifest["launch_error"] = type(exc).__name__
+                exit_code = 127
     finally:
         stop.set()
         sampler.join(timeout=12)
-    manifest["status"] = "finished" if completed.returncode == 0 else "interrupted_or_failed"
-    manifest["exit_code"] = completed.returncode
+    if manifest["status"] != "launch_failed":
+        manifest["status"] = "finished" if exit_code == 0 else "interrupted_or_failed"
+    manifest["exit_code"] = exit_code
     manifest["finished_at"] = datetime.now(timezone.utc).isoformat()
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    raise SystemExit(completed.returncode)
+    raise SystemExit(exit_code)
 
 
 if __name__ == "__main__":
