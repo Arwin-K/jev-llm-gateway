@@ -98,3 +98,14 @@ def test_malformed_raw_events_are_counted_without_losing_valid_rows(tmp_path: Pa
     assert report["requests"] == 1
     assert report["failures"] == 1
     assert report["malformed_event_lines"] == 2
+
+
+def test_reversed_run_timestamps_do_not_produce_negative_throughput(tmp_path: Path):
+    (tmp_path / "manifest.json").write_text(json.dumps({
+        "run_id": "fixture", "scenario": "steady", "status": "finished",
+        "duration_seconds": 600, "arrival_model": "closed_loop_users",
+        "started_at": "2026-10-31T12:00:02+00:00",
+        "finished_at": "2026-10-31T12:00:01+00:00"}))
+    report = summarize(tmp_path)
+    assert report["evidence_state"] == "invalid_interval"
+    assert "achieved_requests_per_second" not in report

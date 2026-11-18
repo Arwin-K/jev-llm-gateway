@@ -1,5 +1,9 @@
 # Observed environments
 
+## Maintenance verification — 2026-11-17
+
+The existing `.venv` on the Mac used Python 3.14.5. `make verify` passed source compilation and 149 offline tests; its raw output is preserved at `evidence/testing/maintenance-offline-20261117.txt`. The focused Ruff command added to GitHub Actions was not executed locally because `uv` and `ruff` are unavailable on PATH. No external services, model endpoints, containers, or GPU were used for this maintenance check.
+
 ## Mac preflight, 2026-10-27 America/Toronto
 
 Observed via `system_profiler`, `sw_vers`, `df -h .`, and PATH checks: MacBook Pro Mac15,6; Apple M3 Pro (11 CPU cores); 18 GB unified memory; macOS 26.5.2 (25F84); 18 GiB available on a 460 GiB data volume (96% used). Python 3.14.5 and Docker CLI 29.6.2 are present. `uv`, `ollama`, and `kind` are absent from PATH; `kubectl` is present. `sysctl hw.memsize` was blocked by the sandbox, so the memory value is from `system_profiler`. No serial number, UUID, or username is retained here.

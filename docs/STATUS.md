@@ -1,5 +1,9 @@
 # Engineering status — 2026-10-27, America/Toronto
 
+## Maintenance block — 2026-11-17 America/Toronto
+
+Six maintenance fixes were completed as separate local commits: sandbox timeout outcomes are preserved when cleanup fails; checkpoint digest paths are validated; Locust launch failures leave terminal manifests; malformed event lines are counted while valid observations remain reportable; focused CI lint covers the checkpoint and sandbox paths; and reversed Locust intervals are rejected before throughput calculation. Focused offline checks passed for each code change. The final `make verify` run (run ID `maintenance-offline-20261117`) passed compileall and 149 tests, with one existing Starlette deprecation warning; raw output is `evidence/testing/maintenance-offline-20261117.txt`. The CI workflow itself was not run remotely. No model, provider, container, Colab, or load experiment was started.
+
 The Day 1 gateway implements explicit-tier text chat, SSE, tracing, diagnostics, and a Colab serving notebook. `model=auto` and Jev routing are Day 3 work. No model inference, frontier call, Colab GPU run, training, or load test occurred.
 
 | ID | Change | Verification and status |

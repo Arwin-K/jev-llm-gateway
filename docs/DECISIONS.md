@@ -80,3 +80,9 @@ Decision:
 - **Output limit.** `eval-run` defaults to 512 output tokens; 256 truncated a pilot answer.
 
 Results recorded under v1 templates have different template fingerprints and are excluded from routing labels by the existing identity checks.
+
+## Maintenance decisions — 2026-11-17 America/Toronto
+
+- Keep failure evidence explicit: sandbox cleanup must not replace the original timeout; failed Locust launches must leave a terminal manifest; malformed raw request lines must be counted while valid rows remain reportable; and reversed timestamps must not produce throughput metrics.
+- Validate checkpoint IDs as lowercase SHA-256 digests before using them as filesystem paths. Include the checkpoint and sandbox changes in the existing focused CI lint scope.
+- These are local reliability fixes. They do not establish provider, model, Colab, container, or load-test success.

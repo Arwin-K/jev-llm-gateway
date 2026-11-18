@@ -26,6 +26,9 @@ def summarize(path: Path):
     duration = (datetime.fromisoformat(manifest["finished_at"]) -
                 datetime.fromisoformat(manifest["started_at"])).total_seconds()
     result["actual_duration_seconds"] = duration
+    if duration < 0:
+        result["evidence_state"] = "invalid_interval"
+        return result
     events_path = path / "requests.jsonl"
     events = []
     malformed_event_lines = 0

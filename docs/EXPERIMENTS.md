@@ -1,5 +1,9 @@
 # Experiment evidence
 
+## Maintenance verification — 2026-11-17 America/Toronto
+
+Run `maintenance-offline-20261117`: `make verify` on the existing project `.venv` (Python 3.14.5) compiled `src`, `load`, `scripts`, and `tests`, then passed **149 offline tests** in 0.82 seconds with one third-party Starlette deprecation warning. Raw output: `evidence/testing/maintenance-offline-20261117.txt`. Focused checks also passed before the final suite: sandbox 3 tests, checkpoint persistence 5 tests, Locust runner 4 tests, and Locust report 6 tests. Ruff/remote CI were not run because the local `uv`/`ruff` tools are unavailable; no live service or experiment was started.
+
 No project experiments have been executed while preparing this pack. Link each actual experiment's hypothesis, source revision/dirty snapshot, environment, model identity, controls, commands, raw outputs, repetitions, observations, and limitations. Keep raw data immutable and distinguish Mac, Colab, mock, replayed, and estimated results.
 
 ## Day 1 engineering checks — 2026-10-27 America/Toronto
