@@ -7,6 +7,16 @@ from pathlib import Path
 IMAGE = 'python:3.12.7-slim-bookworm'
 
 
+def _remove_container(name: str) -> None:
+    """Best-effort cleanup after the foreground Docker client times out."""
+    try:
+        subprocess.run(['docker', 'rm', '-f', name], capture_output=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        # Preserve the evaluation timeout as the primary outcome. Docker may
+        # have exited or become unavailable at the same time as the run.
+        pass
+
+
 def execute(code: str, tests: tuple[str, ...], imports: tuple[str, ...] = (), timeout: int = 8, runner=subprocess.run):
     if not 1 <= timeout <= 30:
         raise ValueError('timeout must be 1..30 seconds')
@@ -20,7 +30,7 @@ def execute(code: str, tests: tuple[str, ...], imports: tuple[str, ...] = (), ti
         try:
             result = runner(cmd, capture_output=True, text=True, timeout=timeout + 3)
         except subprocess.TimeoutExpired:
-            subprocess.run(['docker', 'rm', '-f', name], capture_output=True, timeout=5)
+            _remove_container(name)
             return {'status': 'timeout', 'exit_code': None}
         except (OSError, subprocess.SubprocessError):
             return {'status': 'environment_error', 'exit_code': None}
