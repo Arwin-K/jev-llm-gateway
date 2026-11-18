@@ -27,7 +27,22 @@ def summarize(path: Path):
                 datetime.fromisoformat(manifest["started_at"])).total_seconds()
     result["actual_duration_seconds"] = duration
     events_path = path / "requests.jsonl"
-    events = [json.loads(line) for line in events_path.read_text().splitlines()] if events_path.exists() else []
+    events = []
+    malformed_event_lines = 0
+    if events_path.exists():
+        for line in events_path.read_text().splitlines():
+            try:
+                event = json.loads(line)
+                if not isinstance(event, dict):
+                    raise ValueError("request event must be an object")
+                float(event["response_time_ms"])
+                if not isinstance(event.get("failed"), bool):
+                    raise ValueError("request event must include a boolean failure state")
+                events.append(event)
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                malformed_event_lines += 1
+    if malformed_event_lines:
+        result["malformed_event_lines"] = malformed_event_lines
     rows = read_rows(path / "locust_stats.csv")
     aggregate = next((row for row in rows if row.get("Name") == "Aggregated"), None)
     if aggregate is None and not events:

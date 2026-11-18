@@ -84,3 +84,17 @@ def test_short_run_uses_raw_events_when_periodic_csv_is_stale(tmp_path: Path):
     assert report["p95_response_ms"] == 20
     assert report["periodic_csv_count_mismatch"] == 0
     assert report["evidence_state"] == "shorter_than_planned"
+
+
+def test_malformed_raw_events_are_counted_without_losing_valid_rows(tmp_path: Path):
+    (tmp_path / "manifest.json").write_text(json.dumps({
+        "run_id": "fixture", "scenario": "steady", "status": "interrupted_or_failed",
+        "duration_seconds": 600, "arrival_model": "closed_loop_users",
+        "started_at": "2026-10-31T12:00:00+00:00",
+        "finished_at": "2026-10-31T12:00:02+00:00"}))
+    valid = json.dumps({"status_code": 502, "failed": True, "response_time_ms": 20})
+    (tmp_path / "requests.jsonl").write_text(valid + "\nnot-json\n[]\n")
+    report = summarize(tmp_path)
+    assert report["requests"] == 1
+    assert report["failures"] == 1
+    assert report["malformed_event_lines"] == 2
