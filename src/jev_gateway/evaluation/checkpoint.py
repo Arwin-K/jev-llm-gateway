@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -18,8 +19,13 @@ class Checkpoints:
         self.directory=directory
         directory.mkdir(parents=True,exist_ok=True)
 
+    def _path(self, key_value):
+        if not isinstance(key_value, str) or not re.fullmatch(r'[0-9a-f]{64}', key_value):
+            raise ValueError('checkpoint key must be a lowercase SHA-256 digest')
+        return self.directory/(key_value+'.json')
+
     def get(self, key_value, configured_model, execution='real'):
-        path=self.directory/(key_value+'.json')
+        path=self._path(key_value)
         if not path.exists(): return None
         result=Result.model_validate_json(path.read_text())
         if result.model != configured_model or result.execution != execution:
@@ -29,7 +35,7 @@ class Checkpoints:
         return result.model_copy(update={'reuse_of':result.run_id})
 
     def put(self, key_value, result):
-        path=self.directory/(key_value+'.json')
+        path=self._path(key_value)
         if path.exists():
             old=Result.model_validate_json(path.read_text())
             if old != result:

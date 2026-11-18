@@ -19,3 +19,10 @@ def test_checkpoint_identity_and_partial_resume(tmp_path):
     assert store.get(k,'different') is None
     assert key(p.model_copy(update={'prompt':'changed'}),'small',backend,'settings')!=k
     with pytest.raises(FileExistsError): store.put(k,r.model_copy(update={'score':0}))
+
+
+@pytest.mark.parametrize('bad_key', ('../outside', 'A' * 64, '0' * 63, None))
+def test_checkpoint_rejects_non_digest_paths(tmp_path, bad_key):
+    store = Checkpoints(tmp_path)
+    with pytest.raises(ValueError, match='SHA-256 digest'):
+        store.get(bad_key, 'model')
