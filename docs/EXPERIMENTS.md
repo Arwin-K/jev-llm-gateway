@@ -105,3 +105,7 @@ The sanitized audit `evidence/day7/local-v2-coverage-audit-20261114.json` preser
 Run `cli-summary-focused-20261119T1922-0500`: `./.venv/bin/pytest -q tests/evaluation/test_command_summary.py tests/evaluation/test_runner.py tests/evaluation/test_checkpoint.py` passed **10 tests** in 0.07 seconds. The summary helper reports returned rows, checkpoint-reused rows, new backend attempts, and new responses separately. Raw test output is `evidence/testing/cli-summary-focused-20261119T1922-0500.txt`. No model or provider request was made.
 
 Run `mac-docker-20261119-session`: `docker info --format '{{.ServerVersion}}'` exited 1 because the Docker API socket was absent. This is an availability check only; no containers or Kubernetes cluster were started. Sanitized output: `evidence/day7/mac-docker-20261119.json`.
+
+## Full offline verification after checkpoint reporting change — 2026-11-19 America/Toronto
+
+Run `offline-after-resume-summary-20261119T1926-0500`: `make verify` completed compileall and **150 tests passed** in 0.73 seconds, with one third-party Starlette deprecation warning. Raw output: `evidence/testing/offline-after-resume-summary-20261119T1926-0500.txt`. No model, provider, container, or Colab work was run.

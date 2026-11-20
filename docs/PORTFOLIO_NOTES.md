@@ -19,4 +19,4 @@ These are proposed descriptions of the project, not claims of independent author
 
 **Fair comparisons.** The project separates train, validation, and locked test; uses prompt/group identity, model/settings fingerprints, and independent scoring; retains failures and unknown costs; and requires paired workload/config checks for repeated NVIDIA runs. The Day 6 comparator refuses profiled timing runs and mismatched arrivals/concurrency. These controls describe a method; final comparisons have not been executed.
 
-**What remains unproven.** Quality retention, dollar savings, harmful cache reuse, Jev calibration, DistilBERT accuracy, real inference capacity, and NVIDIA speedup are not established. The latest recorded 149-test Mac suite and clean-clone health check establish software behavior and packaging only.
+**What remains unproven.** Quality retention, dollar savings, harmful cache reuse, Jev calibration, DistilBERT accuracy, real inference capacity, and NVIDIA speedup are not established. The latest 150-test Mac suite and clean-clone health check establish software behavior and packaging only.
