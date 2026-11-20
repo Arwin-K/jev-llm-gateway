@@ -5,8 +5,8 @@ This table distinguishes implemented code from real backend verification. See [e
 | Component | Implementation | Verification | Remaining work |
 | --- | --- | --- | --- |
 | Explicit-tier gateway API and streaming | Implemented | Offline contract, transport, dispatch, streaming, and error tests; loopback health check | Real generation and streaming answers |
-| Small Ollama tier | Adapter and configured candidate tag | Real v2 pilot and 500-prompt validation set for `qwen2.5:1.5b`; current 2026-11-19 doctor check returned `ConnectError` | Restore local service; complete remaining train coverage, capture weight digest, and repeat live operational checks |
-| Medium Ollama tier | Adapter and configured candidate tag | 30-prompt real v2 pilot for `qwen2.5:7b`; current 2026-11-19 doctor check returned `ConnectError` | Restore local service; collect full train/validation results and capture weight digest |
+| Small Ollama tier | Adapter and configured candidate tag | Real v2 pilot, 500-prompt validation set, and one new train smoke for `qwen2.5:1.5b`; digest recorded; loopback service active during check | Complete remaining train coverage and capture per-run model identity in result records |
+| Medium Ollama tier | Adapter and configured candidate tag | 30-prompt real v2 pilot for `qwen2.5:7b`; digest recorded; installed but not yet loaded in current service session | Collect full train/validation results and capture per-run model identity in result records |
 | Frontier API | Compatible transport and process-local admission guard | Offline configuration and budget checks | Key, model, sourced rates, positive caps, and authorized paid check |
 | Colab vLLM notebook | Prepared | Notebook structure and syntax checked | Actual GPU allocation and notebook execution |
 | Versioned benchmark adapters and split index | Implemented | Pinned source files loaded; 2,500 unique IDs/groups; split counts checked | Assess semantic duplicates and dataset redistribution terms |

@@ -106,6 +106,8 @@ Run `cli-summary-focused-20261119T1922-0500`: `./.venv/bin/pytest -q tests/evalu
 
 Run `mac-docker-20261119-session`: `docker info --format '{{.ServerVersion}}'` exited 1 because the Docker API socket was absent. This is an availability check only; no containers or Kubernetes cluster were started. Sanitized output: `evidence/day7/mac-docker-20261119.json`.
 
+Run `local-small-one-new-prompt-20261119`: after starting Ollama on loopback only, `jev doctor` found both configured local model tags installed. The bounded train command returned 579 rows: 578 checkpoint-reused and one newly generated small-tier response. The new math response was correct, format-compliant, and completed in 4.425 seconds; this single prompt is an availability smoke and does not estimate quality. Request/token limits, model digests, settings/template fingerprints, and the private result-file path are recorded in `evidence/day7/mac-local-eval-smoke-20261119.json`. Command output: `evidence/day7/local-small-one-new-prompt-20261119.txt`. No frontier or paid request was enabled.
+
 ## Full offline verification after checkpoint reporting change — 2026-11-19 America/Toronto
 
 Run `offline-after-resume-summary-20261119T1926-0500`: `make verify` completed compileall and **150 tests passed** in 0.73 seconds, with one third-party Starlette deprecation warning. Raw output: `evidence/testing/offline-after-resume-summary-20261119T1926-0500.txt`. No model, provider, container, or Colab work was run.

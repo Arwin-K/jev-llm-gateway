@@ -77,3 +77,5 @@ The runner's resumed-work summary is locally verified with Python 3.14.5 and the
 After the runner change, `make verify` passed **150 tests** with one existing Starlette deprecation warning. Compileall and the full local suite passed; raw output: `evidence/testing/offline-after-resume-summary-20261119T1926-0500.txt`.
 
 The 2026-11-19 `docker info` check found no Docker Desktop daemon socket. Containerized code evaluation and local kind/Compose execution therefore cannot run in this session; no container or cluster was started. Sanitized output: `evidence/day7/mac-docker-20261119.json`.
+
+Later on 2026-11-19, the installed Ollama 0.40.16 server was started on `127.0.0.1:11434` only. `/api/tags` reported `qwen2.5:1.5b` digest `65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b` and `qwen2.5:7b` digest `845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e`. The gateway doctor found both configured models installed. A bounded small-tier train smoke made one new request and reused 578 saved checkpoints. Sanitized run details: `evidence/day7/mac-local-eval-smoke-20261119.json`.

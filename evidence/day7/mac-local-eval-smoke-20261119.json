@@ -1,0 +1,48 @@
+{
+  "run_id": "local-small-one-new-prompt-20261119",
+  "observed_on": "2026-11-19 America/Toronto",
+  "runtime": {
+    "ollama_version": "0.40.16",
+    "bind_host": "127.0.0.1:11434",
+    "paid_frontier_configured": false,
+    "model_digests": {
+      "qwen2.5:1.5b": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+      "qwen2.5:7b": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e"
+    }
+  },
+  "host_capacity_observation": {
+    "unified_memory_bytes": 19327352832,
+    "system_memory_free_percent_before_run": 66,
+    "disk_free_gib_before_run": 82
+  },
+  "command": "./.venv/bin/jev eval-run --split train --tier small --max-prompts 579 --max-requests 1 --max-tokens 5000 --output-tokens 512 --concurrency 1 --retries 0",
+  "limits": {"max_new_backend_requests": 1, "reserved_token_cap": 5000, "output_token_cap_per_request": 512, "retries": 0},
+  "result_file": "runs/day2-run-026f3f46998945eb8d53c1c77bbe03cf.jsonl",
+  "returned_rows": 579,
+  "checkpoint_reused": 578,
+  "new_backend_attempts": 1,
+  "new_responses": 1,
+  "new_observation": {
+    "run_id": "e21713ef96e74a519f2693853de94349",
+    "prompt_id": "gsm8k:train:6748",
+    "task": "math",
+    "split": "train",
+    "tier": "small",
+    "model_tag": "qwen2.5:1.5b",
+    "template_fingerprint": "16dc85bcfc5c6903e5b1048379896cafb49456056838c26a0dae4bafafa2c579",
+    "settings_fingerprint": "da4edb9bc2079db692cae675b7b6a0e7d01574f63c54c7bfc72bbef33a51263b",
+    "outcome": "correct",
+    "score": 1.0,
+    "format_compliant": true,
+    "prompt_tokens": 143,
+    "completion_tokens": 345,
+    "started_at": "2026-11-20T03:10:07.670321Z",
+    "ended_at": "2026-11-20T03:10:12.095537Z",
+    "elapsed_seconds": 4.425216
+  },
+  "limits_of_evidence": [
+    "One newly generated prompt is an availability and collection smoke, not a quality estimate.",
+    "The other 578 rows were restored from existing compatible checkpoints.",
+    "Model digests were captured from the local Ollama tags API during this session; earlier result records contain model tags but not weight digests."
+  ]
+}
