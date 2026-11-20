@@ -103,3 +103,5 @@ The sanitized audit `evidence/day7/local-v2-coverage-audit-20261114.json` preser
 ## Checkpoint reuse summary verification — 2026-11-19 America/Toronto
 
 Run `cli-summary-focused-20261119T1922-0500`: `./.venv/bin/pytest -q tests/evaluation/test_command_summary.py tests/evaluation/test_runner.py tests/evaluation/test_checkpoint.py` passed **10 tests** in 0.07 seconds. The summary helper reports returned rows, checkpoint-reused rows, new backend attempts, and new responses separately. Raw test output is `evidence/testing/cli-summary-focused-20261119T1922-0500.txt`. No model or provider request was made.
+
+Run `mac-docker-20261119-session`: `docker info --format '{{.ServerVersion}}'` exited 1 because the Docker API socket was absent. This is an availability check only; no containers or Kubernetes cluster were started. Sanitized output: `evidence/day7/mac-docker-20261119.json`.

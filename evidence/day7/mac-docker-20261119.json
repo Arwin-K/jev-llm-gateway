@@ -1,0 +1,9 @@
+{
+  "run_id": "mac-docker-20261119-session",
+  "observed_on": "2026-11-19 America/Toronto",
+  "command": "docker info --format '{{.ServerVersion}}'",
+  "exit_code": 1,
+  "docker_daemon_available": false,
+  "reason": "Docker API socket was absent; Docker Desktop daemon was not running.",
+  "action_taken": "inspection only; no container or cluster was started"
+}

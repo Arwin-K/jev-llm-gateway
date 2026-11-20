@@ -73,3 +73,5 @@ The ignored local `runs/` directory contains v2 real-answer observations dated 2
 On 2026-11-19, an authorized `jev doctor` check returned `ConnectError` for both configured Ollama URLs; the sanitized output is `evidence/day7/mac-doctor-20261119.json`. A bounded 10-prompt CLI invocation reused existing checkpoint rows and did not issue generation requests. Frontier was unconfigured. This session made no paid calls and did not start Docker, Colab, model downloads, or other compute.
 
 The runner's resumed-work summary is locally verified with Python 3.14.5 and the existing test environment. It reports checkpoint reuse, current backend attempts, and current responses separately. No dependency or model download was needed.
+
+The 2026-11-19 `docker info` check found no Docker Desktop daemon socket. Containerized code evaluation and local kind/Compose execution therefore cannot run in this session; no container or cluster was started. Sanitized output: `evidence/day7/mac-docker-20261119.json`.
