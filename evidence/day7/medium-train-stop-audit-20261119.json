@@ -1,0 +1,41 @@
+{
+  "observed_at": "2026-11-19T23:38:14-05:00",
+  "run_id": "530250b4989d4dd1bc9ca75c6014513d",
+  "state": "paused_by_user_request",
+  "split": "train",
+  "tier": "medium",
+  "model": "qwen2.5:7b",
+  "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "tasks": ["math", "choice"],
+  "planned_prompt_count": 1260,
+  "checkpointed_prompt_count": 420,
+  "task_outcomes": {
+    "math": {"total": 420, "correct": 409, "incorrect": 10, "parse_error": 1},
+    "choice": {"total": 0}
+  },
+  "observed_tokens_in_checkpoints": {
+    "prompt_tokens": 45959,
+    "completion_tokens": 80167
+  },
+  "checkpoint_interval": "each completed prompt; checkpoints are in ignored runs/day2-checkpoints/",
+  "request_token_limits": {
+    "max_requests": 1260,
+    "max_tokens": 2887016,
+    "output_tokens_per_request": 512,
+    "concurrency": 1,
+    "retries": 0
+  },
+  "process_exit_code": 130,
+  "interrupt_location": "async evaluation task waiting to acquire the concurrency semaphore",
+  "cli_summary_written_before_interrupt": false,
+  "checkpointed_prompt_result_rows_written_before_interrupt": true,
+  "raw_interrupt_output": "evidence/day7/medium-train-interrupt-20261119T2338-0500.txt",
+  "raw_answers_location": "runs/day2-checkpoints/ (ignored, local only)",
+  "local_services_after_stop": {
+    "evaluation_process": "stopped",
+    "ollama_server": "stopped",
+    "docker_desktop": "stopped",
+    "system_memory_free_percent": 62
+  },
+  "resume_command": "OLLAMA_HOST=127.0.0.1:11434 ollama serve (in a separate shell), then PYTHONUNBUFFERED=1 ./.venv/bin/jev eval-run --split train --task math --task choice --tier medium --max-prompts 1260 --max-requests 1260 --max-tokens 2887016 --output-tokens 512 --concurrency 1 --retries 0"
+}

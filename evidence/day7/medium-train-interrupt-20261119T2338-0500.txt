@@ -1,0 +1,38 @@
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py", line 127, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/Users/ArwinKarir/Desktop/Research Project 2/src/jev_gateway/evaluation/commands.py", line 85, in call
+    return await evaluate_batch(prompts,args.tier,uuid.uuid4().hex,settings,transport,limits,args.paid_enabled,checkpoints=Checkpoints(CHECKPOINTS),rates=rates)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ArwinKarir/Desktop/Research Project 2/src/jev_gateway/evaluation/runner.py", line 123, in evaluate_batch
+    return await asyncio.gather(*(one(prompt,tier) for prompt in prompts for tier in tiers))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ArwinKarir/Desktop/Research Project 2/src/jev_gateway/evaluation/runner.py", line 113, in one
+    async with sem:
+               ^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py", line 14, in __aenter__
+    await self.acquire()
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/locks.py", line 407, in acquire
+    await fut
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/ArwinKarir/Desktop/Research Project 2/./.venv/bin/jev", line 12, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/ArwinKarir/Desktop/Research Project 2/src/jev_gateway/cli.py", line 63, in main
+    return execute(args)
+  File "/Users/ArwinKarir/Desktop/Research Project 2/src/jev_gateway/evaluation/commands.py", line 88, in execute
+    results=asyncio.run(call())
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py", line 204, in run
+    return runner.run(main)
+           ~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.5/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py", line 132, in run
+    raise KeyboardInterrupt()
+KeyboardInterrupt
