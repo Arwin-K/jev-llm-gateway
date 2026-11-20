@@ -65,3 +65,9 @@ Native Ollama 0.40.16 is installed at `/usr/local/bin/ollama` with `qwen2.5:1.5b
 ## 2026-11-16 local test environment
 
 The existing project `.venv` uses Python 3.14.5 and pytest 9.1.1 and successfully ran the full offline suite. The `uv` executable is not on this Mac's PATH, so `make setup-test` was not run here; the current venv already contains the locked core/test runtime needed for `make verify`. A fresh checkout should install uv, then run `make setup-test`. Docker Compose configuration validation passed without starting containers. This check did not contact Ollama, Jev, frontier providers, Colab, or any model service.
+
+## Local inference and evaluation update — 2026-11-19 America/Toronto
+
+The ignored local `runs/` directory contains v2 real-answer observations dated 2026-11-13/14: a 500-prompt small-tier validation set, 578 small-tier train math checkpoints, and 30-prompt pilots for small, medium, and small with strict code output. Sanitized run IDs, model tags, fingerprints, and outcome counts are recorded in `evidence/day7/local-v2-coverage-audit-20261114.json`. These results are separate from the older Day 6 freeze audit and do not establish complete three-tier coverage or a final frozen comparison. The model tag is captured, but the output records do not include an immutable weight digest.
+
+On 2026-11-19, an authorized `jev doctor` check returned `ConnectError` for both configured Ollama URLs. A bounded 10-prompt CLI invocation reused existing checkpoint rows and did not issue generation requests. Frontier was unconfigured. This session made no paid calls and did not start Docker, Colab, model downloads, or other compute.

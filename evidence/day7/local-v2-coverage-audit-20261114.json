@@ -1,0 +1,64 @@
+{
+  "audit_id": "local-v2-coverage-audit-20261114",
+  "created_from": [
+    "runs/day2-run-ddd52bb7b6c74b15b68a1df581e8ba1b.jsonl",
+    "runs/day2-checkpoints/"
+  ],
+  "raw_data_is_private_and_ignored": true,
+  "observations": {
+    "small_validation": {
+      "split": "validation",
+      "tier": "small",
+      "model_tag": "qwen2.5:1.5b",
+      "dataset_revisions": {
+        "math": "740312add88f781978c0658806c59bc2815b9866",
+        "choice": "c30699e8356da336a370243923dbaf21066bb9fe",
+        "code": "1ae1fded5c616deb6b4652818588577e8fca0f06"
+      },
+      "settings_fingerprint": "da4edb9bc2079db692cae675b7b6a0e7d01574f63c54c7bfc72bbef33a51263b",
+      "prompt_template_fingerprints": {
+        "math": "16dc85bcfc5c6903e5b1048379896cafb49456056838c26a0dae4bafafa2c579",
+        "choice": "d4aa6df864bb36988debcb0b54a3351b6765f256b133a363b8fd5b21d6340b5a",
+        "code": "974c4f1702a027f6637858beb6da27678e20954e471db8d55ca9bf6e5899372d"
+      },
+      "unique_prompts": 500,
+      "task_counts": {
+        "math": {"total": 220, "correct": 175, "incorrect": 33, "parse_error": 12},
+        "choice": {"total": 200, "correct": 116, "incorrect": 84},
+        "code": {"total": 80, "correct": 33, "incorrect": 40, "parse_error": 7}
+      },
+      "outcomes": {"correct": 324, "incorrect": 157, "parse_error": 19},
+      "strict_format_compliant": 250,
+      "strict_format_noncompliant": 250,
+      "execution": "real",
+      "run_ids": [
+        "9363b0dd9aaf4b0da49857612870b990",
+        "da29c88e6eff4a29b7bb09d9fce7d5b6"
+      ],
+      "result_file": "runs/day2-run-ddd52bb7b6c74b15b68a1df581e8ba1b.jsonl",
+      "provenance_note": "The run file contains 479 records from an earlier invocation and 21 later records; the logged rerun reused saved checkpoints. This is one complete compatible validation set, not 500 newly generated answers in a single invocation."
+    },
+    "small_train_checkpoint_coverage": {
+      "tier": "small",
+      "model_tag": "qwen2.5:1.5b",
+      "unique_prompts": 578,
+      "target_prompts": 1500,
+      "task_counts": {"math": 578},
+      "outcomes": {"correct": 453, "incorrect": 89, "parse_error": 36},
+      "execution": "real",
+      "raw_source": "runs/day2-checkpoints/",
+      "note": "Checkpoint coverage is partial and limited to the first 578 train prompts, all math. It does not provide full three-tier labels."
+    },
+    "v2_pilots": {
+      "small": {"prompts": 30, "correct": 20, "incorrect": 10, "format_compliant": 16, "format_noncompliant": 14},
+      "medium": {"prompts": 30, "correct": 26, "incorrect": 4, "format_compliant": 20, "format_noncompliant": 0},
+      "small_strict_code": {"prompts": 30, "correct": 18, "incorrect": 9, "parse_error": 3, "format_compliant": 9, "format_noncompliant": 11, "format_not_applicable": 10}
+    }
+  },
+  "limits": [
+    "Small validation outcomes are partial research evidence, not a frozen router comparison.",
+    "The local model tag is recorded but a model weight digest is absent from these result records.",
+    "Provider/frontier results, Jev decisions, validation-selected thresholds, calibration, cascades, cache, sustained serving, and held-out test results are absent.",
+    "Current backend availability is a separate observation: jev doctor returned ConnectError for both local tiers on 2026-11-19 America/Toronto."
+  ]
+}

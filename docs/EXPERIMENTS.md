@@ -91,3 +91,11 @@ Bounded pilot `day2-run-7eafd76f97304422910d6dfb9cdf23d9` (10 validation math pr
 ## Offline test environment verification — 2026-11-16 America/Toronto
 
 Run `make verify` (run ID: `offline-suite-20261116`) with the existing Python 3.14.5 `.venv` and pytest 9.1.1: syntax compilation passed; **141 offline tests passed** in 0.90 seconds, with one third-party Starlette deprecation warning. `make compose-config` passed as a syntax/configuration check only; it did not start the gateway, monitoring services, or open ports. Raw pytest output: `evidence/testing/offline-suite-20261116.txt`. No provider or model calls were made. The `uv` CLI was absent, so clean environment installation and package build were not checked in this run; see `ENVIRONMENT.md`.
+
+## Local v2 model results and checkpoint audit — 2026-11-13/14
+
+The v2 template decision was already implemented when these observations were collected. The private file `runs/day2-run-ddd52bb7b6c74b15b68a1df581e8ba1b.jsonl` contains 500 unique small-tier validation prompts using `qwen2.5:1.5b`: 220 math (175 correct, 33 incorrect, 12 parse errors), 200 choice (116 correct, 84 incorrect), and 80 code (33 passed, 40 failed tests, 7 parse errors). Overall: 324 correct, 157 incorrect, 19 parse errors. Strict format compliance was 250/500. The run file combines 479 checkpoint-reused records and 21 later records across run IDs `9363b0dd9aaf4b0da49857612870b990` and `da29c88e6eff4a29b7bb09d9fce7d5b6`; the logged rerun was not 500 fresh calls.
+
+The private checkpoint directory contains 578 unique small-tier train math results (453 correct, 89 incorrect, 36 parse errors), not the full 1,500 train prompts. Separate 30-prompt validation pilots recorded 20/30 correct for small, 26/30 for medium, and 18/30 for small with strict code output. These pilot samples and the complete small validation set are descriptive evidence, not a frozen policy comparison. No frontier/paid generation, full medium tier, complete train labels, cache/cascade result, or held-out test result was produced.
+
+The sanitized audit `evidence/day7/local-v2-coverage-audit-20261114.json` preserves counts, fingerprints, and run IDs without answer text. On 2026-11-19, `jev doctor` returned `ConnectError` for both local tiers; the 10-prompt CLI rerun reused saved checkpoints and issued no generation calls. Frontier was not configured.
