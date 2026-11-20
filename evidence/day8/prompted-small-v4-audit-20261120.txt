@@ -1,0 +1,75 @@
+{
+  "output": "evidence/day8/prompted-small-v4-audit-20261120.json",
+  "train_pilot": {
+    "expected_split": "train",
+    "attempted": 30,
+    "selected": 30,
+    "selected_tiers": {
+      "small": 30
+    },
+    "errors": {},
+    "decisions_by_task": {
+      "math/selected": 10,
+      "code/selected": 10,
+      "choice/selected": 10
+    },
+    "saved_small_generator_outcomes_for_selected_prompts": {},
+    "decision_duration_ms": {
+      "n": 30,
+      "median": 130.02566700743046,
+      "p95": 187.37766600679606
+    },
+    "usage_on_selected_decisions_only": {
+      "completion_tokens": 180,
+      "prompt_tokens": 6807,
+      "total_tokens": 6987
+    },
+    "outcome_join_note": "Matched saved generator outcomes; this router run made no generation requests."
+  },
+  "validation": {
+    "expected_split": "validation",
+    "attempted": 500,
+    "selected": 500,
+    "selected_tiers": {
+      "small": 500
+    },
+    "errors": {},
+    "decisions_by_task": {
+      "math/selected": 220,
+      "code/selected": 80,
+      "choice/selected": 200
+    },
+    "saved_small_generator_outcomes_for_selected_prompts": {
+      "correct": 324,
+      "incorrect": 157,
+      "parse_error": 19
+    },
+    "decision_duration_ms": {
+      "n": 500,
+      "median": 128.34991700947285,
+      "p95": 182.46224999893457
+    },
+    "usage_on_selected_decisions_only": {
+      "completion_tokens": 3000,
+      "prompt_tokens": 123364,
+      "total_tokens": 126364
+    },
+    "outcome_join_note": "Matched saved generator outcomes; this router run made no generation requests."
+  },
+  "uncaptured_validation_attempt": {
+    "attempted": 500,
+    "errors": {
+      "RoutingError/ConnectError": 500
+    },
+    "note": "All rows failed to connect in the restricted shell. A later elevated inference invocation hit an existing output path and has no saved response records."
+  }
+}
+
+Successful validation decision command:
+./.venv/bin/python -m jev_gateway.routing.evaluate --policy prompted-small --split validation --max-prompts 500 --max-decisions 500 --output runs/day8-prompted-small-validation-v4-rerun-20261120.jsonl
+
+Training pilot command used the same policy and max token setting, with 30 explicit train prompt IDs and output runs/day8-prompted-small-train-pilot-v4-20261120.jsonl. No generator backend was called by either command. The first validation attempt recorded 500 ConnectError rows under runs/day8-prompted-small-validation-v4-20261120.jsonl. A following elevated invocation completed inference but could not persist records because that filename already existed; its results are excluded. The successful rerun used a fresh output filename.
+
+Focused verification:
+./.venv/bin/pytest -q tests/routing/test_evaluate.py tests/routing/test_prompted.py tests/routing/test_failures.py
+10 passed.

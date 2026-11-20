@@ -1,0 +1,79 @@
+{
+  "run_id": "prompted-small-v4-20261120",
+  "prompt_version": "4",
+  "train_pilot": {
+    "expected_split": "train",
+    "attempted": 30,
+    "selected": 30,
+    "selected_tiers": {
+      "small": 30
+    },
+    "errors": {},
+    "decisions_by_task": {
+      "math/selected": 10,
+      "code/selected": 10,
+      "choice/selected": 10
+    },
+    "saved_small_generator_outcomes_for_selected_prompts": {},
+    "decision_duration_ms": {
+      "n": 30,
+      "median": 130.02566700743046,
+      "p95": 187.37766600679606
+    },
+    "usage_on_selected_decisions_only": {
+      "completion_tokens": 180,
+      "prompt_tokens": 6807,
+      "total_tokens": 6987
+    },
+    "outcome_join_note": "Matched saved generator outcomes; this router run made no generation requests."
+  },
+  "validation": {
+    "expected_split": "validation",
+    "attempted": 500,
+    "selected": 500,
+    "selected_tiers": {
+      "small": 500
+    },
+    "errors": {},
+    "decisions_by_task": {
+      "math/selected": 220,
+      "code/selected": 80,
+      "choice/selected": 200
+    },
+    "saved_small_generator_outcomes_for_selected_prompts": {
+      "correct": 324,
+      "incorrect": 157,
+      "parse_error": 19
+    },
+    "decision_duration_ms": {
+      "n": 500,
+      "median": 128.34991700947285,
+      "p95": 182.46224999893457
+    },
+    "usage_on_selected_decisions_only": {
+      "completion_tokens": 3000,
+      "prompt_tokens": 123364,
+      "total_tokens": 126364
+    },
+    "outcome_join_note": "Matched saved generator outcomes; this router run made no generation requests."
+  },
+  "uncaptured_validation_attempt": {
+    "attempted": 500,
+    "errors": {
+      "RoutingError/ConnectError": 500
+    },
+    "note": "All rows failed to connect in the restricted shell. A later elevated inference invocation hit an existing output path and has no saved response records."
+  },
+  "input_sha256": {
+    "docs/day2-manifest-index.jsonl": "e21746f34cff571d4993d4731797621c60ba69ffb599ea8a5f74faca4251c4da",
+    "runs/day8-prompted-small-train-pilot-v4-20261120.jsonl": "0d5fc2932ec3031c263cd7ee4242f87b14a70c17f1f05ce725e6ac104a510192",
+    "runs/day8-prompted-small-validation-v4-rerun-20261120.jsonl": "9fbbdc5d80426051612fac90d8ffa9219fc570680c7a3023e2a35467bce1abb3",
+    "runs/day2-run-ddd52bb7b6c74b15b68a1df581e8ba1b.jsonl": "3193c6e783ea8b0a7db415fac386cee0b139c2c21490572c7a4aa6223c45b270",
+    "runs/day8-prompted-small-validation-v4-20261120.jsonl": "e8a4af7e017b45f4acb37cc8e5a859fecf9ed2d7b57d9336daa0152b60a0285b"
+  },
+  "limits": [
+    "The 30-prompt train pilot is development evidence and has no validation claim.",
+    "Saved small-tier scores are joined descriptively; the router made no answer-generation calls.",
+    "This is a local prompted-router comparison, not a Jev, DistilBERT, frontier, paid-provider, or held-out test result."
+  ]
+}

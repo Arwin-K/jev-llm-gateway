@@ -38,7 +38,8 @@ def test_decision_errors_preserve_safe_cause_category(monkeypatch):
                     source_revision='s',group_id='g',template_fingerprint='t',prompt='2+2?')
     records=asyncio.run(collect([prompt],replace(from_env(),router_policy='prompted-small'),max_decisions=1))
     assert records == [{'status':'error','prompt_id':'broken','split':'validation','policy':'prompted-small','version':'1',
-                        'error_category':'RoutingError','cause_category':'JSONDecodeError'}]
+                        'error_category':'RoutingError','cause_category':'JSONDecodeError',
+                        'router_raw_response':'{'}]
 
 
 def test_exact_prompt_selection_is_bounded_and_validation_scoped():

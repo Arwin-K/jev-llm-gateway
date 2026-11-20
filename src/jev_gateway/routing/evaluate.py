@@ -38,11 +38,17 @@ async def collect(prompts, settings, *, max_decisions: int):
                                 'probabilities':dict(decision.probabilities),
                                 'usage':dict(decision.usage)})
             except (RoutingError, ValueError, asyncio.TimeoutError) as exc:
-                records.append({'status':'error', 'prompt_id':prompt.prompt_id,
-                                'split':prompt.split,
-                                'policy':router.name, 'version':router.version,
-                                'error_category':type(exc).__name__,
-                                'cause_category':type(exc.__cause__).__name__ if exc.__cause__ else None})
+                record = {'status':'error', 'prompt_id':prompt.prompt_id,
+                          'split':prompt.split,
+                          'policy':router.name, 'version':router.version,
+                          'error_category':type(exc).__name__,
+                          'cause_category':type(exc.__cause__).__name__ if exc.__cause__ else None}
+                # JSONDecodeError.doc is the local model's malformed completion. Keep it only
+                # in the private run record; aggregate reports must not print it.
+                raw_output = getattr(exc.__cause__, 'doc', None)
+                if isinstance(raw_output, str):
+                    record['router_raw_response'] = raw_output
+                records.append(record)
     finally:
         for closer in closers:
             await closer.close()
