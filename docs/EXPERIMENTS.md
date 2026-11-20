@@ -111,3 +111,5 @@ Run `local-small-one-new-prompt-20261119`: after starting Ollama on loopback onl
 ## Full offline verification after checkpoint reporting change — 2026-11-19 America/Toronto
 
 Run `offline-after-resume-summary-20261119T1926-0500`: `make verify` completed compileall and **150 tests passed** in 0.73 seconds, with one third-party Starlette deprecation warning. Raw output: `evidence/testing/offline-after-resume-summary-20261119T1926-0500.txt`. No model, provider, container, or Colab work was run.
+
+Run `task-filter-focused-20261119T2214-0500`: focused selection, summary, runner, and checkpoint tests passed **12 tests** in 0.11 seconds after adding task filters to `eval-run`. Raw output: `evidence/testing/task-filter-focused-20261119T2214-0500.txt`. No model or provider call was made.

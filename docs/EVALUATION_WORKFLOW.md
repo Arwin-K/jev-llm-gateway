@@ -25,6 +25,14 @@ uv run jev eval-run --split validation --tier small --tier medium --max-prompts 
 
 The command prints a unique ignored `runs/day2-run-*.jsonl` path. Request and token caps apply across tier attempts, including retries. `--retries` is at most 3. `--concurrency` bounds simultaneous calls. Completed compatible results are checkpointed under `runs/day2-checkpoints/`; retries and failures remain visible in the run file. Reuse preserves the original run identity and timestamps. A changed prompt, template, model, backend, or generation setting prevents reuse. A failed evaluation can be retried on a later run.
 
+Use `--task math`, `--task choice`, or `--task code` to collect one task type; repeat the option to select more than one. Task filtering occurs before `--max-prompts` is applied, and manifest order is preserved. For example, when Docker is unavailable, math and choice can be collected without attempting code prompts:
+
+```bash
+uv run jev eval-run --split train --task math --task choice --tier small --max-prompts 1260 --max-requests 1260 --max-tokens 3000000 --output-tokens 512 --concurrency 1
+```
+
+The CLI summary distinguishes returned rows, checkpoint-reused rows, backend attempts, and new responses. A resumed row is not a new model call.
+
 For a frontier run, configure `JEV_FRONTIER_MODEL`, `JEV_FRONTIER_API_KEY`, positive `JEV_FRONTIER_MAX_REQUESTS`, `JEV_FRONTIER_MAX_TOKENS`, `JEV_FRONTIER_MAX_USD`, and current input/output rate environment values. Then pass `--tier frontier --paid-enabled --max-usd <positive-cap> --rate-file <private-json>`. The rate file is an array of objects with `model`, `input_usd_per_million`, `output_usd_per_million`, `effective_date` (ISO date), and `source_url`. Use the provider's current published rate page. Do not commit credentials, rate assumptions, raw answers, or private audit exports. Local application guards do not replace provider account spending controls.
 
 ## Report and audit an explicit run
@@ -46,4 +54,4 @@ This sends streaming traffic and writes an ignored `runs/day2-serving-*.json`. I
 
 ## Known blockers and next step
 
-The last real `doctor` check found both configured Ollama tags unreachable and frontier unconfigured. One validation prompt attempted on small and medium returned two backend errors. Docker code-scoring fixtures did run successfully. Start Ollama, verify actual model identities and memory, then run a small real train/validation subset before increasing caps. Human audit and complete three-tier training observations are needed before hindsight labels can support Day 3 routing work. See [the handoff](DAY2_HANDOFF.md) for exact observed evidence.
+As of 2026-11-19, Ollama 0.40.16 is running on loopback, and both installed model digests were recorded. One new small-tier train request succeeded; previous compatible rows were restored from checkpoints. Docker Desktop is not running, so live code scoring and code rows in new runs are blocked. Frontier remains unconfigured. Use task filters to collect non-code observations while Docker is unavailable; complete the code tasks after the sandbox is available. Human audit and complete compatible train/validation observations across tiers are still needed before hindsight labels can support Day 3 routing work. See [the handoff](DAY2_HANDOFF.md) for historical evidence and current [project status](STATUS.md).

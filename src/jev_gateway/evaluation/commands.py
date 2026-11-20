@@ -41,6 +41,19 @@ def _run_summary(results):
     }
 
 
+def _select_prompts(path, split, max_prompts, tasks=None):
+    if max_prompts < 1:
+        raise ValueError('--max-prompts must be positive')
+    selected=load(path,split)
+    if tasks:
+        wanted=set(tasks)
+        selected=[prompt for prompt in selected if prompt.task in wanted]
+    selected=selected[:max_prompts]
+    if not selected:
+        raise ValueError('task selection produced no prompts for this split')
+    return selected
+
+
 def execute(args):
     if args.command=='eval-prepare':
         import sys
@@ -49,9 +62,7 @@ def execute(args):
         run_path('scripts/prepare_day2.py',run_name='__main__')
         return 0
     if args.command=='eval-run':
-        if args.max_prompts<1:
-            raise ValueError('--max-prompts must be positive')
-        prompts=load(MANIFEST,args.split)[:args.max_prompts]
+        prompts=_select_prompts(MANIFEST,args.split,args.max_prompts,getattr(args,'task',None))
         limits=RunLimits(args.max_requests,args.max_tokens,args.max_usd,args.concurrency,args.retries,args.output_tokens)
         settings=from_env()
         if args.paid_enabled and 'frontier' in args.tier and not args.rate_file:
