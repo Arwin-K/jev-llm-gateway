@@ -1,0 +1,96 @@
+{
+  "run_id": "medium-validation-fixed-random-baselines-20261120",
+  "split": "validation",
+  "expected_prompt_count": 500,
+  "policies": [
+    {
+      "policy": "always-frontier",
+      "expected": 500,
+      "selected": 500,
+      "unselected": 0,
+      "missing_result": 500,
+      "failed_result": 0,
+      "classified_result": 0,
+      "scored": 0,
+      "parse_errors": 0,
+      "correct": 0,
+      "correct_completion_rate": 0.0,
+      "scored_accuracy": null,
+      "total_charge_usd": null,
+      "decision_overhead_observed": 0,
+      "execution": "offline_replay"
+    },
+    {
+      "policy": "always-medium",
+      "expected": 500,
+      "selected": 500,
+      "unselected": 0,
+      "missing_result": 0,
+      "failed_result": 0,
+      "classified_result": 500,
+      "scored": 494,
+      "parse_errors": 6,
+      "correct": 402,
+      "correct_completion_rate": 0.804,
+      "scored_accuracy": 0.8137651821862348,
+      "total_charge_usd": null,
+      "decision_overhead_observed": 0,
+      "execution": "offline_replay"
+    },
+    {
+      "policy": "always-small",
+      "expected": 500,
+      "selected": 500,
+      "unselected": 0,
+      "missing_result": 0,
+      "failed_result": 0,
+      "classified_result": 500,
+      "scored": 481,
+      "parse_errors": 19,
+      "correct": 324,
+      "correct_completion_rate": 0.648,
+      "scored_accuracy": 0.6735966735966736,
+      "total_charge_usd": null,
+      "decision_overhead_observed": 0,
+      "execution": "offline_replay"
+    },
+    {
+      "policy": "seeded-random-17",
+      "expected": 500,
+      "selected": 500,
+      "unselected": 0,
+      "missing_result": 170,
+      "failed_result": 0,
+      "classified_result": 330,
+      "scored": 322,
+      "parse_errors": 8,
+      "correct": 234,
+      "correct_completion_rate": 0.468,
+      "scored_accuracy": 0.7267080745341615,
+      "total_charge_usd": null,
+      "decision_overhead_observed": 0,
+      "execution": "offline_replay"
+    }
+  ],
+  "seed": 17,
+  "classification_override": {
+    "prompt_id": "mbpp:401",
+    "tier": "medium",
+    "outcome": "incorrect",
+    "score": 0.0,
+    "source": "evidence/day8/medium-validation-code-mbpp401-rescore-20261120.json",
+    "source_sha256": "94774d58a6a0b39b5268c609cc63a9ec71c756004833746edcff612dd4fa455a"
+  },
+  "input_sources": {
+    "runs/day2-manifest.jsonl": "d92b9f0a077da3e04487d2a6bdf43bb443b20eea5c7a06e3f93ee2c849a57474",
+    "runs/day2-run-ddd52bb7b6c74b15b68a1df581e8ba1b.jsonl": "3193c6e783ea8b0a7db415fac386cee0b139c2c21490572c7a4aa6223c45b270",
+    "runs/day2-run-1024c23932c74897a9c95604c7f88836.jsonl": "ec2ab8fc49c2f2d41223213cc862f50e1813e44f8cd8de4df36a0f9aac831e13",
+    "runs/day2-run-66afe463970d4f04900c50c204c1510f.jsonl": "df90e18dcf85c3403375db96f85d2d6577556f0a4303147512611457e34adb33"
+  },
+  "limits": [
+    "Only fixed-tier and seeded-random baselines are replayed; no Jev, prompted-router, or frontier decision was observed.",
+    "Missing frontier outputs reduce seeded-random coverage; no missing result is imputed.",
+    "Provider charges are unknown, so no cost frontier or cost-quality claim is made.",
+    "Validation results are descriptive and do not select a threshold or use the held-out test."
+  ]
+}

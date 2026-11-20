@@ -30,3 +30,17 @@ def test_saved_decision_replaces_generated_baseline_once():
            'decision_charge_usd':0.,'decision_duration_ms':.1,'execution':'deterministic_local'}}
     merged=merge_selections(generated,[saved])
     assert len(merged)==1 and merged[0].decision_duration_ms==.1
+
+
+def test_parse_errors_reduce_completion_rate_but_not_binary_accuracy_denominator():
+    from types import SimpleNamespace
+
+    p = prompt('validation')
+    result = SimpleNamespace(prompt_id='p', tier='small', split='validation',
+                             execution='real', outcome='parse_error', charge_usd=None)
+    report = compare([p], [result], [Selection('p', 'always-small', 'small')])[0]
+    assert report['classified_result'] == 1
+    assert report['scored'] == 0
+    assert report['parse_errors'] == 1
+    assert report['scored_accuracy'] is None
+    assert report['correct_completion_rate'] == 0

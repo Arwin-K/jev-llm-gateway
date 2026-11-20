@@ -57,7 +57,7 @@ def compare(prompts, results: list[Result], selections: list[Selection], policy_
         choices = [s for s in selections if s.policy == policy and s.prompt_id in expected_ids]
         if len({s.prompt_id for s in choices}) != len(choices):
             raise ValueError('duplicate policy selection for prompt')
-        correct = scored = missing = failed = 0
+        correct = binary_scored = classified = missing = failed = parse_errors = 0
         charges = 0.
         cost_known = True
         overhead_count = 0
@@ -68,9 +68,13 @@ def compare(prompts, results: list[Result], selections: list[Selection], policy_
             if result is None:
                 missing += 1
                 continue
-            if result.outcome in {'correct','incorrect','parse_error'}:
-                scored += 1
+            if result.outcome in {'correct','incorrect'}:
+                binary_scored += 1
+                classified += 1
                 correct += result.outcome == 'correct'
+            elif result.outcome == 'parse_error':
+                classified += 1
+                parse_errors += 1
             else:
                 failed += 1
             if result.charge_usd is None or selection.decision_charge_usd is None:
@@ -81,9 +85,10 @@ def compare(prompts, results: list[Result], selections: list[Selection], policy_
         expected = len(prompts)
         reports.append({'policy':policy, 'expected':expected, 'selected':len(choices),
                         'unselected':expected-len(choices), 'missing_result':missing,
-                        'failed_result':failed, 'scored':scored, 'correct':correct,
+                        'failed_result':failed, 'classified_result':classified,
+                        'scored':binary_scored, 'parse_errors':parse_errors, 'correct':correct,
                         'correct_completion_rate':correct/expected,
-                        'scored_accuracy':correct/scored if scored else None,
+                        'scored_accuracy':correct/binary_scored if binary_scored else None,
                         'total_charge_usd':charges if cost_known and len(choices)==expected and not missing else None,
                         'decision_overhead_observed':overhead_count,
                         'execution':'offline_replay'})

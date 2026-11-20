@@ -10,6 +10,7 @@
 - Corrected a false positive in the pre-test freeze audit: task-specific math/choice/code templates are now compared within their task. Six focused tests passed. The current audit reports no identity issues but keeps `ready_for_test=false` because required freeze fields and full coverage are still missing. See `evidence/day8/freeze-audit-current-20261120.json`.
 - Reproducible validation-only group bootstrap on 476 paired binary outcomes: medium minus small accuracy +14.1 percentage points (95% interval +10.5 to +17.6 pp). This is descriptive local generator evidence; it does not select a routing threshold. Full task breakdown and input hashes are in `evidence/day8/medium-validation-paired-group-bootstrap-20261120.json`.
 - Development manifest loading now validates only the requested split; a malformed held-out prompt record is ignored by validation loads, and the test split remains permission-gated. Focused verification: `evidence/testing/manifest-split-validation-focused-20261120.txt`.
+- Fixed/random validation replay is recorded. Always-medium has 402/500 correct completions; always-small has 324/500. Seeded random selected unavailable frontier for 170 prompts. All charges remain unknown; report: `evidence/day8/medium-validation-fixed-random-baselines-20261120.json`.
 - The held-out test was not touched. No paid API calls or external compute were used. No threshold was selected.
 
 ## Current validation exception and next research gate

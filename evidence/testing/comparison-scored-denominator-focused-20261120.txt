@@ -1,0 +1,5 @@
+Command: ./.venv/bin/pytest -q tests/routing/test_comparison.py tests/routing/test_tuning.py tests/routing/test_calibration_report.py
+Result: 7 passed in 0.06s
+
+The regression case confirms parse errors reduce correct-completion rate but are
+excluded from the binary-scored accuracy denominator.
