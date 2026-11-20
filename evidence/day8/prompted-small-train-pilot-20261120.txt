@@ -1,0 +1,3 @@
+Command: prompted-small, train split, 9 exact IDs, 9 decision cap, 24 completion tokens per decision.
+Output: runs/day8-prompted-small-train-pilot-20261120.jsonl
+Result: 9 attempted, 5 selected, 4 errors. Selected: 2 math/small and 3 code/small. Errors: 1 math and 3 choice, each with JSONDecodeError cause.

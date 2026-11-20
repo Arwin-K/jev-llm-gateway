@@ -1,0 +1,5 @@
+Command: ./.venv/bin/python -m jev_gateway.routing.evaluate --policy prompted-small --max-prompts 2 --max-decisions 2 --prompt-id gsm8k:train:137 --prompt-id mmlu:test:anatomy:128 --output runs/day8-prompted-small-error-diagnostics-20261120.jsonl
+Result: {"path": "runs/day8-prompted-small-error-diagnostics-20261120.jsonl", "policy": "prompted-small", "attempted": 2, "selected": 0, "errors": 2}
+
+Both validation rows returned RoutingError caused by JSONDecodeError. The raw
+model response body was not retained. No held-out prompt was used.

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import httpx
 import pytest
 from jev_gateway.config import from_env
@@ -18,8 +19,10 @@ def test_prompted_router_parses_only_eligible_json():
     transport=BackendTransport(2, httpx.MockTransport(handler))
     routing=request_for(settings, ({'role':'user','content':'Solve a hard problem'},), 32, 'id')
     decision=asyncio.run(PromptedRouter(settings, transport).decide(routing))
-    assert decision.tier=='medium' and decision.usage['completion_tokens']==4
+    assert decision.tier=='medium' and decision.version=='2' and decision.usage['completion_tokens']==4
     assert b'"max_tokens":24' in seen[0]
+    system_prompt=json.loads(seen[0])['messages'][0]['content']
+    assert '{"tier":"small"} or {"tier":"medium"}' in system_prompt
 
 
 def test_prompted_router_rejects_prose():

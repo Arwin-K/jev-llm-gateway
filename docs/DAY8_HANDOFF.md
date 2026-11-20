@@ -11,6 +11,7 @@
 - Reproducible validation-only group bootstrap on 476 paired binary outcomes: medium minus small accuracy +14.1 percentage points (95% interval +10.5 to +17.6 pp). This is descriptive local generator evidence; it does not select a routing threshold. Full task breakdown and input hashes are in `evidence/day8/medium-validation-paired-group-bootstrap-20261120.json`.
 - Development manifest loading now validates only the requested split; a malformed held-out prompt record is ignored by validation loads, and the test split remains permission-gated. Focused verification: `evidence/testing/manifest-split-validation-focused-20261120.txt`.
 - Fixed/random validation replay is recorded. Always-medium has 402/500 correct completions; always-small has 324/500. Seeded random selected unavailable frontier for 170 prompts. All charges remain unknown; report: `evidence/day8/medium-validation-fixed-random-baselines-20261120.json`.
+- Prompted-small v1 made 500 validation decisions with 250 selections (all small) and 250 errors. Two exact errors were `JSONDecodeError`. V2 was only piloted on 30 train prompts and still had 11 decode errors, so do not treat it as validation-ready. Full counts and limits: `evidence/day8/prompted-small-audit-20261120.json`.
 - The held-out test was not touched. No paid API calls or external compute were used. No threshold was selected.
 
 ## Current validation exception and next research gate

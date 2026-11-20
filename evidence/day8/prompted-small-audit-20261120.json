@@ -1,0 +1,96 @@
+{
+  "run_id": "prompted-small-audit-20261120",
+  "validation": {
+    "expected_prompts": 500,
+    "attempted_decisions": 500,
+    "selected": 250,
+    "selected_tiers": {
+      "small": 250
+    },
+    "errors": {
+      "RoutingError": 250
+    },
+    "errors_by_task": {
+      "math/selected": 170,
+      "math/error": 50,
+      "code/selected": 80,
+      "choice/error": 200
+    },
+    "saved_small_generator_outcomes_for_selected_prompts": {
+      "correct": 163,
+      "incorrect": 70,
+      "parse_error": 17
+    },
+    "decision_duration_ms": {
+      "n": 250,
+      "median": 137.78750000346918,
+      "p95": 183.11391599127091
+    },
+    "usage_on_selected_decisions_only": {
+      "completion_tokens": 1984,
+      "prompt_tokens": 43490,
+      "total_tokens": 45474
+    },
+    "initial_run_version": [
+      "1"
+    ],
+    "selected_response_count_note": "These are matched saved small-tier outcomes, not generations made by the router run."
+  },
+  "targeted_validation_error_diagnostics": {
+    "attempted": 2,
+    "errors": {
+      "math/RoutingError/JSONDecodeError": 1,
+      "choice/RoutingError/JSONDecodeError": 1
+    },
+    "scope": "two exact failed prompt IDs; diagnostic cause categories only, response bodies not retained"
+  },
+  "training_prompt_development_pilots": {
+    "version_1": {
+      "attempted": 9,
+      "prompt_version": "1",
+      "selected": {
+        "math/small": 2,
+        "code/small": 3
+      },
+      "errors": {
+        "math/RoutingError/JSONDecodeError": 1,
+        "choice/RoutingError/JSONDecodeError": 3
+      },
+      "selected_row_versions": {
+        "1": 5
+      },
+      "source_sha256": "34ca37a75a28d2826e9fd05ac3d011ca25a52aa2382abce89a8e96eaf8c1c0b9"
+    },
+    "version_2": {
+      "attempted": 30,
+      "prompt_version": "2",
+      "selected": {
+        "math/small": 10,
+        "code/small": 9
+      },
+      "errors": {
+        "code/RoutingError/JSONDecodeError": 1,
+        "choice/RoutingError/JSONDecodeError": 10
+      },
+      "selected_row_versions": {
+        "2": 19
+      },
+      "source_sha256": "54e14d4e1497ba944b008d4cda5b81097d99fd384f36bd4162ffcce3df3b86a2"
+    }
+  },
+  "input_sha256": {
+    "docs/day2-manifest-index.jsonl": "e21746f34cff571d4993d4731797621c60ba69ffb599ea8a5f74faca4251c4da",
+    "runs/day8-prompted-small-validation-20261120.jsonl": "14301b6730f33e86701d2e800323998e63fc8f392de2b5fbb58a1b47e2b2507d",
+    "runs/day2-run-ddd52bb7b6c74b15b68a1df581e8ba1b.jsonl": "3193c6e783ea8b0a7db415fac386cee0b139c2c21490572c7a4aa6223c45b270",
+    "runs/day8-prompted-small-error-diagnostics-20261120.jsonl": "ae08aabcc72a3a7b903c7039d80a5a76de0d7fe58c16bbe54922c2a03efc5f71",
+    "runs/day8-prompted-small-train-pilot-20261120.jsonl": "34ca37a75a28d2826e9fd05ac3d011ca25a52aa2382abce89a8e96eaf8c1c0b9",
+    "runs/day8-prompted-small-train-pilot-v2-20261120.jsonl": "54e14d4e1497ba944b008d4cda5b81097d99fd384f36bd4162ffcce3df3b86a2"
+  },
+  "limits": [
+    "The initial 500-prompt validation run records only generic RoutingError for failures; it cannot be retroactively assigned parser cause categories.",
+    "Two targeted validation failures and 30 disjoint train-pilot decisions reported JSONDecodeError; this does not establish a cause for every initial failure.",
+    "Saved generator outcomes are joined only to successful route selections for descriptive analysis; router run made no generation requests.",
+    "Prompt version 2 was explored on train prompts only and was not evaluated on validation.",
+    "No Jev, frontier, paid-provider, or held-out test call/result is included."
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "output": "evidence/day8/prompted-small-audit-20261120.json",
+  "validation": {
+    "expected_prompts": 500,
+    "attempted_decisions": 500,
+    "selected": 250,
+    "selected_tiers": {
+      "small": 250
+    },
+    "errors": {
+      "RoutingError": 250
+    },
+    "errors_by_task": {
+      "math/selected": 170,
+      "math/error": 50,
+      "code/selected": 80,
+      "choice/error": 200
+    },
+    "saved_small_generator_outcomes_for_selected_prompts": {
+      "correct": 163,
+      "incorrect": 70,
+      "parse_error": 17
+    },
+    "decision_duration_ms": {
+      "n": 250,
+      "median": 137.78750000346918,
+      "p95": 183.11391599127091
+    },
+    "usage_on_selected_decisions_only": {
+      "completion_tokens": 1984,
+      "prompt_tokens": 43490,
+      "total_tokens": 45474
+    },
+    "initial_run_version": [
+      "1"
+    ],
+    "selected_response_count_note": "These are matched saved small-tier outcomes, not generations made by the router run."
+  },
+  "diagnostics": {
+    "attempted": 2,
+    "errors": {
+      "math/RoutingError/JSONDecodeError": 1,
+      "choice/RoutingError/JSONDecodeError": 1
+    },
+    "scope": "two exact failed prompt IDs; diagnostic cause categories only, response bodies not retained"
+  },
+  "train_pilots": {
+    "version_1": {
+      "attempted": 9,
+      "prompt_version": "1",
+      "selected": {
+        "math/small": 2,
+        "code/small": 3
+      },
+      "errors": {
+        "math/RoutingError/JSONDecodeError": 1,
+        "choice/RoutingError/JSONDecodeError": 3
+      },
+      "selected_row_versions": {
+        "1": 5
+      },
+      "source_sha256": "34ca37a75a28d2826e9fd05ac3d011ca25a52aa2382abce89a8e96eaf8c1c0b9"
+    },
+    "version_2": {
+      "attempted": 30,
+      "prompt_version": "2",
+      "selected": {
+        "math/small": 10,
+        "code/small": 9
+      },
+      "errors": {
+        "code/RoutingError/JSONDecodeError": 1,
+        "choice/RoutingError/JSONDecodeError": 10
+      },
+      "selected_row_versions": {
+        "2": 19
+      },
+      "source_sha256": "54e14d4e1497ba944b008d4cda5b81097d99fd384f36bd4162ffcce3df3b86a2"
+    }
+  }
+}

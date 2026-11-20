@@ -1,0 +1,5 @@
+Command: ./.venv/bin/pytest -q tests/routing/test_evaluate.py tests/routing/test_prompted.py tests/routing/test_failures.py
+Result: 10 passed in 0.13s
+
+Coverage includes split provenance, exact prompt-ID caps and rejection, wrapped
+error-cause categories, and the eligible-tier JSON prompt contract.

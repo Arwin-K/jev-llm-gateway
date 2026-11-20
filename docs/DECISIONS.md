@@ -29,6 +29,7 @@ Record actual decisions, context, alternatives, evidence, affected code/configur
 - Calibration reports require one declared event per binary report. Oracle-tier distributions, named-generator success probabilities, and realized selected-generator correctness use different labels and cannot share an ECE denominator. Validation tuning requires complete selected-result coverage, known observed cost, and a stated correct-completion objective; without these it returns no selected threshold. The current data support only coverage reporting.
 
 - The bounded router decision collector saves selected and error rows without calling a generation backend. Jev collection additionally requires an explicit `--paid-enabled` flag, a positive per-run USD cap, a decision count cap, configured credentials/model, and positive rates tied to an HTTPS source URL and ISO effective date. Calibration reports read these decisions and independent validation scores; absent scored coverage produces `insufficient_data` instead of numerical calibration metrics.
+- Prompted-small v1 returned generic routing errors on half of its 500 validation decisions; two exact failures and 11/30 failures in a disjoint train pilot were caused by JSON decoding. Prompt v2's clearer eligible-tier examples remain development-only because 10/10 choice prompts still failed in the train pilot. Do not promote v2 or present the prompted router as a viable comparison until train-side format reliability improves; do not tune it further on validation.
 
 ## Day 4 verification boundary
 

@@ -7,7 +7,7 @@ from .contracts import Decision, RoutingError, RoutingRequest, TIERS
 
 class PromptedRouter:
     name = 'prompted-small'
-    version = '1'
+    version = '2'
 
     def __init__(self, settings, transport):
         self.settings = settings
@@ -20,9 +20,12 @@ class PromptedRouter:
         descriptions = {tier: {'model': self.settings.backend(tier).model,
                                'context_limit': self.settings.backend(tier).max_context_tokens}
                         for tier in request.eligible_tiers}
+        examples = ' or '.join(json.dumps({'tier': tier}, separators=(',', ':'))
+                               for tier in request.eligible_tiers)
         instruction = ('Choose one eligible generation tier for the user request. '
-                       'Return only compact JSON with exactly one key, tier. '
-                       'Use the least capable tier likely to answer correctly. '
+                       'Return exactly one JSON object and no explanation or markdown. '
+                       f'Use exactly this shape: {examples}. '
+                       'Choose the least capable eligible tier likely to answer correctly. '
                        f'Eligible backends: {json.dumps(descriptions, sort_keys=True)}')
         payload = {'model': self.settings.small.model, 'stream': False, 'temperature': 0,
                    'max_tokens': 24, 'messages': [

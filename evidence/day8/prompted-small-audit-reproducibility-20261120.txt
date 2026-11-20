@@ -1,0 +1,2 @@
+Command: rerun scripts/day8_prompted_router_audit.py with the six recorded inputs and output under /private/tmp.
+Result: regenerated JSON compared byte-for-byte identical to evidence/day8/prompted-small-audit-20261120.json.

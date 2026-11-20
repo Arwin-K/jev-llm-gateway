@@ -30,7 +30,8 @@ async def collect(prompts, settings, *, max_decisions: int):
                 selection = Selection(prompt.prompt_id, decision.policy, decision.tier,
                                       0.0 if zero_overhead else None, decision.duration_ms,
                                       'real_decision' if not zero_overhead else 'deterministic_local')
-                records.append({'status':'selected', 'selection':asdict(selection),
+                records.append({'status':'selected', 'prompt_id':prompt.prompt_id,
+                                'split':prompt.split, 'selection':asdict(selection),
                                 'version':decision.version, 'decision_model':decision.decision_model,
                                 'question_version':decision.question_version,
                                 'probability_event':decision.probability_event,
@@ -38,12 +39,29 @@ async def collect(prompts, settings, *, max_decisions: int):
                                 'usage':dict(decision.usage)})
             except (RoutingError, ValueError, asyncio.TimeoutError) as exc:
                 records.append({'status':'error', 'prompt_id':prompt.prompt_id,
-                                'policy':router.name, 'error_category':type(exc).__name__})
+                                'split':prompt.split,
+                                'policy':router.name, 'version':router.version,
+                                'error_category':type(exc).__name__,
+                                'cause_category':type(exc.__cause__).__name__ if exc.__cause__ else None})
     finally:
         for closer in closers:
             await closer.close()
         await transport.close()
     return records
+
+
+def select_prompts(prompts, max_prompts: int, prompt_ids: list[str] | None = None):
+    if max_prompts < 1:
+        raise ValueError('max_prompts must be positive')
+    if not prompt_ids:
+        return prompts[:max_prompts]
+    if len(prompt_ids) != len(set(prompt_ids)):
+        raise ValueError('prompt IDs must be unique')
+    wanted = set(prompt_ids)
+    selected = [prompt for prompt in prompts if prompt.prompt_id in wanted]
+    if len(selected) != len(wanted):
+        raise ValueError('one or more prompt IDs are absent from the selected split')
+    return selected[:max_prompts]
 
 
 def main(argv=None):
@@ -52,8 +70,10 @@ def main(argv=None):
                         'seeded-random','distilbert','prompted-small','jev-choice',
                         'jev-threshold','strands-decider'), required=True)
     parser.add_argument('--manifest', type=Path, default=Path('runs/day2-manifest.jsonl'))
+    parser.add_argument('--split', choices=('train','validation'), default='validation')
     parser.add_argument('--max-prompts', type=int, required=True)
     parser.add_argument('--max-decisions', type=int, required=True)
+    parser.add_argument('--prompt-id', action='append', default=[])
     parser.add_argument('--max-usd', type=float, default=0.)
     parser.add_argument('--paid-enabled', action='store_true')
     parser.add_argument('--output', type=Path)
@@ -66,7 +86,7 @@ def main(argv=None):
             parser.error('Jev run requires explicit --paid-enabled, positive --max-usd, key, model, sourced rates and caps')
         settings = replace(settings, jev_max_requests=min(settings.jev_max_requests,args.max_decisions),
                            jev_max_usd=min(settings.jev_max_usd,args.max_usd))
-    prompts = load(args.manifest,'validation')[:args.max_prompts]
+    prompts = select_prompts(load(args.manifest,args.split), args.max_prompts, args.prompt_id)
     records = asyncio.run(collect(prompts,settings,max_decisions=args.max_decisions))
     output = args.output or Path('runs')/f'day3-decisions-{uuid.uuid4().hex}.jsonl'
     if not output.resolve().is_relative_to(Path('runs').resolve()):

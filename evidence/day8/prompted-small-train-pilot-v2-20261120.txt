@@ -1,0 +1,3 @@
+Command: prompted-small prompt version 2, train split, 30 exact IDs (10 per task), 30 decision cap, 24 completion tokens per decision.
+Output: runs/day8-prompted-small-train-pilot-v2-20261120.jsonl
+Result: 30 attempted, 19 selected, 11 errors. Selected: 10 math/small and 9 code/small. Errors: 10 choice and 1 code, each with JSONDecodeError cause. Version 2 was not evaluated on validation.

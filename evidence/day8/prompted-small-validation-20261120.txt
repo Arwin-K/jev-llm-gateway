@@ -1,0 +1,6 @@
+Command: ./.venv/bin/python -m jev_gateway.routing.evaluate --policy prompted-small --max-prompts 500 --max-decisions 500 --output runs/day8-prompted-small-validation-20261120.jsonl
+Result: {"path": "runs/day8-prompted-small-validation-20261120.jsonl", "policy": "prompted-small", "attempted": 500, "selected": 250, "errors": 250}
+
+The command ran prompt version 1. Each prompted decision allowed 24 completion
+tokens. All 250 selections chose small; the collector stored only generic
+RoutingError categories for failures. The router made no generator calls.
