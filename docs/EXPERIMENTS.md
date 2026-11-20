@@ -98,4 +98,8 @@ The v2 template decision was already implemented when these observations were co
 
 The private checkpoint directory contains 578 unique small-tier train math results (453 correct, 89 incorrect, 36 parse errors), not the full 1,500 train prompts. Separate 30-prompt validation pilots recorded 20/30 correct for small, 26/30 for medium, and 18/30 for small with strict code output. These pilot samples and the complete small validation set are descriptive evidence, not a frozen policy comparison. No frontier/paid generation, full medium tier, complete train labels, cache/cascade result, or held-out test result was produced.
 
-The sanitized audit `evidence/day7/local-v2-coverage-audit-20261114.json` preserves counts, fingerprints, and run IDs without answer text. On 2026-11-19, `jev doctor` returned `ConnectError` for both local tiers; the 10-prompt CLI rerun reused saved checkpoints and issued no generation calls. Frontier was not configured.
+The sanitized audit `evidence/day7/local-v2-coverage-audit-20261114.json` preserves counts, fingerprints, and run IDs without answer text. On 2026-11-19, `jev doctor` returned `ConnectError` for both local tiers; its raw sanitized report is `evidence/day7/mac-doctor-20261119.json`. The 10-prompt CLI rerun reused saved checkpoints and issued no generation calls. Frontier was not configured.
+
+## Checkpoint reuse summary verification — 2026-11-19 America/Toronto
+
+Run `cli-summary-focused-20261119T1922-0500`: `./.venv/bin/pytest -q tests/evaluation/test_command_summary.py tests/evaluation/test_runner.py tests/evaluation/test_checkpoint.py` passed **10 tests** in 0.07 seconds. The summary helper reports returned rows, checkpoint-reused rows, new backend attempts, and new responses separately. Raw test output is `evidence/testing/cli-summary-focused-20261119T1922-0500.txt`. No model or provider request was made.

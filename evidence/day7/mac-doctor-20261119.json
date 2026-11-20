@@ -1,0 +1,12 @@
+{
+  "run_id": "mac-doctor-20261119-session",
+  "observed_on": "2026-11-19 America/Toronto",
+  "command": "./.venv/bin/jev doctor",
+  "exit_code": 1,
+  "frontier": {"configured": false},
+  "tiers": {
+    "small": {"model": "qwen2.5:1.5b", "available": false, "reason": "ConnectError"},
+    "medium": {"model": "qwen2.5:7b", "available": false, "reason": "ConnectError"}
+  },
+  "interpretation": "Local model endpoints were not reachable during this check. No generation request was made."
+}
