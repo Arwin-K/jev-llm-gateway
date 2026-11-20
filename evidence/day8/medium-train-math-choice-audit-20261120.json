@@ -1,0 +1,84 @@
+{
+  "run_id": "medium-train-math-choice-20261120",
+  "observed_on": "2026-11-20 America/Toronto",
+  "split": "train",
+  "tier": "medium",
+  "model_tag": "qwen2.5:7b",
+  "model_digest_at_collection": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "dataset_revision": {
+    "math": "740312add88f781978c0658806c59bc2815b9866",
+    "choice": "c30699e8356da336a370243923dbaf21066bb9fe"
+  },
+  "template_fingerprints": {
+    "math": "16dc85bcfc5c6903e5b1048379896cafb49456056838c26a0dae4bafafa2c579",
+    "choice": "d4aa6df864bb36988debcb0b54a3351b6765f256b133a363b8fd5b21d6340b5a"
+  },
+  "settings_fingerprint": "da4edb9bc2079db692cae675b7b6a0e7d01574f63c54c7bfc72bbef33a51263b",
+  "unique_prompt_count": 1260,
+  "task_outcomes": {
+    "math": {"total": 660, "correct": 632, "incorrect": 26, "parse_error": 2},
+    "choice": {"total": 600, "correct": 436, "incorrect": 164}
+  },
+  "aggregate_outcomes": {
+    "correct": 1068,
+    "incorrect": 190,
+    "parse_error": 2,
+    "backend_error": 0,
+    "evaluator_error": 0
+  },
+  "strict_format_compliance": {
+    "math": {"compliant": 644, "total": 660},
+    "choice": {"compliant": 599, "total": 600},
+    "aggregate": {"compliant": 1243, "total": 1260}
+  },
+  "small_vs_medium_paired_train_comparison": {
+    "scope": "descriptive only; train split, not validation and not a threshold selection set",
+    "same_prompt_ids": true,
+    "same_template_and_settings_fingerprints": true,
+    "binary_only_transitions": {
+      "math": {
+        "both_correct": 514,
+        "small_correct_medium_incorrect": 7,
+        "small_incorrect_medium_correct": 82,
+        "both_incorrect": 14,
+        "nonbinary_in_either_tier": 43
+      },
+      "choice": {
+        "both_correct": 320,
+        "small_correct_medium_incorrect": 32,
+        "small_incorrect_medium_correct": 116,
+        "both_incorrect": 132,
+        "nonbinary_in_either_tier": 0
+      }
+    }
+  },
+  "request_and_token_controls": {
+    "output_tokens_per_request": 512,
+    "max_concurrency": 1,
+    "retries": 0,
+    "request_cap": 1260,
+    "token_cap": 2887016,
+    "checkpoint_reused": 420,
+    "new_backend_attempts": 840,
+    "new_responses": 840,
+    "paid_provider_calls": 0
+  },
+  "observed_usage": {
+    "prompt_tokens": 165661,
+    "completion_tokens": 127948,
+    "response_latency_seconds": {
+      "n": 1260,
+      "min": 0.33,
+      "median": 3.531,
+      "p95": 10.535
+    }
+  },
+  "result_file": "runs/day2-run-263a6f59ec7d493cbdf0dd205cbaaf21.jsonl",
+  "command_output": "evidence/day7/medium-train-math-choice-resume-20261120.txt",
+  "limits": [
+    "Math/choice train coverage only; medium code and validation are not complete.",
+    "The paired small/medium result changes are on train prompts and do not establish generalization or select a routing threshold.",
+    "The held-out test was not read or evaluated.",
+    "Raw prompts, references, and answers remain in ignored runs/ and are excluded from this audit."
+  ]
+}

@@ -146,3 +146,9 @@ After the small-tier coverage run, a bounded medium-tier training evaluation beg
 ## Medium-tier overnight resume point — 2026-11-19 America/Toronto
 
 The medium train math/choice run was stopped at the user's request after confirming 420 durable prompt checkpoints: math 409 correct, 10 incorrect, 1 parse error; choice 0 reached. The runner and loopback Ollama server are both stopped, and system memory free returned to 62%. The process exit was an interrupt while an evaluation task waited on the serial concurrency semaphore; completed checkpoint files remain intact under ignored `runs/day2-checkpoints/`. This is a partial train result, not a complete tier comparison. The exact run/model identity, limits, stop record, raw interrupt output, and copy-ready resume command are in [the stop audit](../evidence/day7/medium-train-stop-audit-20261119.json) and [Day 7 handoff](DAY7_HANDOFF.md).
+
+## Day 8 — 2026-11-20 America/Toronto
+
+Resumed the medium-tier train math/choice evaluation with the same local model, settings, request/token caps, and 420 checkpoints. The run returned all 1,260 unique train IDs: math 632 correct, 26 incorrect, 2 parse errors; choice 436 correct, 164 incorrect. It reused 420 checkpoints and made 840 new requests/responses, with no backend or evaluator errors. The small/medium paired train audit confirms identical prompt IDs and task/template/settings fingerprints; it is descriptive train evidence only. Full counts, paired outcome transitions, strict-format counts, observed latency, caps, and private result path are in [the medium math/choice audit](../evidence/day8/medium-train-math-choice-audit-20261120.json). Raw answers remain in ignored `runs/`.
+
+Medium train code and all medium validation tasks remain outstanding. The held-out test, paid providers, and external compute remain untouched. No medium decision threshold has been selected from train results.

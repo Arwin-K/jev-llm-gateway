@@ -1,8 +1,8 @@
 # Day 7 handoff — 2026-11-19 America/Toronto
 
-## Resume the medium-tier train run
+## Resume the medium-tier train run (completed 2026-11-20)
 
-The medium `qwen2.5:7b` train run is paused at 420 saved math checkpoints (409 correct, 10 incorrect, 1 parse error); no choice prompt was reached. The evaluation runner and Ollama server are stopped. The checkpoint JSON files and raw answers remain in ignored `runs/day2-checkpoints/`. Do not treat this partial run as the completed medium comparison. See `evidence/day7/medium-train-stop-audit-20261119.json` for the run ID, model digest, caps, and shutdown evidence.
+The 2026-11-19 pause left 420 saved math checkpoints (409 correct, 10 incorrect, 1 parse error); no choice prompt had been reached. On 2026-11-20 the same bounded run resumed and completed all 1,260 math/choice train rows. Its audited outcomes, identity checks, and limitations are in `evidence/day8/medium-train-math-choice-audit-20261120.json`. The remaining code and validation stages are below.
 
 From the repository root, start Ollama in one shell, bound to loopback:
 
@@ -27,6 +27,8 @@ PYTHONUNBUFFERED=1 ./.venv/bin/jev eval-run \
 ```
 
 The 1,260-request/2,887,016-token ceilings are the original positive local run caps; no paid calls are involved. Keep the held-out test untouched.
+
+This command was completed on 2026-11-20. The result audit is `evidence/day8/medium-train-math-choice-audit-20261120.json`; the next work is the medium code/validation collection below, not another math/choice run.
 
 ## Remaining local comparison steps
 
