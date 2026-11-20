@@ -41,13 +41,20 @@ def _run_summary(results):
     }
 
 
-def _select_prompts(path, split, max_prompts, tasks=None):
+def _select_prompts(path, split, max_prompts, tasks=None, prompt_ids=None):
     if max_prompts < 1:
         raise ValueError('--max-prompts must be positive')
     selected=load(path,split)
     if tasks:
         wanted=set(tasks)
         selected=[prompt for prompt in selected if prompt.task in wanted]
+    if prompt_ids:
+        wanted_ids=set(prompt_ids)
+        if len(wanted_ids)!=len(prompt_ids):
+            raise ValueError('prompt IDs must be unique')
+        selected=[prompt for prompt in selected if prompt.prompt_id in wanted_ids]
+        if len(selected)!=len(wanted_ids):
+            raise ValueError('one or more prompt IDs are absent from the selected split/tasks')
     selected=selected[:max_prompts]
     if not selected:
         raise ValueError('task selection produced no prompts for this split')
@@ -62,7 +69,7 @@ def execute(args):
         run_path('scripts/prepare_day2.py',run_name='__main__')
         return 0
     if args.command=='eval-run':
-        prompts=_select_prompts(MANIFEST,args.split,args.max_prompts,getattr(args,'task',None))
+        prompts=_select_prompts(MANIFEST,args.split,args.max_prompts,getattr(args,'task',None),getattr(args,'prompt_id',None))
         limits=RunLimits(args.max_requests,args.max_tokens,args.max_usd,args.concurrency,args.retries,args.output_tokens)
         settings=from_env()
         if args.paid_enabled and 'frontier' in args.tier and not args.rate_file:

@@ -17,6 +17,7 @@ def main(argv=None):
     run = sub.add_parser("eval-run", help="bounded development tier evaluation")
     run.add_argument("--split", choices=("train", "validation"), default="validation")
     run.add_argument("--task", choices=("math", "choice", "code"), action="append", help="include only these task types; repeat to select more than one")
+    run.add_argument("--prompt-id", action="append", help="include only these exact manifest prompt IDs; repeat for more than one")
     run.add_argument("--tier", choices=("small", "medium", "frontier"), action="append", required=True)
     run.add_argument("--max-prompts", type=int, required=True)
     run.add_argument("--max-requests", type=int, required=True)

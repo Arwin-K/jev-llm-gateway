@@ -48,3 +48,16 @@ def test_task_filter_requires_a_positive_limit_and_a_matching_prompt(monkeypatch
         _select_prompts('manifest','train',0)
     with pytest.raises(ValueError,match='no prompts'):
         _select_prompts('manifest','train',10,['code'])
+
+
+def test_prompt_id_filter_targets_exact_rows_and_rejects_unknown_or_duplicate_ids(monkeypatch):
+    prompts=[SimpleNamespace(task='code',prompt_id='mbpp:573'),SimpleNamespace(task='code',prompt_id='mbpp:765')]
+    monkeypatch.setattr(commands,'load',lambda path,split: prompts)
+
+    selected=_select_prompts('manifest','train',1,['code'],['mbpp:573'])
+
+    assert [prompt.prompt_id for prompt in selected]==['mbpp:573']
+    with pytest.raises(ValueError,match='absent'):
+        _select_prompts('manifest','train',1,['code'],['unknown'])
+    with pytest.raises(ValueError,match='unique'):
+        _select_prompts('manifest','train',1,['code'],['mbpp:573','mbpp:573'])
