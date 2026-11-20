@@ -1,0 +1,7 @@
+Command:
+  ./.venv/bin/python -c 'from jev_gateway.evaluation.sandbox import execute; print(execute("print(1)", ()))'
+
+Output:
+  {'status': 'passed', 'exit_code': 0}
+
+This verifies that the project sandbox ran a trivial isolated container at the time of the check. It does not diagnose the prompt-specific environment_error for mbpp:401.

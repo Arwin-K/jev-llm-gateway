@@ -1,0 +1,75 @@
+{
+  "run_id": "medium-validation-code-20261120",
+  "observed_on": "2026-11-20 America/Toronto",
+  "split": "validation",
+  "task": "code",
+  "tier": "medium",
+  "model_tag": "qwen2.5:7b",
+  "model_digest_at_collection": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "dataset_revision": "1ae1fded5c616deb6b4652818588577e8fca0f06",
+  "template_fingerprint": "974c4f1702a027f6637858beb6da27678e20954e471db8d55ca9bf6e5899372d",
+  "settings_fingerprint": "da4edb9bc2079db692cae675b7b6a0e7d01574f63c54c7bfc72bbef33a51263b",
+  "unique_prompt_count": 80,
+  "outcomes": {"correct": 45, "incorrect": 29, "parse_error": 5, "blocked": 1, "backend_error": 0, "evaluator_error": 0},
+  "strict_format_compliance": {"compliant": 70, "noncompliant": 10},
+  "small_vs_medium_paired_validation_comparison": {
+    "same_prompt_ids": true,
+    "same_template_and_settings_fingerprints": true,
+    "small_outcomes": {"correct": 33, "incorrect": 40, "parse_error": 7},
+    "binary_only_transitions": {
+      "both_correct": 27,
+      "small_correct_medium_incorrect": 3,
+      "small_incorrect_medium_correct": 13,
+      "both_incorrect": 25,
+      "nonbinary_in_either_tier": 12
+    },
+    "scope": "descriptive paired validation outcomes; not a selected routing threshold"
+  },
+  "request_and_token_controls": {
+    "initial_request_cap": 80,
+    "initial_token_cap": 103736,
+    "output_tokens_per_request": 512,
+    "max_concurrency": 1,
+    "automatic_retries": 0,
+    "initial_backend_attempts": 80,
+    "initial_responses": 80,
+    "targeted_recovery_attempts": 2,
+    "recovery_request_cap_each": 1,
+    "recovery_token_cap_each": 5000,
+    "total_responses_including_recoveries": 82,
+    "paid_provider_calls": 0
+  },
+  "environment_error_observations": {
+    "prompt_id": "mbpp:401",
+    "outcome": "blocked",
+    "error_category": "environment_error",
+    "observed_count": 3,
+    "recovery_policy": "two separate exact prompt-ID invocations; both remained blocked, so no further generation retries were made",
+    "project_sandbox_sanity_check": "same sandbox function executed print(1) in a Docker container and returned passed; this does not determine why the benchmark code executions were blocked"
+  },
+  "observed_usage_initial_run": {"prompt_tokens": 5519, "completion_tokens": 5872},
+  "docker_sandbox": {
+    "engine_version": "29.6.2",
+    "architecture": "aarch64",
+    "image": "python:3.12.7-slim-bookworm",
+    "image_id": "sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d",
+    "containers_left_running": 0
+  },
+  "result_files": [
+    "runs/day2-run-66afe463970d4f04900c50c204c1510f.jsonl",
+    "runs/day2-run-2fad7488ed574a939800c390b559752e.jsonl",
+    "runs/day2-run-014a1a8648fa40d2a8e29f05d7ece313.jsonl"
+  ],
+  "command_outputs": [
+    "evidence/day8/medium-validation-code-20261120.txt",
+    "evidence/day8/medium-validation-code-mbpp401-recovery-20261120.txt",
+    "evidence/day8/medium-validation-code-mbpp401-recovery2-20261120.txt",
+    "evidence/day8/medium-validation-code-sandbox-sanity-20261120.txt"
+  ],
+  "limits": [
+    "All 80 validation IDs have real result rows, but one remains blocked without an answer score; complete scored code coverage is 79/80.",
+    "The blocked row is not relabeled as correct or incorrect. A generic sandbox pass does not diagnose the prompt-specific environment error.",
+    "The held-out test was not accessed; this audit is not a threshold selection or generalization claim.",
+    "Raw prompts, references, generated code, and completions remain private in ignored runs/."
+  ]
+}
