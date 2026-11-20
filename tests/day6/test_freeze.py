@@ -30,3 +30,68 @@ def test_freeze_audit_flags_mixed_generation_identity(tmp_path):
     config = tmp_path / 'config.json'
     config.write_text('{}')
     assert 'small: mixed model, settings, or template identities' in audit(manifest, [results], config)['identity_issues']
+
+
+def _task_scoped_fixture(tmp_path, rows, generation_settings=None):
+    manifest = tmp_path / 'manifest.jsonl'
+    manifest.write_text(''.join(json.dumps({'split': 'validation', 'prompt_id': row['prompt_id']})+'\n'
+                                for row in rows))
+    results = tmp_path / 'results.jsonl'
+    results.write_text(''.join(json.dumps(row)+'\n' for row in rows))
+    config = tmp_path / 'config.json'
+    config.write_text(json.dumps({'generation_settings': generation_settings or {}}))
+    return audit(manifest, [results], config)
+
+
+def test_freeze_audit_allows_distinct_templates_across_tasks(tmp_path):
+    rows = [
+        {'split': 'validation', 'prompt_id': 'math1', 'task': 'math', 'tier': 'small',
+         'execution': 'real', 'score': 1, 'outcome': 'correct', 'model': 'local',
+         'model_revision': 'sha256:x', 'settings_fingerprint': 'settings', 'template_fingerprint': 'math-v2'},
+        {'split': 'validation', 'prompt_id': 'choice1', 'task': 'choice', 'tier': 'small',
+         'execution': 'real', 'score': 1, 'outcome': 'correct', 'model': 'local',
+         'model_revision': 'sha256:x', 'settings_fingerprint': 'settings', 'template_fingerprint': 'choice-v2'},
+    ]
+    report = _task_scoped_fixture(tmp_path, rows)
+    assert report['identity_issues'] == []
+
+
+def test_freeze_audit_flags_template_change_within_task(tmp_path):
+    rows = [
+        {'split': 'validation', 'prompt_id': 'math1', 'task': 'math', 'tier': 'small',
+         'execution': 'real', 'score': 1, 'outcome': 'correct', 'model': 'local',
+         'settings_fingerprint': 'settings', 'template_fingerprint': 'math-v2'},
+        {'split': 'validation', 'prompt_id': 'math2', 'task': 'math', 'tier': 'small',
+         'execution': 'real', 'score': 1, 'outcome': 'correct', 'model': 'local',
+         'settings_fingerprint': 'settings', 'template_fingerprint': 'math-v1'},
+    ]
+    report = _task_scoped_fixture(tmp_path, rows)
+    assert 'small: mixed model, settings, or template identities' in report['identity_issues']
+
+
+def test_freeze_audit_matches_task_scoped_template_configuration(tmp_path):
+    rows = [
+        {'split': 'validation', 'prompt_id': 'math1', 'task': 'math', 'tier': 'small',
+         'execution': 'real', 'score': 1, 'outcome': 'correct', 'model': 'local',
+         'model_revision': 'sha256:x', 'settings_fingerprint': 'settings', 'template_fingerprint': 'math-v2'},
+        {'split': 'validation', 'prompt_id': 'choice1', 'task': 'choice', 'tier': 'small',
+         'execution': 'real', 'score': 1, 'outcome': 'correct', 'model': 'local',
+         'model_revision': 'sha256:x', 'settings_fingerprint': 'settings', 'template_fingerprint': 'choice-v2'},
+    ]
+    expected = {'small': {'fingerprint': 'settings',
+                         'templates': {'math': 'math-v2', 'choice': 'choice-v2'}}}
+    assert _task_scoped_fixture(tmp_path, rows, expected)['identity_issues'] == []
+    expected['small']['templates']['choice'] = 'wrong'
+    assert 'small: records disagree with freeze configuration' in \
+        _task_scoped_fixture(tmp_path, rows, expected)['identity_issues']
+
+
+def test_legacy_template_configuration_requires_single_task_template(tmp_path):
+    row = {'split': 'validation', 'prompt_id': 'math1', 'task': 'math', 'tier': 'small',
+           'execution': 'real', 'score': 1, 'outcome': 'correct', 'model': 'local',
+           'settings_fingerprint': 'settings', 'template_fingerprint': 'math-v2'}
+    config = {'small': {'fingerprint': 'settings', 'template': 'math-v2'}}
+    assert _task_scoped_fixture(tmp_path, [row], config)['identity_issues'] == []
+    other = {**row, 'prompt_id': 'choice1', 'task': 'choice', 'template_fingerprint': 'choice-v2'}
+    issues = _task_scoped_fixture(tmp_path, [row, other], config)['identity_issues']
+    assert 'small: task-scoped templates required in freeze configuration' in issues

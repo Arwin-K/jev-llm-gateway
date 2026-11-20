@@ -6,7 +6,9 @@
 - Medium train code: all 240 prompts completed through Docker's isolated scorer. Audit: `evidence/day8/medium-train-code-audit-20261120.json`.
 - Medium train aggregate: all 1,500 prompts across math, choice, and code, with 1,487 binary labels. Audit: `evidence/day8/medium-train-full-audit-20261120.json`.
 - Medium validation math/choice: all 420 prompts, 420 new responses. Paired IDs and fingerprints match the small-tier validation rows. Audit: `evidence/day8/medium-validation-math-choice-audit-20261120.json`.
-- The held-out test was not touched. No paid API calls or external compute were used. No threshold was selected because medium code validation is still missing.
+- Medium validation code: all 80 prompt IDs have records; 79 scored and `mbpp:401` remains a blocked `environment_error` after two bounded retries. The complete validation comparison therefore has 493 binary medium scores, not a fully scored set.
+- Corrected a false positive in the pre-test freeze audit: task-specific math/choice/code templates are now compared within their task. Six focused tests passed. The current audit reports no identity issues but keeps `ready_for_test=false` because required freeze fields and full coverage are still missing. See `evidence/day8/freeze-audit-current-20261120.json`.
+- The held-out test was not touched. No paid API calls or external compute were used. No threshold was selected.
 
 ## Current validation exception and next research gate
 
@@ -21,6 +23,6 @@ docker info --format '{{.ServerVersion}} {{.Architecture}} {{.MemTotal}}'
 ollama list
 ```
 
-The math, choice, and code validation prompt IDs have been compared, but a fully scored local comparison still has the one blocked code row. Router thresholds, Jev probabilities, and cost-aware operating points have not been selected. The held-out test remains locked. Jev decision API access is separate and unconfigured.
+The math, choice, and code validation prompt IDs have been compared, but the local comparison still has the one blocked code row. Router thresholds, Jev probabilities, and cost-aware operating points have not been selected. The freeze audit is not ready for held-out evaluation: freeze fields are absent, tier coverage is incomplete, and frontier has no observations. The held-out test remains locked. Jev decision API access is separate and unconfigured.
 
 Colab GPU/DistilBERT training, NVIDIA/vLLM, configured Jev/frontier comparisons, verification cascade, cache comparison, and sustained real serving/load runs remain outside today's executed work. Paid runs remain disabled.

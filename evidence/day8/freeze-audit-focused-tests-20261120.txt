@@ -1,0 +1,6 @@
+Command: ./.venv/bin/pytest -q tests/day6/test_freeze.py
+Result: 6 passed in 0.02s
+
+The focused tests cover unique scored prompt counts, mixed model identity,
+task-specific templates, within-task template drift, task-scoped configuration
+matching/mismatch, and legacy single-template configuration.

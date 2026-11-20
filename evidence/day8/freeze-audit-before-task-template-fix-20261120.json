@@ -1,0 +1,66 @@
+{
+  "coverage_shortfalls": [
+    "train/small",
+    "train/medium",
+    "train/frontier",
+    "validation/small",
+    "validation/medium",
+    "validation/frontier"
+  ],
+  "freeze_config_sha256": "39f429b2b16be7f4e75aa0e5d809d29978461a85f5a14ccf6d6dce13f2eaad03",
+  "identity_issues": [
+    "small: mixed model, settings, or template identities",
+    "medium: mixed model, settings, or template identities"
+  ],
+  "incompatible_records": [],
+  "manifest_counts": {
+    "test": 500,
+    "train": 1500,
+    "validation": 500
+  },
+  "manifest_sha256": "d92b9f0a077da3e04487d2a6bdf43bb443b20eea5c7a06e3f93ee2c849a57474",
+  "missing_freeze_fields": [
+    "model_identities",
+    "tokenizer_identities",
+    "generation_settings",
+    "router_artifact",
+    "router_preprocessing",
+    "jev_questions",
+    "backend_descriptions",
+    "thresholds",
+    "fallback_rules",
+    "scoring_rules",
+    "source_revision"
+  ],
+  "ready_for_test": false,
+  "required_scored_observations": {
+    "train/frontier": 1500,
+    "train/medium": 1500,
+    "train/small": 1500,
+    "validation/frontier": 500,
+    "validation/medium": 500,
+    "validation/small": 500
+  },
+  "result_sha256": [
+    "99768f4fd1eb1eba6d03e244d8d0d9a8d698df54fd8658ccecc805e2cbd74c23",
+    "946c8756f77f103fd0c541a26210dbe57d0e382e6dd746ec20e59996342822c9",
+    "8d5388d32142497c1a7800ed6e83676e5e423dca98db098f08747d3358186da9",
+    "bc3fcb679d89b963575f0e05de2f8fe9675096f854c3919ff23c3e61d00d0ba1",
+    "3193c6e783ea8b0a7db415fac386cee0b139c2c21490572c7a4aa6223c45b270",
+    "db82b00271790dd5a893cad93b664a375fa6571e1074f42ef44ac7957c206ddc",
+    "bed5da951b9930222dfd2d6ae17e58aa95a2d93c56e5e217ac00b533dc9f8d75",
+    "ec2ab8fc49c2f2d41223213cc862f50e1813e44f8cd8de4df36a0f9aac831e13",
+    "df90e18dcf85c3403375db96f85d2d6577556f0a4303147512611457e34adb33",
+    "0b3033e828da62ad0a35d3c1a3330cbf330ea8d1b09028c23206c6b967d8c84e",
+    "c11b72d1b7c76bcae97292d830166e742a2c3bd2afd0765a8da534f7fd322b2e"
+  ],
+  "schema": "jev.day6.freeze_audit.v1",
+  "scored_observations": {
+    "train/frontier": 0,
+    "train/medium": 1487,
+    "train/small": 1444,
+    "validation/frontier": 0,
+    "validation/medium": 493,
+    "validation/small": 481
+  }
+}

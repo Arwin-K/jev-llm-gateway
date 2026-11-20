@@ -21,7 +21,8 @@ def audit(manifest: Path, results: list[Path], freeze_config: Path) -> dict:
         row = json.loads(line)
         split_ids[row['split']].add(row['prompt_id'])
     coverage = {(split, tier): set() for split in ('train', 'validation') for tier in TIERS}
-    identities = {tier: set() for tier in TIERS}
+    model_settings = {tier: set() for tier in TIERS}
+    templates = {tier: {} for tier in TIERS}
     incompatible = []
     for path in results:
         for line in path.read_text().splitlines():
@@ -38,20 +39,37 @@ def audit(manifest: Path, results: list[Path], freeze_config: Path) -> dict:
                 continue
             if row.get('score') is not None and row.get('outcome') in ('correct', 'incorrect'):
                 coverage[(split, row['tier'])].add(row['prompt_id'])
-                identities[row['tier']].add((row.get('model'), row.get('model_revision'),
-                                            row.get('settings_fingerprint'), row.get('template_fingerprint')))
+                tier = row['tier']
+                model_settings[tier].add((row.get('model'), row.get('model_revision'),
+                                          row.get('settings_fingerprint')))
+                task_templates = templates[tier].setdefault(row.get('task'), set())
+                task_templates.add(row.get('template_fingerprint'))
     needed = {f'{split}/{tier}': len(split_ids[split]) for split in ('train', 'validation') for tier in TIERS}
     observed = {key: len(coverage[tuple(key.split('/'))]) for key in needed}
     short = [key for key in needed if observed[key] < needed[key]]
     identity_issues = []
     for tier in TIERS:
-        if len(identities[tier]) > 1:
+        observed_templates = {task: next(iter(values)) for task, values in templates[tier].items()
+                              if len(values) == 1}
+        if len(model_settings[tier]) > 1 or any(len(values) > 1 for values in templates[tier].values()):
             identity_issues.append(f'{tier}: mixed model, settings, or template identities')
-        if len(identities[tier]) == 1 and config.get('model_identities') and config.get('generation_settings'):
-            model, revision, settings, template = next(iter(identities[tier]))
-            if config['model_identities'].get(tier) != {'model': model, 'revision': revision} or \
-               config['generation_settings'].get(tier) != {'fingerprint': settings, 'template': template}:
+        if len(model_settings[tier]) == 1:
+            model, revision, settings = next(iter(model_settings[tier]))
+            if config.get('model_identities') and \
+               config['model_identities'].get(tier) != {'model': model, 'revision': revision}:
                 identity_issues.append(f'{tier}: records disagree with freeze configuration')
+            expected_settings = (config.get('generation_settings') or {}).get(tier)
+            if expected_settings:
+                mismatch = expected_settings.get('fingerprint') != settings
+                if 'templates' in expected_settings:
+                    mismatch = mismatch or expected_settings['templates'] != observed_templates
+                elif len(observed_templates) == 1:
+                    mismatch = mismatch or expected_settings.get('template') != next(iter(observed_templates.values()))
+                else:
+                    identity_issues.append(f'{tier}: task-scoped templates required in freeze configuration')
+                    mismatch = False
+                if mismatch:
+                    identity_issues.append(f'{tier}: records disagree with freeze configuration')
     return {'schema': 'jev.day6.freeze_audit.v1', 'manifest_sha256': digest(manifest),
             'freeze_config_sha256': digest(freeze_config), 'result_sha256': [digest(p) for p in results],
             'manifest_counts': {split: len(ids) for split, ids in split_ids.items()},
