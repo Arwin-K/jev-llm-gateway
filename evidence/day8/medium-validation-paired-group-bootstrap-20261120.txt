@@ -1,0 +1,71 @@
+{
+  "output": "evidence/day8/medium-validation-paired-group-bootstrap-20261120.json",
+  "overall": {
+    "method": "paired group bootstrap",
+    "seed": 23,
+    "repetitions": 2000,
+    "prompt_count": 476,
+    "group_count": 476,
+    "mean_right_minus_left": 0.1407563025210084,
+    "ci95": [
+      0.10504201680672269,
+      0.17647058823529413
+    ]
+  },
+  "by_task": {
+    "choice": {
+      "method": "paired group bootstrap",
+      "seed": 23,
+      "repetitions": 2000,
+      "prompt_count": 199,
+      "group_count": 199,
+      "mean_right_minus_left": 0.17587939698492464,
+      "ci95": [
+        0.11055276381909548,
+        0.24623115577889448
+      ],
+      "transitions": {
+        "both_correct": 106,
+        "small_correct_medium_incorrect": 9,
+        "small_incorrect_medium_correct": 44,
+        "both_incorrect": 40
+      }
+    },
+    "code": {
+      "method": "paired group bootstrap",
+      "seed": 23,
+      "repetitions": 2000,
+      "prompt_count": 69,
+      "group_count": 69,
+      "mean_right_minus_left": 0.14492753623188406,
+      "ci95": [
+        0.043478260869565216,
+        0.2608695652173913
+      ],
+      "transitions": {
+        "both_correct": 27,
+        "small_correct_medium_incorrect": 3,
+        "small_incorrect_medium_correct": 13,
+        "both_incorrect": 26
+      }
+    },
+    "math": {
+      "method": "paired group bootstrap",
+      "seed": 23,
+      "repetitions": 2000,
+      "prompt_count": 208,
+      "group_count": 208,
+      "mean_right_minus_left": 0.10576923076923077,
+      "ci95": [
+        0.057692307692307696,
+        0.15384615384615385
+      ],
+      "transitions": {
+        "both_correct": 173,
+        "small_correct_medium_incorrect": 2,
+        "small_incorrect_medium_correct": 24,
+        "both_incorrect": 9
+      }
+    }
+  }
+}

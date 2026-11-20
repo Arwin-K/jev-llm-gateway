@@ -8,6 +8,7 @@
 - Medium validation math/choice: all 420 prompts, 420 new responses. Paired IDs and fingerprints match the small-tier validation rows. Audit: `evidence/day8/medium-validation-math-choice-audit-20261120.json`.
 - Medium validation code: all 80 prompt IDs have records; 75 are binary-scored and 5 are parse errors. The saved `mbpp:401` response was re-scored as incorrect after the sandbox captured a Python `SyntaxError`; no model request was made. Across all medium validation tasks there are 494 binary scores. See `evidence/day8/medium-validation-code-audit-reclassified-20261120.json`.
 - Corrected a false positive in the pre-test freeze audit: task-specific math/choice/code templates are now compared within their task. Six focused tests passed. The current audit reports no identity issues but keeps `ready_for_test=false` because required freeze fields and full coverage are still missing. See `evidence/day8/freeze-audit-current-20261120.json`.
+- Reproducible validation-only group bootstrap on 476 paired binary outcomes: medium minus small accuracy +14.1 percentage points (95% interval +10.5 to +17.6 pp). This is descriptive local generator evidence; it does not select a routing threshold. Full task breakdown and input hashes are in `evidence/day8/medium-validation-paired-group-bootstrap-20261120.json`.
 - The held-out test was not touched. No paid API calls or external compute were used. No threshold was selected.
 
 ## Current validation exception and next research gate

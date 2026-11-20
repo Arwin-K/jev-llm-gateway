@@ -1,0 +1,115 @@
+{
+  "run_id": "medium-validation-paired-group-bootstrap-20261120",
+  "split": "validation",
+  "comparison": "medium accuracy minus small accuracy, paired on identical prompt IDs",
+  "unit": "prompt-group cluster",
+  "method": "paired group bootstrap",
+  "seed": 23,
+  "repetitions": 2000,
+  "overall": {
+    "method": "paired group bootstrap",
+    "seed": 23,
+    "repetitions": 2000,
+    "prompt_count": 476,
+    "group_count": 476,
+    "mean_right_minus_left": 0.1407563025210084,
+    "ci95": [
+      0.10504201680672269,
+      0.17647058823529413
+    ]
+  },
+  "by_task": {
+    "choice": {
+      "method": "paired group bootstrap",
+      "seed": 23,
+      "repetitions": 2000,
+      "prompt_count": 199,
+      "group_count": 199,
+      "mean_right_minus_left": 0.17587939698492464,
+      "ci95": [
+        0.11055276381909548,
+        0.24623115577889448
+      ],
+      "transitions": {
+        "both_correct": 106,
+        "small_correct_medium_incorrect": 9,
+        "small_incorrect_medium_correct": 44,
+        "both_incorrect": 40
+      }
+    },
+    "code": {
+      "method": "paired group bootstrap",
+      "seed": 23,
+      "repetitions": 2000,
+      "prompt_count": 69,
+      "group_count": 69,
+      "mean_right_minus_left": 0.14492753623188406,
+      "ci95": [
+        0.043478260869565216,
+        0.2608695652173913
+      ],
+      "transitions": {
+        "both_correct": 27,
+        "small_correct_medium_incorrect": 3,
+        "small_incorrect_medium_correct": 13,
+        "both_incorrect": 26
+      }
+    },
+    "math": {
+      "method": "paired group bootstrap",
+      "seed": 23,
+      "repetitions": 2000,
+      "prompt_count": 208,
+      "group_count": 208,
+      "mean_right_minus_left": 0.10576923076923077,
+      "ci95": [
+        0.057692307692307696,
+        0.15384615384615385
+      ],
+      "transitions": {
+        "both_correct": 173,
+        "small_correct_medium_incorrect": 2,
+        "small_incorrect_medium_correct": 24,
+        "both_incorrect": 9
+      }
+    }
+  },
+  "result_sources": {
+    "small": [
+      {
+        "path": "runs/day2-run-ddd52bb7b6c74b15b68a1df581e8ba1b.jsonl",
+        "sha256": "3193c6e783ea8b0a7db415fac386cee0b139c2c21490572c7a4aa6223c45b270"
+      }
+    ],
+    "medium": [
+      {
+        "path": "runs/day2-run-1024c23932c74897a9c95604c7f88836.jsonl",
+        "sha256": "ec2ab8fc49c2f2d41223213cc862f50e1813e44f8cd8de4df36a0f9aac831e13"
+      },
+      {
+        "path": "runs/day2-run-66afe463970d4f04900c50c204c1510f.jsonl",
+        "sha256": "df90e18dcf85c3403375db96f85d2d6577556f0a4303147512611457e34adb33"
+      },
+      {
+        "path": "evidence/day8/medium-validation-code-mbpp401-rescore-20261120.jsonl",
+        "sha256": "9badcae779918b875349748b8373c56c852ec08343be507ac80ce1ce1cb3d3aa"
+      }
+    ]
+  },
+  "index_source": {
+    "path": "docs/day2-manifest-index.jsonl",
+    "sha256": "e21746f34cff571d4993d4731797621c60ba69ffb599ea8a5f74faca4251c4da",
+    "used_fields": [
+      "prompt_id",
+      "task",
+      "split",
+      "group_id"
+    ]
+  },
+  "limits": [
+    "Binary-scored validation prompts only; parse errors and other nonbinary outcomes are excluded.",
+    "The mbpp:401 saved answer uses the supplemental SyntaxError-based incorrect classification.",
+    "This descriptive validation interval is not a selected routing threshold or a held-out generalization estimate.",
+    "No test prompt text or reference was read; no model or paid-provider request was made."
+  ]
+}
