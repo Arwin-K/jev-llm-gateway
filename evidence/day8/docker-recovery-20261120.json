@@ -1,0 +1,16 @@
+{
+  "observed_on": "2026-11-20 America/Toronto",
+  "recovery_action": "terminated stale Docker Desktop UI/helper processes after graceful quit and CLI restart failed, then used the supported detached start command",
+  "start_command": "docker desktop start --detach",
+  "start_result": "Starting Docker Desktop",
+  "daemon": {"version": "29.6.2", "architecture": "aarch64", "memory_bytes": 8321372160},
+  "code_image": {
+    "tag": "python:3.12.7-slim-bookworm",
+    "image_id": "sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d",
+    "os": "linux",
+    "architecture": "arm64"
+  },
+  "medium_train_code_completed": true,
+  "containers_left_running": 0,
+  "raw_output": "evidence/day8/docker-recovery-20261120.txt"
+}

@@ -149,3 +149,13 @@ The full per-task counts, exact identities, caps, token usage, paired transition
 ## Docker availability blocker — 2026-11-20 America/Toronto
 
 After the medium math/choice runs, Docker Desktop's local daemon remained unavailable. The Desktop UI process was present, but `docker info` could not connect to `unix:///Users/ArwinKarir/.docker/run/docker.sock`. `docker desktop start` reported the application already running; status could not be retrieved; a 120-second CLI restart failed because stale UI/helper processes would not exit. No container or Kubernetes cluster was started. Consequently medium train code and validation code were not run in this session. Raw CLI observations: `evidence/day8/mac-docker-blocker-20261120.txt`; sanitized state and resume notes: `evidence/day8/mac-docker-blocker-20261120.json` and `docs/DAY8_HANDOFF.md`.
+
+## Docker recovery and medium-tier train code — 2026-11-20 America/Toronto
+
+On resume, terminating the stale Desktop UI/helper PIDs allowed `docker desktop start --detach` to start the daemon. `docker info` returned engine 29.6.2, aarch64, with 8,321,372,160 bytes assigned. The cached `python:3.12.7-slim-bookworm` image was linux/arm64 with image ID `sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d`.
+
+Run `medium-train-code-20261120` completed 240 unique train code prompts using `qwen2.5:7b`: 156 correct, 73 incorrect (51 failed hidden tests and 22 crashes), and 11 ambiguous-code parse errors. There were no backend/evaluator errors. Strict format compliance was 203/240; prompt/completion usage was 16,354/18,644 tokens; response latency median was 2.243 seconds and p95 was 7.126 seconds. Compared with the small-tier train rows, all prompt IDs and template/settings fingerprints matched. Among prompts with binary outcomes for both tiers, medium corrected 45 small-tier errors and regressed on 12 small-tier correct answers; the 24 nonbinary-in-either rows were excluded. This is a train-split comparison only.
+
+The full medium training split now covers all 1,500 prompts: 1,224 correct, 263 incorrect, 13 parse errors, zero backend/evaluator errors, and 1,487 binary labels. The combined train audit is `evidence/day8/medium-train-full-audit-20261120.json`; code detail and private raw result path are in `evidence/day8/medium-train-code-audit-20261120.json`. Command output: `evidence/day8/medium-train-code-20261120.txt`. `docker ps` showed no containers after the run. Validation code (80 prompts) remains outstanding.
+
+Docker recovery records: `evidence/day8/docker-recovery-20261120.json` and `.txt`. The earlier startup failure remains preserved as historical evidence above.

@@ -1,0 +1,11 @@
+$ docker desktop start --detach
+✓ Starting Docker Desktop
+
+$ docker info --format 'version={{.ServerVersion}} arch={{.Architecture}} memory_bytes={{.MemTotal}}'
+version=29.6.2 arch=aarch64 memory_bytes=8321372160
+
+$ docker ps --format '{{.ID}} {{.Names}}'
+(no running containers)
+
+$ docker image inspect python:3.12.7-slim-bookworm --format 'image_id={{.Id}} os={{.Os}} arch={{.Architecture}}'
+image_id=sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d os=linux arch=arm64

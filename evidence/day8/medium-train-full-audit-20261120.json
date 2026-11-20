@@ -1,0 +1,27 @@
+{
+  "run_id": "medium-train-full-audit-20261120",
+  "observed_on": "2026-11-20 America/Toronto",
+  "split": "train",
+  "tier": "medium",
+  "model_tag": "qwen2.5:7b",
+  "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "unique_prompt_count": 1500,
+  "task_outcomes": {
+    "math": {"total": 660, "correct": 632, "incorrect": 26, "parse_error": 2},
+    "choice": {"total": 600, "correct": 436, "incorrect": 164},
+    "code": {"total": 240, "correct": 156, "incorrect": 73, "parse_error": 11}
+  },
+  "aggregate_outcomes": {"correct": 1224, "incorrect": 263, "parse_error": 13, "backend_error": 0, "evaluator_error": 0},
+  "binary_scored": 1487,
+  "strict_format_compliant": {"math": 644, "choice": 599, "code": 203, "aggregate": 1446, "total": 1500},
+  "run_audits": [
+    "evidence/day8/medium-train-math-choice-audit-20261120.json",
+    "evidence/day8/medium-train-code-audit-20261120.json"
+  ],
+  "raw_results_remain_private": true,
+  "limits": [
+    "This completes medium train coverage only; validation code remains outstanding.",
+    "Train performance is not a generalization estimate and was not used to select a threshold.",
+    "The held-out test was not accessed."
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "run_id": "medium-train-code-20261120",
+  "observed_on": "2026-11-20 America/Toronto",
+  "split": "train",
+  "task": "code",
+  "tier": "medium",
+  "model_tag": "qwen2.5:7b",
+  "model_digest_at_collection": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "dataset_revision": "1ae1fded5c616deb6b4652818588577e8fca0f06",
+  "template_fingerprint": "974c4f1702a027f6637858beb6da27678e20954e471db8d55ca9bf6e5899372d",
+  "settings_fingerprint": "da4edb9bc2079db692cae675b7b6a0e7d01574f63c54c7bfc72bbef33a51263b",
+  "unique_prompt_count": 240,
+  "outcomes": {"correct": 156, "incorrect": 73, "parse_error": 11, "backend_error": 0, "evaluator_error": 0},
+  "execution_outcomes": {"passed": 156, "failed_tests": 51, "crashed": 22, "ambiguous_code": 11},
+  "strict_format_compliance": {"compliant": 203, "noncompliant": 37},
+  "small_vs_medium_paired_train_comparison": {
+    "same_prompt_ids": true,
+    "same_template_and_settings_fingerprints": true,
+    "small_outcomes": {"correct": 118, "incorrect": 109, "parse_error": 11, "backend_error": 1, "evaluator_error": 1},
+    "binary_only_transitions": {
+      "both_correct": 104,
+      "small_correct_medium_incorrect": 12,
+      "small_incorrect_medium_correct": 45,
+      "both_incorrect": 55,
+      "nonbinary_in_either_tier": 24
+    },
+    "scope": "descriptive train-split evidence only; not validation or threshold selection"
+  },
+  "request_and_token_controls": {
+    "request_cap": 240,
+    "token_cap": 307828,
+    "output_tokens_per_request": 512,
+    "max_concurrency": 1,
+    "retries": 0,
+    "new_backend_attempts": 240,
+    "new_responses": 240,
+    "paid_provider_calls": 0
+  },
+  "observed_usage": {
+    "prompt_tokens": 16354,
+    "completion_tokens": 18644,
+    "response_latency_seconds": {"n": 240, "min": 0.786, "median": 2.243, "p95": 7.126}
+  },
+  "docker_sandbox": {
+    "engine_version": "29.6.2",
+    "architecture": "aarch64",
+    "image": "python:3.12.7-slim-bookworm",
+    "image_id": "sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d",
+    "containers_left_running": 0
+  },
+  "result_file": "runs/day2-run-9593d68d79c5455b980a2cf83fbe818b.jsonl",
+  "command_output": "evidence/day8/medium-train-code-20261120.txt",
+  "limits": [
+    "Train-split evidence only; the matching medium code validation prompts are not yet scored.",
+    "The 73 incorrect outcomes comprise failed hidden tests and code crashes; 11 parse errors remain nonbinary.",
+    "Raw prompts, references, completions, and code remain in ignored runs/."
+  ]
+}
