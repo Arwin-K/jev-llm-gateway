@@ -30,3 +30,24 @@ def test_template_revision_keeps_split_assignment(tmp_path, monkeypatch):
     assert {p.template_fingerprint for p in v1}.isdisjoint({p.template_fingerprint for p in v2})
     with pytest.raises(ValueError):
         same_assignment(v1, [p.model_copy(update={'split':'test' if p.split=='train' else p.split}) for p in v2])
+
+
+def test_loading_validation_does_not_validate_test_prompt_rows(tmp_path):
+    import json
+    from pydantic import ValidationError
+
+    base = {'prompt_id':'math:one', 'task':'math', 'dataset':'fixture',
+            'dataset_revision':'r1', 'source_split':'train', 'source_id':'1',
+            'source_revision':'r1', 'group_id':'math:g1',
+            'template_fingerprint':'template-v1', 'prompt':'validation prompt'}
+    validation = {**base, 'split':'validation'}
+    locked_test = {**base, 'prompt':None, 'split':'test'}
+    path = tmp_path / 'manifest.jsonl'
+    path.write_text(json.dumps(validation)+'\n'+json.dumps(locked_test)+'\n')
+
+    prompts = load(path, 'validation')
+    assert [prompt.prompt for prompt in prompts] == ['validation prompt']
+    with pytest.raises(PermissionError):
+        load(path, 'test')
+    with pytest.raises(ValidationError):
+        load(path, 'test', allow_test=True)

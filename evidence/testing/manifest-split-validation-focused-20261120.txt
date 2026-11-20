@@ -1,0 +1,5 @@
+Command: ./.venv/bin/pytest -q tests/evaluation/test_manifest.py tests/evaluation/test_command_summary.py tests/evaluation/test_runner.py
+Result: 11 passed in 0.11s
+
+The new manifest test supplies a malformed test-split prompt and confirms a
+validation load validates only validation records; ordinary test loading stays locked.

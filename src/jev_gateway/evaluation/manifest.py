@@ -103,4 +103,10 @@ def load(path: Path, split='validation', allow_test=False):
         raise PermissionError('held-out test is locked until final configuration freeze')
     if split not in ('train', 'validation', 'test'):
         raise ValueError('explicit split required')
-    return [p for p in (Prompt.model_validate_json(line) for line in path.read_text().splitlines()) if p.split == split]
+    selected = []
+    with path.open() as stream:
+        for line in stream:
+            record = json.loads(line)
+            if record.get('split') == split:
+                selected.append(Prompt.model_validate(record))
+    return selected
