@@ -118,6 +118,8 @@ Run `offline-after-task-filter-20261119T2219-0500`: `make verify` completed comp
 
 Run `prompt-id-filter-focused-20261119T2241-0500`: exact prompt selection, duplicate/unknown ID rejection, task filtering, resume summary, runner, and checkpoint checks passed **13 tests** in 0.14 seconds. Raw output: `evidence/testing/prompt-id-filter-focused-20261119T2241-0500.txt`. No model request was made by these tests.
 
+Run `offline-after-prompt-id-filter-20261119T2246-0500`: `make verify` completed compileall and **153 tests passed** in 0.72 seconds, with one third-party Starlette deprecation warning. Raw output: `evidence/testing/offline-after-prompt-id-filter-20261119T2246-0500.txt`. No model/provider call, container, or Colab run was performed by the suite.
+
 ## Complete small-tier train coverage — 2026-11-19 America/Toronto
 
 Three task-scoped `eval-run` result files cover all 1,500 train IDs with `qwen2.5:1.5b` at the saved v2 template/settings fingerprints. Aggregate outcomes: 991 correct, 453 incorrect, 54 parse errors, one persistent backend error, and one Docker sandbox timeout. Task counts: math 660 (521/96/43 correct/incorrect/parse error), choice 600 (352/248 correct/incorrect), and code 240 (118/109/11 correct/incorrect/parse error, plus one backend error and one evaluator timeout). The code recovery run reused 238 successful/parse-error checkpoints and reattempted the two errors; both outcomes repeated. An additional exact retry of `mbpp:573` also returned backend error. The timeout is a scored task execution limit, not a successful answer.

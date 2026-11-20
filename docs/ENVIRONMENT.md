@@ -74,7 +74,7 @@ On 2026-11-19, an authorized `jev doctor` check returned `ConnectError` for both
 
 The runner's resumed-work summary is locally verified with Python 3.14.5 and the existing test environment. It reports checkpoint reuse, current backend attempts, and current responses separately. No dependency or model download was needed.
 
-After checkpoint summary reporting, `make verify` passed **150 tests** with one existing Starlette deprecation warning. After task-filter support, it passed **152 tests** with the same warning; latest raw output: `evidence/testing/offline-after-task-filter-20261119T2219-0500.txt`.
+After checkpoint summary reporting, `make verify` passed **150 tests** with one existing Starlette deprecation warning. After task-filter support, it passed **152 tests**; after exact prompt-ID selection, it passed **153 tests** with the same warning. Latest raw output: `evidence/testing/offline-after-prompt-id-filter-20261119T2246-0500.txt`.
 
 The 2026-11-19 `docker info` check found no Docker Desktop daemon socket. Containerized code evaluation and local kind/Compose execution therefore cannot run in this session; no container or cluster was started. Sanitized output: `evidence/day7/mac-docker-20261119.json`.
 
