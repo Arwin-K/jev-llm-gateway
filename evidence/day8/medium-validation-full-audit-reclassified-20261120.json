@@ -1,0 +1,89 @@
+{
+  "run_id": "medium-validation-full-audit-reclassified-20261120",
+  "observed_on": "2026-11-20 America/Toronto",
+  "split": "validation",
+  "tier": "medium",
+  "model_tag": "qwen2.5:7b",
+  "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+  "prompt_ids_observed": 500,
+  "task_outcomes": {
+    "math": {
+      "total": 220,
+      "correct": 207,
+      "incorrect": 13
+    },
+    "choice": {
+      "total": 200,
+      "correct": 150,
+      "incorrect": 49,
+      "parse_error": 1
+    },
+    "code": {
+      "total": 80,
+      "correct": 45,
+      "incorrect": 30,
+      "parse_error": 5
+    }
+  },
+  "aggregate_outcomes": {
+    "correct": 403,
+    "incorrect": 92,
+    "parse_error": 6,
+    "blocked": 0
+  },
+  "binary_scored": 494,
+  "strict_format_compliant": {
+    "math": 216,
+    "choice": 199,
+    "code": 70,
+    "aggregate": 485,
+    "total": 500
+  },
+  "small_vs_medium_result_duration_seconds": {
+    "metric": "ended_at minus started_at for per-prompt evaluation records; descriptive, not a router end-to-end latency benchmark",
+    "small": {
+      "n": 500,
+      "median": 1.71,
+      "p95": 3.979
+    },
+    "medium": {
+      "n": 500,
+      "median": 2.724,
+      "p95": 10.629
+    },
+    "caveat": "small-tier observations span earlier invocations, so these are not a same-session load comparison"
+  },
+  "paired_binary_transitions_vs_small": {
+    "math": {
+      "both_correct": 173,
+      "small_correct_medium_incorrect": 2,
+      "small_incorrect_medium_correct": 24,
+      "both_incorrect": 9,
+      "nonbinary_in_either": 12
+    },
+    "choice": {
+      "both_correct": 106,
+      "small_correct_medium_incorrect": 9,
+      "small_incorrect_medium_correct": 44,
+      "both_incorrect": 40,
+      "nonbinary_in_either": 1
+    },
+    "code": {
+      "both_correct": 27,
+      "small_correct_medium_incorrect": 3,
+      "small_incorrect_medium_correct": 13,
+      "both_incorrect": 26,
+      "nonbinary_in_either": 11
+    }
+  },
+  "task_audits": [
+    "evidence/day8/medium-validation-math-choice-audit-20261120.json",
+    "evidence/day8/medium-validation-code-audit-reclassified-20261120.json"
+  ],
+  "limits": [
+    "The small/medium validation IDs and fingerprints match. The saved mbpp:401 response was re-scored as incorrect after a real Docker run showed a Python SyntaxError; no model request was made.",
+    "No routing threshold was selected; paired comparisons are descriptive.",
+    "No live Jev decision or verifier predictions, frontier results, or cost rates are included.",
+    "The held-out test was not accessed."
+  ]
+}

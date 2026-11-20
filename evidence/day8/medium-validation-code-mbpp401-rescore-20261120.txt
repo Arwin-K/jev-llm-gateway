@@ -1,0 +1,8 @@
+Validation-only rescore of the already saved medium response; no model request.
+Prompt: mbpp:401
+Docker return code: 1
+Interpreter diagnostic: File "/work/case.py", line 16
+    return tuple((a + b for a, b in zip(t1, t2))) for t1, t2 in zip(nested_tuples1, nested_tuples2)
+                                                  ^^^
+SyntaxError: invalid syntax
+Corrected classification: incorrect / crashed / 0.0

@@ -1,0 +1,38 @@
+{
+  "manifest_counts": {
+    "test": 500,
+    "train": 1500,
+    "validation": 500
+  },
+  "scored_observations": {
+    "train/frontier": 0,
+    "train/medium": 1487,
+    "train/small": 1444,
+    "validation/frontier": 0,
+    "validation/medium": 494,
+    "validation/small": 481
+  },
+  "identity_issues": [],
+  "missing_freeze_fields": [
+    "model_identities",
+    "tokenizer_identities",
+    "generation_settings",
+    "router_artifact",
+    "router_preprocessing",
+    "jev_questions",
+    "backend_descriptions",
+    "thresholds",
+    "fallback_rules",
+    "scoring_rules",
+    "source_revision"
+  ],
+  "coverage_shortfalls": [
+    "train/small",
+    "train/medium",
+    "train/frontier",
+    "validation/small",
+    "validation/medium",
+    "validation/frontier"
+  ],
+  "ready_for_test": false
+}

@@ -1,0 +1,24 @@
+{
+  "run_id": "medium-validation-code-mbpp401-rescore-20261120",
+  "source_result_sha256": "df90e18dcf85c3403375db96f85d2d6577556f0a4303147512611457e34adb33",
+  "source_prompt_id": "mbpp:401",
+  "source_model_response_count": 3,
+  "original_saved_classification": {
+    "outcome": "blocked",
+    "error_category": "environment_error",
+    "score": null
+  },
+  "docker_diagnostic": {
+    "docker_returncode": 1,
+    "stderr": "  File \"/work/case.py\", line 16\n    return tuple((a + b for a, b in zip(t1, t2))) for t1, t2 in zip(nested_tuples1, nested_tuples2)\n                                                  ^^^\nSyntaxError: invalid syntax\n"
+  },
+  "corrected_classification": {
+    "outcome": "incorrect",
+    "error_category": "crashed",
+    "score": 0.0
+  },
+  "paid_provider_calls": 0,
+  "model_requests": 0,
+  "held_out_test_accessed": false,
+  "interpretation": "The saved response is invalid Python. SyntaxError output lacked the literal Traceback marker, so the previous sandbox classifier incorrectly labeled the evaluator result as an environment block. With SyntaxError classified as a code crash, the score is incorrect/0."
+}

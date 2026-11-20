@@ -1,0 +1,5 @@
+Command: ./.venv/bin/pytest -q tests/evaluation/test_sandbox.py tests/evaluation/test_code_scoring.py
+Result: 6 passed in 0.01s
+
+The focused tests include a Python SyntaxError diagnostic with no Traceback marker,
+which must be classified as a generated-code crash rather than an environment error.

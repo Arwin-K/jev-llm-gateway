@@ -39,7 +39,7 @@ def execute(code: str, tests: tuple[str, ...], imports: tuple[str, ...] = (), ti
         status = 'passed'
     elif 'AssertionError' in stderr:
         status = 'failed_tests'
-    elif 'Traceback' in stderr:
+    elif 'Traceback' in stderr or 'SyntaxError:' in stderr:
         status = 'crashed'
     else:
         status = 'environment_error'

@@ -21,6 +21,12 @@ def test_unavailable_docker_is_environment_error():
     assert execute('x=1', ('assert x == 1',), runner=missing)['status'] == 'environment_error'
 
 
+def test_python_syntax_error_is_classified_as_code_failure():
+    def syntax_error(cmd, **kwargs):
+        return subprocess.CompletedProcess(cmd, 1, '', '  File "/work/case.py", line 1\nSyntaxError: invalid syntax\n')
+    assert execute('return (', (), runner=syntax_error)['status'] == 'crashed'
+
+
 def test_cleanup_timeout_does_not_replace_evaluation_timeout(monkeypatch):
     def cleanup(*args, **kwargs):
         raise subprocess.TimeoutExpired(args[0], kwargs['timeout'])
