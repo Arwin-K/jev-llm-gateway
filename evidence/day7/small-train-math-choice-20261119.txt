@@ -1,0 +1,1 @@
+{"path": "runs/day2-run-8c79def8c85842678068131bbedd5f05.jsonl", "results": 1260, "checkpoint_reused": 579, "new_backend_attempts": 544, "new_responses": 544, "outcomes": {"correct": 799, "incorrect": 281, "parse_error": 43, "backend_error": 0, "evaluator_error": 0, "blocked": 137}}

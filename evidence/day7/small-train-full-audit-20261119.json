@@ -1,0 +1,79 @@
+{
+  "run_id": "small-train-full-audit-20261119",
+  "observed_on": "2026-11-19 America/Toronto",
+  "split": "train",
+  "tier": "small",
+  "model_tag": "qwen2.5:1.5b",
+  "model_digest_at_collection": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
+  "template_fingerprints": {
+    "math": "16dc85bcfc5c6903e5b1048379896cafb49456056838c26a0dae4bafafa2c579",
+    "choice": "d4aa6df864bb36988debcb0b54a3351b6765f256b133a363b8fd5b21d6340b5a",
+    "code": "974c4f1702a027f6637858beb6da27678e20954e471db8d55ca9bf6e5899372d"
+  },
+  "settings_fingerprint": "da4edb9bc2079db692cae675b7b6a0e7d01574f63c54c7bfc72bbef33a51263b",
+  "code_sandbox": {
+    "docker_engine_version": "29.6.2",
+    "docker_architecture": "aarch64",
+    "image": "python:3.12.7-slim-bookworm",
+    "image_id": "sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d",
+    "network_mode": "none",
+    "memory_limit_bytes": 268435456,
+    "cpu_limit": 1,
+    "containers_left_running": 0
+  },
+  "unique_prompt_count": 1500,
+  "task_outcomes": {
+    "math": {"total": 660, "correct": 521, "incorrect": 96, "parse_error": 43},
+    "choice": {"total": 600, "correct": 352, "incorrect": 248},
+    "code": {"total": 240, "correct": 118, "incorrect": 109, "parse_error": 11, "backend_error": 1, "evaluator_error_timeout": 1}
+  },
+  "aggregate_outcomes": {"correct": 991, "incorrect": 453, "parse_error": 54, "backend_error": 1, "evaluator_error": 1},
+  "scored_correct_or_incorrect": 1444,
+  "strict_format_compliance": {
+    "math": {"compliant": 229, "noncompliant": 431},
+    "choice": {"compliant": 455, "noncompliant": 145},
+    "code": {"compliant": 140, "noncompliant": 99, "not_recorded": 1}
+  },
+  "request_and_token_controls": {
+    "output_tokens_per_request": 512,
+    "retries": 0,
+    "max_concurrency": 1,
+    "batches": [
+      {"scope": "math+choice", "request_cap": 681, "token_cap": 1342424, "new_attempts": 544, "note": "Hit the token cap; 137 rows were blocked and then completed in the resume batch."},
+      {"scope": "math+choice resume", "request_cap": 137, "token_cap": 483272, "new_attempts": 137},
+      {"scope": "code", "request_cap": 240, "token_cap": 307828, "new_attempts": 240},
+      {"scope": "code recovery", "request_cap": 2, "token_cap": 5000, "new_attempts": 2},
+      {"scope": "single-prompt smoke", "request_cap": 1, "token_cap": 5000, "new_attempts": 1}
+    ],
+    "paid_provider_calls": 0
+  },
+  "recovery_notes": [
+    "The first math/choice batch hit its reserved-token ceiling after 544 new attempts; 137 rows were marked blocked without a backend call. A second bounded invocation completed those 137 choice prompts.",
+    "The code batch recorded one backend error for mbpp:573 and one Docker sandbox timeout for mbpp:765. A two-request recovery invocation reused the other 238 rows and reattempted those two; both outcomes repeated. The model answer for mbpp:765 is present in the private raw result, but scoring timed out.",
+    "All 1,500 project train prompt IDs have records across the private run files, but 56 rows are parse or execution/provider failures and are not ordinary binary training labels. This is not multi-tier training coverage."
+  ],
+  "private_result_files": [
+    "runs/day2-run-9c5c3a051c9640b98305c10ca00fa475.jsonl",
+    "runs/day2-run-c20ce8a09e874424ad8fb67132d5ce48.jsonl",
+    "runs/day2-run-f40be33775284caeb148299124bd0769.jsonl"
+  ],
+  "command_outputs": [
+    "evidence/day7/local-small-one-new-prompt-20261119.txt",
+    "evidence/day7/small-train-math-choice-20261119.txt",
+    "evidence/day7/small-train-math-choice-resume-20261119.txt",
+    "evidence/day7/small-train-code-20261119.txt",
+    "evidence/day7/small-train-code-resume-20261119.txt"
+  ],
+  "new_run_ids": [
+    "e21713ef96e74a519f2693853de94349",
+    "f59862c1af284d44a087070273bd65cd",
+    "161595c3726949ce870f6b93a06c0fbf",
+    "985bf67d744e4410b86b3becf1cd484f",
+    "350156eb7a6b406abcdc2c3b79562e4a"
+  ],
+  "limits": [
+    "Small-tier results only; no medium/frontier comparison, router decision, calibration, cascade, cache, or held-out test evaluation is included.",
+    "Model digest was captured at collection time from the local Ollama tags API. Historical result rows preserve the tag and fingerprints, not the digest field.",
+    "Raw prompt text, references, completions, and code are excluded from this committed audit."
+  ]
+}
