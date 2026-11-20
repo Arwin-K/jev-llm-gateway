@@ -1,0 +1,21 @@
+$ open -a Docker
+Unable to find application named 'Docker'
+
+$ open /Applications/Docker.app
+The application cannot be opened for an unexpected reason, error=Error Domain=NSOSStatusErrorDomain Code=-10827 "kLSNoExecutableErr: The executable is missing"
+
+$ docker desktop start
+Docker Desktop is already running
+
+$ docker desktop status
+Could not retrieve status. Is Docker Desktop running?
+You can start Docker Desktop by running 'docker desktop start'.
+
+$ docker desktop restart --timeout 120
+Failed to stop Docker Desktop
+stopping Docker Desktop: stopping Docker Desktop: processes still running: Docker Desktop Helper (Renderer) (25284), Docker Desktop Helper (25272), Docker Desktop Helper (25273), Docker Desktop (25241): context deadline exceeded
+
+$ docker info --format '{{.ServerVersion}}'
+Cannot connect to the Docker daemon at unix:///Users/ArwinKarir/.docker/run/docker.sock. Is the docker daemon running?
+
+No Docker container or cluster was started during these checks.
