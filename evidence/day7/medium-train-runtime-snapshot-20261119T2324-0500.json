@@ -1,0 +1,36 @@
+{
+  "observed_at": "2026-11-19T23:24:45-05:00",
+  "run": {
+    "state": "in_progress",
+    "split": "train",
+    "tasks": ["math", "choice"],
+    "planned_prompts": 1260,
+    "request_cap": 1260,
+    "token_cap": 2887016,
+    "output_tokens_per_request": 512,
+    "concurrency": 1,
+    "retries": 0,
+    "checkpoint_count": 319,
+    "checkpoint_outcomes": {
+      "math_correct": 313,
+      "math_incorrect": 6
+    },
+    "choice_checkpoint_count": 0
+  },
+  "backend": {
+    "runtime": "Ollama 0.40.16",
+    "model": "qwen2.5:7b",
+    "model_digest": "845dbda0ea48ed749caafd9e6037047aa19acfcfd82e704d7ca97d631a0b697e",
+    "loaded_size": "4.8 GB",
+    "processor": "100% GPU",
+    "context_tokens": 4096,
+    "bind_address": "127.0.0.1:11434"
+  },
+  "host": {
+    "architecture": "arm64",
+    "system_memory_free_percent": 28,
+    "docker_desktop": "stopped"
+  },
+  "raw_answers_location": "runs/day2-checkpoints/ (ignored, local only)",
+  "run_output_location": "evidence/day7/medium-train-math-choice-20261119.txt"
+}
