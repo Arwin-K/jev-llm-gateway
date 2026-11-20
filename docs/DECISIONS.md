@@ -86,3 +86,8 @@ Results recorded under v1 templates have different template fingerprints and are
 - Keep failure evidence explicit: sandbox cleanup must not replace the original timeout; failed Locust launches must leave a terminal manifest; malformed raw request lines must be counted while valid rows remain reportable; and reversed timestamps must not produce throughput metrics.
 - Validate checkpoint IDs as lowercase SHA-256 digests before using them as filesystem paths. Include the checkpoint and sandbox changes in the existing focused CI lint scope.
 - These are local reliability fixes. They do not establish provider, model, Colab, container, or load-test success.
+
+## Evaluation run reporting — 2026-11-19 America/Toronto
+
+- `jev eval-run` reports returned result rows separately from rows restored from immutable checkpoints, backend attempts made in the current invocation, and new responses. A resumed run must not present reused answers as fresh model work. Per-attempt timestamps and source run IDs remain in the result records.
+- Evidence: a 10-row invocation on 2026-11-19 returned 10 checkpoint-reused rows and made no backend calls; see the raw ignored file noted in `STATUS.md`. Focused summary, runner, and checkpoint tests passed.

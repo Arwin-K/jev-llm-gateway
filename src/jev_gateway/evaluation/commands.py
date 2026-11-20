@@ -28,6 +28,19 @@ def _saved(path):
     return [Result.model_validate_json(line) for line in target.read_text().splitlines()]
 
 
+def _run_summary(results):
+    """Summarize returned rows without presenting checkpoint reuse as new work."""
+    reused=[result for result in results if result.reuse_of is not None]
+    current=[result for result in results if result.reuse_of is None]
+    return {
+        'results':len(results),
+        'checkpoint_reused':len(reused),
+        'new_backend_attempts':sum(len(result.attempts) for result in current),
+        'new_responses':sum(result.raw_response is not None for result in current),
+        'outcomes':{x:sum(str(r.outcome)==x for r in results) for x in ('correct','incorrect','parse_error','backend_error','evaluator_error','blocked')},
+    }
+
+
 def execute(args):
     if args.command=='eval-prepare':
         import sys
@@ -58,7 +71,7 @@ def execute(args):
         out=Path('runs')/('day2-run-'+uuid.uuid4().hex+'.jsonl')
         with out.open('x') as stream:
             for result in results: stream.write(result.model_dump_json()+'\n')
-        print(json.dumps({'results':len(results),'path':str(out),'outcomes':{x:sum(str(r.outcome)==x for r in results) for x in ('correct','incorrect','parse_error','backend_error','evaluator_error','blocked')}}))
+        print(json.dumps({'path':str(out),**_run_summary(results)}))
         return 0
     if args.command=='eval-report':
         report=quality_report(load(MANIFEST,args.split),_saved(args.run))
