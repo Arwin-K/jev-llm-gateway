@@ -5,7 +5,7 @@ This table distinguishes implemented code from real backend verification. See [e
 | Component | Implementation | Verification | Remaining work |
 | --- | --- | --- | --- |
 | Explicit-tier gateway API and streaming | Implemented | Offline contract, transport, dispatch, streaming, and error tests; loopback health check | Real generation and streaming answers |
-| Small Ollama tier | Adapter and configured candidate tag | Real v2 validation plus all 1,500 train prompt IDs for `qwen2.5:1.5b`; 1,444 correct/incorrect scores, 54 parse errors and two execution/provider failures; digest recorded at collection | Resolve/review exception rows and capture per-run model digest in result records |
+| Small Ollama tier | Adapter and configured candidate tag | Real v2 validation plus all 1,500 train prompt IDs for `qwen2.5:1.5b`; 1,444 correct/incorrect scores, 54 parse errors, one backend error repeated three times, and one sandbox timeout; digest recorded at collection | Review exception rows and capture per-run model digest in result records |
 | Medium Ollama tier | Adapter and configured candidate tag | 30-prompt real v2 pilot for `qwen2.5:7b`; digest recorded; installed but not yet loaded in current service session | Collect full train/validation results and capture per-run model identity in result records |
 | Frontier API | Compatible transport and process-local admission guard | Offline configuration and budget checks | Key, model, sourced rates, positive caps, and authorized paid check |
 | Colab vLLM notebook | Prepared | Notebook structure and syntax checked | Actual GPU allocation and notebook execution |

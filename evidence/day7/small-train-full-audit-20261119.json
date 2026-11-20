@@ -43,6 +43,7 @@
       {"scope": "math+choice resume", "request_cap": 137, "token_cap": 483272, "new_attempts": 137},
       {"scope": "code", "request_cap": 240, "token_cap": 307828, "new_attempts": 240},
       {"scope": "code recovery", "request_cap": 2, "token_cap": 5000, "new_attempts": 2},
+      {"scope": "single-prompt backend-error retry", "request_cap": 1, "token_cap": 5000, "new_attempts": 1},
       {"scope": "single-prompt smoke", "request_cap": 1, "token_cap": 5000, "new_attempts": 1}
     ],
     "paid_provider_calls": 0
@@ -50,26 +51,30 @@
   "recovery_notes": [
     "The first math/choice batch hit its reserved-token ceiling after 544 new attempts; 137 rows were marked blocked without a backend call. A second bounded invocation completed those 137 choice prompts.",
     "The code batch recorded one backend error for mbpp:573 and one Docker sandbox timeout for mbpp:765. A two-request recovery invocation reused the other 238 rows and reattempted those two; both outcomes repeated. The model answer for mbpp:765 is present in the private raw result, but scoring timed out.",
+    "A later exact one-prompt retry of mbpp:573 also returned backend_error. The error is retained rather than counted as a scored label.",
     "All 1,500 project train prompt IDs have records across the private run files, but 56 rows are parse or execution/provider failures and are not ordinary binary training labels. This is not multi-tier training coverage."
   ],
   "private_result_files": [
     "runs/day2-run-9c5c3a051c9640b98305c10ca00fa475.jsonl",
     "runs/day2-run-c20ce8a09e874424ad8fb67132d5ce48.jsonl",
-    "runs/day2-run-f40be33775284caeb148299124bd0769.jsonl"
+    "runs/day2-run-f40be33775284caeb148299124bd0769.jsonl",
+    "runs/day2-run-565b201476704b10853f0c4b71063674.jsonl"
   ],
   "command_outputs": [
     "evidence/day7/local-small-one-new-prompt-20261119.txt",
     "evidence/day7/small-train-math-choice-20261119.txt",
     "evidence/day7/small-train-math-choice-resume-20261119.txt",
     "evidence/day7/small-train-code-20261119.txt",
-    "evidence/day7/small-train-code-resume-20261119.txt"
+    "evidence/day7/small-train-code-resume-20261119.txt",
+    "evidence/day7/small-train-backend-error-retry-20261119.txt"
   ],
   "new_run_ids": [
     "e21713ef96e74a519f2693853de94349",
     "f59862c1af284d44a087070273bd65cd",
     "161595c3726949ce870f6b93a06c0fbf",
     "985bf67d744e4410b86b3becf1cd484f",
-    "350156eb7a6b406abcdc2c3b79562e4a"
+    "350156eb7a6b406abcdc2c3b79562e4a",
+    "4509b307413141a89c3e6c46b92dfb49"
   ],
   "limits": [
     "Small-tier results only; no medium/frontier comparison, router decision, calibration, cascade, cache, or held-out test evaluation is included.",
