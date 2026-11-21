@@ -54,6 +54,8 @@ uv run jev eval-run --split validation --tier small --tier medium --max-prompts 
 
 The runner prints a private run-file path for `jev eval-report` and `jev eval-audit`. Normal offline checks do not download datasets or call paid APIs. [The evaluation workflow](docs/EVALUATION_WORKFLOW.md) covers resumption, audits, sourced rates, held-out test policy, and serving baselines.
 
+[Progress figures](docs/FIGURES.md) show the system map, evaluation pipeline, small-vs-medium results, policy replay, freeze gate, and engineering progress, all regenerated from committed evidence with `make figures`.
+
 For clean-checkout validation, real-backend smoke checks, Compose/kind paths, figures, and Colab artifacts, follow [the Day 6 reproduction guide](docs/DAY6_REPRO.md).
 
 ## Repository layout

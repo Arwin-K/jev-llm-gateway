@@ -202,3 +202,5 @@ D6-17 attempted a current-revision wheel build with `make build`; it is blocked 
 D6-18 closes the 2026-11-21 work session at a local handoff, not project completion. See `docs/DAY9_HANDOFF.md` for D6-06 through D6-18, exact current verification, package-build blocker, and dependency gates for Jev/frontier, DistilBERT, Colab, and the held-out test.
 
 D6-10 follow-up adds `scripts/make_progress_figures.py`, `make setup-figures`/`make figures`, pinned `requirements/figures.txt`, and seven offline tests for its data loaders. The loaders read only committed evidence and reject policy rows that do not account for every prompt. `make verify`: compileall plus 174 tests passed, one existing warning (`evidence/testing/offline-suite-day9-figures-20261121.txt`).
+
+The generated figures are committed under `docs/figures/progress/` with a captioned gallery in `docs/FIGURES.md`, linked from the README. They restate existing evidence only; the commit-count panel reflects history at generation time.
