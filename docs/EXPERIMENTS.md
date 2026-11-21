@@ -217,3 +217,5 @@ The next-session gate now links the post-rescore freeze audit rather than the im
 The Day 6 NVIDIA notebook now has offline static checks for Python syntax, loopback bind, explicit baseline versus diagnostic profile labeling, and cleanup statements. Two tests passed. This is source validation only; the notebook was not executed and there are no GPU performance results. Evidence: `evidence/testing/day6-colab-notebook-focused-20261121.txt`.
 
 Full `make verify` after the Day 6 notebook-source checks and freeze-gate handoff update returned **167 passed**, one existing Starlette deprecation warning, in 1.20 seconds. No external compute/model/provider was used. Output: `evidence/testing/offline-suite-day9-post-notebook-20261121.txt`.
+
+A read-only Mac preflight on 2026-11-21 confirmed Docker 29.6.2/aarch64, both installed Ollama model files, no running containers, and no loaded models. Memory free was 40% with 79 GiB disk available. Default-shell socket/loopback denials were resolved for inspection through the authorized local path; no service state changed, no model was pulled, and no experiment ran. Evidence: `evidence/day9/local-runtime-preflight-20261121.txt`.

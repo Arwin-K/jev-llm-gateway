@@ -1,0 +1,17 @@
+Date: 2026-11-21 America/Toronto
+
+Read-only environment snapshot.
+
+Default restricted-shell checks:
+- `docker info --format '{{.ServerVersion}} {{.Architecture}} {{.MemTotal}}'`: permission denied for the Docker API socket.
+- `ollama list`: loopback connection denied by the shell sandbox.
+- `memory_pressure`: system-wide memory free percentage 40% (18 GiB total reported by macOS: 19,327,352,832 bytes).
+- `df -h /`: 79 GiB available on the root volume.
+
+Authorized read-only local checks:
+- Docker: server 29.6.2, aarch64, 8,321,372,160 bytes assigned.
+- Installed Ollama models: `qwen2.5:7b` (4.7 GB, ID prefix `845dbda0ea48`) and `qwen2.5:1.5b` (986 MB, ID prefix `65ec06548149`).
+- `docker ps`: no running containers.
+- `ollama ps`: no loaded models.
+
+No service was started or stopped, no model was pulled, and no inference or compute experiment ran. The default-shell connection denials are sandbox restrictions, not evidence that the installed services are unavailable.
