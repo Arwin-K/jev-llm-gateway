@@ -215,3 +215,5 @@ The full offline suite after the 2026-11-21 evaluator and audit-helper changes r
 The next-session gate now links the post-rescore freeze audit rather than the immediately preceding snapshot. Small has 1,444/1,500 binary train and 481/500 binary validation results; medium has 1,487/1,500 and 494/500; frontier has none. Identity checks are clean, but missing freeze configuration and incomplete coverage keep the test split locked. Latest saved gate: `evidence/day8/freeze-audit-after-mbpp401-rescore-20261120.json`.
 
 The Day 6 NVIDIA notebook now has offline static checks for Python syntax, loopback bind, explicit baseline versus diagnostic profile labeling, and cleanup statements. Two tests passed. This is source validation only; the notebook was not executed and there are no GPU performance results. Evidence: `evidence/testing/day6-colab-notebook-focused-20261121.txt`.
+
+Full `make verify` after the Day 6 notebook-source checks and freeze-gate handoff update returned **167 passed**, one existing Starlette deprecation warning, in 1.20 seconds. No external compute/model/provider was used. Output: `evidence/testing/offline-suite-day9-post-notebook-20261121.txt`.
