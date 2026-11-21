@@ -192,3 +192,5 @@ The 2026-11-21 local preflight confirms Docker and both Ollama model files are i
 A bounded local integration check succeeded on 2026-11-21: one 16-token-cap small-tier request traversed the loopback gateway to `qwen2.5:1.5b` and returned HTTP 200. The gateway and resident Ollama model were stopped afterward; no containers remain. It is a smoke test, not benchmark evidence. See `evidence/day9/small-gateway-smoke-20261121.txt`.
 
 D6-14 makes the NVIDIA notebook stop its loopback vLLM server and close its log in a `finally` block, including when workload, benchmark, or profiling commands fail. The final cell checks shutdown. Two static notebook tests pass; no Colab runtime was executed. Evidence: `evidence/testing/day6-colab-notebook-cleanup-20261121.txt`.
+
+After the one-request local smoke and notebook cleanup change, `make verify` compiled project Python and passed all 167 offline tests in 0.85 seconds, with the existing Starlette/httpx deprecation warning. Evidence: `evidence/testing/offline-suite-day9-post-cleanup-20261121.txt`.
