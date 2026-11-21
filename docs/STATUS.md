@@ -194,3 +194,5 @@ A bounded local integration check succeeded on 2026-11-21: one 16-token-cap smal
 D6-14 makes the NVIDIA notebook stop its loopback vLLM server and close its log in a `finally` block, including when workload, benchmark, or profiling commands fail. The final cell checks shutdown. Two static notebook tests pass; no Colab runtime was executed. Evidence: `evidence/testing/day6-colab-notebook-cleanup-20261121.txt`.
 
 After the one-request local smoke and notebook cleanup change, `make verify` compiled project Python and passed all 167 offline tests in 0.85 seconds, with the existing Starlette/httpx deprecation warning. Evidence: `evidence/testing/offline-suite-day9-post-cleanup-20261121.txt`.
+
+D6-16 reconciles the release audit with the actual repository license and current evidence. The code/docs are MIT-licensed; benchmark/model/provider rights remain separate. The audit now reports exact local train/validation counts, v4's always-small result, 167 current tests, and the closed freeze gate. A current wheel build remains unverified because `uv` and `hatchling` are unavailable. Evidence: `evidence/day9/release-audit-reconciliation-20261121.txt`.

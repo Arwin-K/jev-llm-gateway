@@ -1,34 +1,34 @@
 # Local Day 6 release audit
 
-**Disposition:** technically reviewable local checkpoint, **not** a fully verified research result or publishable release. This audit does not authorize a push or external publication.
+**Disposition:** technically reviewable local checkpoint as of 2026-11-21; **not** a fully verified research result or publishable release. This audit does not authorize a push or external publication.
 
 | Original deliverable | Implementation / offline evidence | Real evidence or blocker |
 | --- | --- | --- |
-| Three-tier gateway, streaming, tracing | Implemented; offline API/transport tests | Real generation blocked by unavailable Ollama and unconfigured frontier |
-| Native Mac small/medium backends | Adapters and model tags configured | No loaded model or successful answer |
-| Frontier/Jev APIs and paid guards | Typed adapters, budget checks, fail-closed tests | No credentials, model/rates, or positive paid run budget |
-| 2,000+ benchmark prompts and scorer | 2,500 indexed; math/choice/code and sandbox tests | Two failed validation attempts; zero scored answers |
-| Fixed/random, prompted, Jev, DistilBERT, Strands | Policy code and fixture tests; decision-only fixed/random Mac timing | No trained artifact or live model/decision comparison |
-| Calibration | Binary/multiclass methods and reliability SVG code | Zero matching samples; no ECE/Brier empirical result |
-| Verification/cascade/hybrid | Buffered paths and fixture HTTP tests | No real answer/verifier comparison |
-| Scoped semantic cache | Scope/index/check protocol and fixture tests | No real embedding/FAISS model or reuse result |
-| Docker, Compose, kind, monitoring | Real ARM image health, Compose scrape, Grafana panels, kind pods | No model inference in containers/pods |
-| Locust and resilience | Bounded schedules, raw event reporting, fixture outage | Two short failed requests; steady/spike/soak and live Jev outage pending |
-| CI | Workflow and synthetic regressions; local and clean-clone offline tests | Remote CI unrun; Linux platform not locally verified |
-| NVIDIA performance | Source-pinned notebook and benchmark/profile/comparison tools | No GPU allocation, vLLM baseline, trace, or candidate |
-| Frozen held-out quality comparison | Freeze and identity audit, locked test | Zero scored training/validation coverage; no final policy freeze |
-| Costs and figures | Stage ledger and raw-audit coverage SVG | API charges, real capacity, quality/cost curves unknown |
-| Technical report and reproduction | Local report, clean-clone walkthrough, commands | Results explicitly limited to existing evidence |
+| Three-tier gateway, streaming, tracing | Implemented; API/transport tests and current full suite | Small and medium real local benchmark runs exist; one 16-token-cap small-tier loopback smoke returned HTTP 200. Frontier remains unconfigured. |
+| Native Mac small/medium backends | Ollama adapters and installed model tags | `qwen2.5:1.5b` and `qwen2.5:7b` are installed. Small-tier smoke succeeded; both local quality datasets have 1,500 train and 500 validation prompt records, with parse/runtime failures kept separate. |
+| Frontier/Jev APIs and paid guards | Typed adapters, budget checks, fail-closed tests | No credentials, configured models/rates, or positive paid-run cap; no real Jev decision/verifier or frontier request. |
+| 2,000+ benchmark prompts and scorer | 2,500 prompt IDs indexed across math, choice, and code; isolated code scorer | Small train: 991 correct, 453 incorrect, 54 parse errors, one backend error, one evaluator timeout. Medium train: 1,224 correct, 263 incorrect, 13 parse errors. Small validation: 324 correct, 157 incorrect, 19 parse errors. Medium validation: 402 correct, 92 incorrect, 6 parse errors. These are local generator results, not routing outcomes. |
+| Fixed/random, prompted, Jev, DistilBERT, Strands | Adapters and fixed/random/prompted comparisons; offline fixtures | Prompted-small v4 made 500/500 validation decisions, all small, matching the fixed-small baseline. No trained DistilBERT artifact, live Jev comparison, or Strands run. |
+| Calibration | Binary/multiclass methods and reliability-figure code | No matching live router probability predictions; no empirical router calibration result. |
+| Verification/cascade/hybrid | Buffered paths and fixture HTTP tests | No real Jev or end-to-end verifier/cascade comparison. |
+| Scoped semantic cache | Scope/index/check protocol and fixture tests | No real embedding/FAISS model, index, or reuse result. |
+| Docker, Compose, kind, monitoring | ARM image health, Compose scrape, Grafana panels, kind checks | No gateway model inference in containers/pods. Docker is available locally; no container was running at the 2026-11-21 preflight. |
+| Locust and resilience | Bounded schedules, raw event reporting, fixture outage | A two-request smoke returned HTTP 502; planned steady/spike/soak and live Jev outage experiments remain unrun. |
+| CI and installation | Current local `make verify`: 167 tests; previous clean-clone test evidence | Remote CI is unrun. Current revision package rebuild/clean install is not verified; `uv`, `build`, and `hatchling` are absent in the active environment. |
+| NVIDIA performance | Source-pinned Colab notebook and benchmark/profile/comparison tools; static syntax, loopback, separation, cleanup tests | No Colab GPU allocation, vLLM baseline, trace, or candidate run. |
+| Frozen held-out quality comparison | Freeze audit, locked test split | Latest audit: small has 1,444/1,500 binary train and 481/500 binary validation outcomes; medium has 1,487/1,500 and 494/500; frontier has none. Identity checks are clean, but 11 freeze fields are missing and all six tier/split coverage requirements are short. `ready_for_test=false`; no test prompt or answer was used. |
+| Costs and figures | Stage ledger, raw audit and coverage figure code | API charges, real capacity cost, and quality/cost operating curves remain unknown. |
+| Technical report and reproduction | Local report, clean-checkout guide, evidence and provenance notes | Report is updated to current local evidence; target-platform clean install, remote CI, and publication rights review remain outstanding. |
 
 ## Integrity checks
 
-At this audit, tracked private `runs/` files and `data/day2_sources/` files: **zero**. The built wheel contained **85 members** and no CUDA/torch-named members. There is no project `LICENSE` file; `CONTRIBUTING.md` records no declared license. A tracked-file secret-pattern scan for common API key and private-key forms returned no matches; it is a heuristic, not a guarantee. Three tracked notebooks have no saved execution outputs. The freeze audit parsed the private manifest to count split IDs, including test IDs, but did not use test prompt text or answers for policy development. The inspected real run has no test records; the test was not executed or used to tune a policy. Do not call the final test “completed.”
+The tracked MIT `LICENSE` is declared by `pyproject.toml` and `CONTRIBUTING.md` for repository code and documentation. It does not grant rights to benchmark datasets, model weights, provider outputs, or external services; those require separate review. No private `runs/` file or `data/day2_sources/` snapshot is tracked. The previous audited wheel contained 85 members and no CUDA/torch-named members; the wheel was not rebuilt from the current revision because its build tooling is unavailable. Three tracked notebooks have no saved execution outputs. The post-rescore freeze audit counts split IDs, including the test count, without using held-out prompt text or answers for policy development. No test record exists and the test was not executed or tuned against.
 
 ## Publication checklist
 
-- Decide a project license and review dataset/model/provider redistribution terms.
-- Resolve and record native backend, Jev, frontier, embedding, and Colab model identities; collect compatible real training/validation records and train/reload the fallback.
-- Select thresholds only on validation, freeze all generation/routing/scoring settings, and run the held-out comparison once without tuning on test.
-- Execute the controlled NVIDIA baseline, diagnostic profile, one evidence-motivated change, and alternating repetitions; preserve every raw result and failed run.
-- Complete real cascade/cache/calibration/cost and sustained load evidence; rerun package/CI checks on the intended publication platform.
-- Review private artifacts, provider secrets, model outputs, source terms, and destination before any push or release.
+- Review the MIT license scope together with the current benchmark, model, and provider terms.
+- Configure Jev/frontier credentials, models, sourced rates, and explicit positive caps before any paid call; obtain a compatible trained DistilBERT artifact and real decision observations.
+- Resolve missing scored outcomes without changing the frozen prompt identities, select policies only on validation, fill every required freeze field, and keep the test locked until coverage is complete.
+- Obtain an actual Colab GPU allocation, run unprofiled baselines, collect a separate diagnostic trace where supported, test one evidence-motivated serving change, and repeat both conditions.
+- Complete real cascade/cache/calibration/cost and sustained-load comparisons; run current-revision packaging, clean-install, and target-platform CI checks.
+- Review private artifacts, secrets, model outputs, source terms, and a specific destination before any push or release.

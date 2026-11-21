@@ -123,3 +123,5 @@ A one-request local integration smoke on 2026-11-21 ran the gateway bound to `12
 The Day 6 notebook cleanup change was checked offline on 2026-11-21: 2 static tests passed, including Python compilation for every notebook cell and cleanup-path assertions. No Colab runtime or GPU was used. Evidence: `evidence/testing/day6-colab-notebook-cleanup-20261121.txt`.
 
 The 2026-11-21 full suite after the bounded local smoke and notebook cleanup change passed compileall plus 167 offline tests in 0.85 seconds. One existing Starlette/httpx deprecation warning remains. No external model/provider was contacted by the suite. Output: `evidence/testing/offline-suite-day9-post-cleanup-20261121.txt`.
+
+The 2026-11-21 release audit reconciliation verified `LICENSE` is tracked and MIT is declared by package metadata and contributor guidance. The old 85-member wheel predates current changes. This environment has no `uv`, no `.venv` pip module, and no system `build`/`hatchling`; the current revision wheel has not been built. Reconciled findings: `evidence/day9/release-audit-reconciliation-20261121.txt`.

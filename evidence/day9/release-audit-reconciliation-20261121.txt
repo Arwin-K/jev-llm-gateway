@@ -1,0 +1,23 @@
+Date: 2026-11-21 America/Toronto
+
+Reconciled release documentation against tracked metadata and saved evidence.
+
+License:
+- `LICENSE` exists and is tracked.
+- `pyproject.toml` declares `license = "MIT"` and `license-files = ["LICENSE"]`.
+- `CONTRIBUTING.md` says the MIT grant covers repository code/documentation only; dataset/model/provider terms are separate.
+- Corrected stale claims in `docs/PROVENANCE.md`, `docs/DECISIONS.md`, `docs/DAY6_RELEASE_AUDIT.md`, and `docs/DAY6_RELEASE_NOTES.md`.
+
+Current result identities:
+- Small train: 991 correct, 453 incorrect, 54 parse errors, 1 backend error, 1 evaluator timeout (1,444 binary scores), from `evidence/day7/small-train-full-audit-20261119.json`.
+- Medium train: 1,224 correct, 263 incorrect, 13 parse errors (1,487 binary scores), from `evidence/day8/medium-train-full-audit-20261120.json`.
+- Small validation: 324 correct, 157 incorrect, 19 parse errors (481 binary scores), in the v4 audit's matched run data.
+- Medium validation: 402 correct, 92 incorrect, 6 parse errors (494 binary scores), from `evidence/day8/medium-validation-full-audit-reclassified-20261120.json`.
+- The latest freeze audit has no identity issues, but all six train/validation tier coverage targets are short and 11 required freeze fields are absent; `ready_for_test=false`.
+- Prompted-small v4 selected small on all 500 validation prompts and matched the fixed-small outcome distribution; see `evidence/day8/prompted-small-v4-audit-20261120.json`.
+
+Packaging/release limits:
+- A previous audited wheel had 85 members and no CUDA/torch-named members; it was not built from the current source revision.
+- `uv` is not available on PATH; the active `.venv` has no pip module, and system Python has neither `build` nor `hatchling`. The current wheel is therefore unverified.
+- Remote CI, Colab GPU/vLLM, held-out testing, real Jev/frontier comparison, and external publication remain incomplete.
+- Private benchmark inputs and runs remain untracked/ignored; no held-out prompt text or answers were used.
