@@ -1,0 +1,25 @@
+Date: 2026-11-21 America/Toronto
+
+Pre-run state:
+- Docker Engine 29.6.2/aarch64 was available; no containers were running.
+- Ollama had `qwen2.5:1.5b` installed and no model loaded.
+- System-wide memory free was 40% in the earlier read-only preflight.
+
+Started the gateway with:
+JEV_BIND_HOST=127.0.0.1 .venv/bin/jev serve
+
+Gateway log:
+Uvicorn running on http://127.0.0.1:8080
+127.0.0.1:49535 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+
+Sent exactly one smoke request:
+.venv/bin/jev smoke --tier small --gateway-url http://127.0.0.1:8080
+
+Result:
+{"tier":"small","request_id":"aced5218417242718839169554cc258a","backend_model":"qwen2.5:1.5b","answer":"Hello!"}
+The gateway smoke command limits generation to 16 output tokens. No paid API or external compute was used. This is a connectivity/response smoke only, not a quality, latency, or throughput result.
+
+Cleanup:
+- Sent interrupt to the gateway; Uvicorn completed shutdown.
+- Ollama showed qwen2.5:1.5b resident at 1.2 GB/100% GPU with its 4-minute idle timer. Ran `ollama stop qwen2.5:1.5b`.
+- Final `ollama ps` and `docker ps` showed no loaded models and no running containers.
