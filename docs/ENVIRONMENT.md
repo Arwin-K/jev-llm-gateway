@@ -109,3 +109,5 @@ On 2026-11-20, the local Ollama prompted-small v4 router ran a 30-decision train
 On 2026-11-21, `tests/routing/test_evaluate.py` passed all four focused tests after the output-path reservation fix. The existing-path regression uses a patched router call counter and a preserved sentinel file; no model or provider was contacted. Output: `evidence/testing/evaluate-output-collision-20261121.txt`.
 
 Also on 2026-11-21, the v4 audit helper's focused tests passed (2 tests) without model/provider access. Output: `evidence/testing/prompted-router-audit-focused-20261121.txt`.
+
+On 2026-11-21, the full `make verify` after the evaluator output reservation and prompted-audit tests passed compileall plus 165 offline tests in 0.82 seconds. The only warning is the existing Starlette/httpx deprecation. No networked model or provider was used. Output: `evidence/testing/offline-suite-day9-20261121.txt`.

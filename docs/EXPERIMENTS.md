@@ -209,3 +209,5 @@ The v4 validation retry exposed that the CLI collected 500 decisions before open
 Added two tests for the sanitized v4 audit builder: it rejects split/version mismatches and duplicate IDs, and it counts task/usage results while joining only matching saved small-tier outcomes. Focused output: `evidence/testing/prompted-router-audit-focused-20261121.txt`.
 
 After these cross-module changes, `make verify` ran compileall and the full offline pytest suite: 162 passed in 0.77 seconds with one existing Starlette/httpx deprecation warning. No paid or live provider call was enabled. Full output: `evidence/testing/offline-suite-day8-20261120.txt`.
+
+The full offline suite after the 2026-11-21 evaluator and audit-helper changes returned **165 passed**, one existing Starlette deprecation warning, in 0.82 seconds. Compilation covered `src`, `load`, `scripts`, and `tests`. Raw output: `evidence/testing/offline-suite-day9-20261121.txt`.

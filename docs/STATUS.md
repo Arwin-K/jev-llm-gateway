@@ -178,3 +178,5 @@ The prompted-small router is now version 4: request text is encoded as quoted JS
 On 2026-11-21, the routing evaluator was corrected to reserve its exclusive output path before making any decision calls. A regression test confirms an existing output is preserved and rejected without invoking the router; four focused evaluator tests pass. This prevents repeating yesterday's uncaptured 500-call run when a destination collision occurs. Raw focused output: `evidence/testing/evaluate-output-collision-20261121.txt`.
 
 The v4 prompted-router audit helper now has focused regression coverage for split/version identity, duplicate prompt IDs, task summaries, token accounting, and joins to saved outcomes. Both helper tests pass; raw output: `evidence/testing/prompted-router-audit-focused-20261121.txt`.
+
+After D6-06/D6-07, `make verify` compiled all project Python paths and passed 165 offline tests in 0.82 seconds, with the same Starlette/httpx deprecation warning. No live model/provider was contacted. Output: `evidence/testing/offline-suite-day9-20261121.txt`.
