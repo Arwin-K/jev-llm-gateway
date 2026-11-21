@@ -1,0 +1,6 @@
+Command: ./.venv/bin/pytest -q tests/day6/test_nvidia_notebook.py
+
+..                                                                       [100%]
+2 passed in 0.01s
+
+Static notebook checks confirm every code cell compiles, the vLLM bind is loopback-only, baseline and diagnostic-profile artifacts are distinguished, and server termination/log closure are inside a `finally` block around workload, benchmark, and optional profiling commands. The final cell verifies shutdown state. No notebook cell or GPU runtime was executed.

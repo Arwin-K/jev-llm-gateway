@@ -190,3 +190,5 @@ After D6-09/D6-10, `make verify` compiled the repository and passed 167 offline 
 The 2026-11-21 local preflight confirms Docker and both Ollama model files are installed, but neither a container nor an Ollama model is currently running/loaded. Memory free was 40%; no inference was started. Details and sandbox distinction: `evidence/day9/local-runtime-preflight-20261121.txt`.
 
 A bounded local integration check succeeded on 2026-11-21: one 16-token-cap small-tier request traversed the loopback gateway to `qwen2.5:1.5b` and returned HTTP 200. The gateway and resident Ollama model were stopped afterward; no containers remain. It is a smoke test, not benchmark evidence. See `evidence/day9/small-gateway-smoke-20261121.txt`.
+
+D6-14 makes the NVIDIA notebook stop its loopback vLLM server and close its log in a `finally` block, including when workload, benchmark, or profiling commands fail. The final cell checks shutdown. Two static notebook tests pass; no Colab runtime was executed. Evidence: `evidence/testing/day6-colab-notebook-cleanup-20261121.txt`.

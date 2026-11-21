@@ -18,6 +18,7 @@ def test_day6_notebook_code_cells_are_valid_python():
 def test_day6_notebook_keeps_serving_and_profile_runs_bounded():
     notebook = json.loads(NOTEBOOK.read_text())
     source = '\n'.join(''.join(cell.get('source', [])) for cell in notebook['cells'])
+    benchmark = ''.join(notebook['cells'][7]['source'])
 
     assert "'--host', '127.0.0.1'" in source
     assert "'--port', '8000'" in source
@@ -25,3 +26,6 @@ def test_day6_notebook_keeps_serving_and_profile_runs_bounded():
     assert "'--diagnostic-only'" in source
     assert 'server.terminate()' in source
     assert 'server.wait(timeout=20)' in source
+    assert 'finally:' in benchmark
+    assert benchmark.index('finally:') < benchmark.index('server.terminate()')
+    assert benchmark.index('finally:') < benchmark.index('log.close()')
