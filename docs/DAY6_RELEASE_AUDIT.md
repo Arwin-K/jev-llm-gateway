@@ -32,3 +32,5 @@ The tracked MIT `LICENSE` is declared by `pyproject.toml` and `CONTRIBUTING.md` 
 - Obtain an actual Colab GPU allocation, run unprofiled baselines, collect a separate diagnostic trace where supported, test one evidence-motivated serving change, and repeat both conditions.
 - Complete real cascade/cache/calibration/cost and sustained-load comparisons; run current-revision packaging, clean-install, and target-platform CI checks.
 - Review private artifacts, secrets, model outputs, source terms, and a specific destination before any push or release.
+
+The current-revision wheel build was attempted on 2026-11-21 with `make build` and exited 2 because `uv` is missing. No new wheel was produced; earlier wheel membership results apply to a prior revision only. See `evidence/day9/package-build-blocker-20261121.txt`.

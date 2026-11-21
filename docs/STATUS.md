@@ -196,3 +196,5 @@ D6-14 makes the NVIDIA notebook stop its loopback vLLM server and close its log 
 After the one-request local smoke and notebook cleanup change, `make verify` compiled project Python and passed all 167 offline tests in 0.85 seconds, with the existing Starlette/httpx deprecation warning. Evidence: `evidence/testing/offline-suite-day9-post-cleanup-20261121.txt`.
 
 D6-16 reconciles the release audit with the actual repository license and current evidence. The code/docs are MIT-licensed; benchmark/model/provider rights remain separate. The audit now reports exact local train/validation counts, v4's always-small result, 167 current tests, and the closed freeze gate. A current wheel build remains unverified because `uv` and `hatchling` are unavailable. Evidence: `evidence/day9/release-audit-reconciliation-20261121.txt`.
+
+D6-17 attempted a current-revision wheel build with `make build`; it is blocked because `uv` is unavailable (`make: uv: No such file or directory`, exit 2). No wheel was produced and no package was installed from the network. Evidence: `evidence/day9/package-build-blocker-20261121.txt`.

@@ -227,3 +227,5 @@ The Day 6 notebook now wraps synthetic workload generation, three baseline runs,
 Full `make verify` after the gateway smoke recording and NVIDIA notebook cleanup update returned **167 passed**, one existing deprecation warning, in 0.85 seconds. This offline suite made no model/provider calls. Output: `evidence/testing/offline-suite-day9-post-cleanup-20261121.txt`.
 
 Updated the local release audit using the saved small/medium train and validation audits, prompted v4 report, freeze audit, tracked MIT license metadata, and current build-tool availability. The latest freeze remains closed; package build is unverified on this revision; no held-out or external release occurred. See `docs/DAY6_RELEASE_AUDIT.md` and `evidence/day9/release-audit-reconciliation-20261121.txt`.
+
+The clean-package checkpoint ran `make build` and stopped at `uv build` because `uv` is not installed/on PATH. No wheel or clean install resulted, and no network dependency installation was attempted. Retry after the repository's documented uv build tool is available. Evidence: `evidence/day9/package-build-blocker-20261121.txt`.

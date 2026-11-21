@@ -16,3 +16,5 @@ The latest source-tree Mac verification on 2026-11-21 compiled the project and p
 ## Still required before research conclusions or publication
 
 Collect compatible real train/validation answers across tiers, train and validate the fallback, freeze all policies and generation settings, then run the held-out test once. The latest freeze audit has incomplete binary coverage and missing fields, so the test gate remains closed. Obtain an actual Colab GPU allocation, run unprofiled baselines, collect a separate diagnostic trace where supported, test one evidence-motivated serving change, and repeat both conditions. Complete real cascade/cache/calibration/cost and sustained load comparisons, rights review of benchmark/model/provider terms, target-platform CI, and a publication destination. Repository code is MIT-licensed; no external release was made.
+
+Current revision packaging remains blocked: `make build` exits 2 because `uv` is missing from PATH, and neither the test venv nor system Python has the `hatchling` build backend. No network installation was attempted. Raw result: `evidence/day9/package-build-blocker-20261121.txt`.

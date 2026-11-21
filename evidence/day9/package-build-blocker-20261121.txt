@@ -1,0 +1,8 @@
+Date: 2026-11-21 America/Toronto
+Command: make build
+
+uv build
+make: uv: No such file or directory
+make: *** [build] Error 1
+
+Exit status: 2. No wheel was produced. `uv` is not installed/on PATH; the active `.venv` also has no pip module and no `hatchling` backend, while system Python has no `build` or `hatchling` distribution. No network installation was attempted. Re-run `make build` after the project's uv build tool is available.
