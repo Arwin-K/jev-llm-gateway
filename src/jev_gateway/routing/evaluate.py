@@ -93,14 +93,22 @@ def main(argv=None):
         settings = replace(settings, jev_max_requests=min(settings.jev_max_requests,args.max_decisions),
                            jev_max_usd=min(settings.jev_max_usd,args.max_usd))
     prompts = select_prompts(load(args.manifest,args.split), args.max_prompts, args.prompt_id)
-    records = asyncio.run(collect(prompts,settings,max_decisions=args.max_decisions))
     output = args.output or Path('runs')/f'day3-decisions-{uuid.uuid4().hex}.jsonl'
     if not output.resolve().is_relative_to(Path('runs').resolve()):
         parser.error('private decisions must be saved under runs/')
     output.parent.mkdir(parents=True,exist_ok=True)
-    with output.open('x') as stream:
-        for record in records:
-            stream.write(json.dumps(record,sort_keys=True)+'\n')
+    try:
+        stream = output.open('x')
+    except FileExistsError:
+        parser.error(f'output path already exists: {output}')
+    try:
+        with stream:
+            records = asyncio.run(collect(prompts,settings,max_decisions=args.max_decisions))
+            for record in records:
+                stream.write(json.dumps(record,sort_keys=True)+'\n')
+    except BaseException:
+        output.unlink(missing_ok=True)
+        raise
     print(json.dumps({'path':str(output),'policy':args.policy,'attempted':len(records),
                       'selected':sum(r['status']=='selected' for r in records),
                       'errors':sum(r['status']=='error' for r in records)}))

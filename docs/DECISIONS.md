@@ -104,3 +104,7 @@ Results recorded under v1 templates have different template fingerprints and are
 
 - Treat each benchmark request as data, never as an instruction to the prompted decision model. Send it as a JSON-quoted string, explicitly forbid answering it, and constrain the response through a JSON schema with an enum of only the request's eligible tiers. Persist malformed raw completions only in ignored private run files; sanitized reports may include cause categories and hashes, not prompt or completion contents.
 - Promote a prompted-router version to validation only after a disjoint train pilot shows valid selections across math, code, and choice. Version 4 met this format criterion (30/30); its 500-row validation audit was 500/500 small-tier decisions. Since all rows chose small, the saved generator outcomes equal the always-small baseline. Reliable output formatting alone is not routing quality improvement, and no threshold or quality claim follows from this result.
+
+## Evaluation output reservation — 2026-11-21 America/Toronto
+
+- Reserve an evaluation's private output path with exclusive creation before invoking any local or external router. Reject an existing path before model work begins. If collection raises, remove only the newly reserved empty output so a retry can use a fresh path. This avoids expensive, unrecorded decision calls and preserves any pre-existing evidence file.

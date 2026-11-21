@@ -1,0 +1,6 @@
+Command: ./.venv/bin/pytest -q tests/routing/test_evaluate.py
+
+....                                                                     [100%]
+4 passed in 0.15s
+
+The existing-output regression uses a patched loader and router collector with a sentinel file. It confirms the CLI returns an error before any router call and leaves the existing file byte-for-byte unchanged. No model or provider was contacted.

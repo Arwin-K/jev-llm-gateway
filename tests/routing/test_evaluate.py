@@ -52,3 +52,31 @@ def test_exact_prompt_selection_is_bounded_and_validation_scoped():
         select_prompts(prompts,2,['0','0'])
     with pytest.raises(ValueError):
         select_prompts(prompts,2,['test-only'])
+
+
+def test_existing_output_path_is_rejected_before_router_calls(tmp_path, monkeypatch):
+    from jev_gateway.routing import evaluate
+
+    runs = tmp_path / 'runs'
+    runs.mkdir()
+    output = runs / 'existing.jsonl'
+    output.write_text('preserve this file\n')
+    manifest = tmp_path / 'manifest.jsonl'
+    manifest.write_text('unused by patched loader\n')
+    prompt = Prompt(prompt_id='p1',task='math',split='validation',dataset='x',
+                    dataset_revision='d',source_split='train',source_id='1',
+                    source_revision='s',group_id='g',template_fingerprint='t',prompt='2+2?')
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(evaluate, 'load', lambda path, split: [prompt])
+    calls = []
+
+    async def collect(*args, **kwargs):
+        calls.append(True)
+        return []
+
+    monkeypatch.setattr(evaluate, 'collect', collect)
+    with pytest.raises(SystemExit):
+        evaluate.main(['--policy','always-small','--max-prompts','1','--max-decisions','1',
+                       '--manifest',str(manifest),'--output',str(output)])
+    assert calls == []
+    assert output.read_text() == 'preserve this file\n'
