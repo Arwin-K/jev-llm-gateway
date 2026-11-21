@@ -1,0 +1,6 @@
+Command: ./.venv/bin/pytest -q tests/routing/test_prompted_router_audit.py
+
+..                                                                       [100%]
+2 passed in 0.01s
+
+Coverage: split/version validation, duplicate prompt rejection, task counts, token summaries, and descriptive joins to saved small-tier outcomes. No benchmark model, provider, or prompt text was used.

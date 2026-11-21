@@ -206,4 +206,6 @@ Prompt v4 followed a disjoint 30-row train pilot in which the earlier versions' 
 
 The v4 validation retry exposed that the CLI collected 500 decisions before opening its output with exclusive creation. The first restricted-shell attempt had already created that path with 500 `ConnectError` records, so a later local inference completed but was discarded when `open('x')` raised `FileExistsError`. The evaluator now reserves the output before collection, rejects collisions before invoking the router, and removes the newly reserved file if collection fails. A regression test preserves a sentinel existing file and asserts the router call counter remains zero. Focused output: `evidence/testing/evaluate-output-collision-20261121.txt`.
 
+Added two tests for the sanitized v4 audit builder: it rejects split/version mismatches and duplicate IDs, and it counts task/usage results while joining only matching saved small-tier outcomes. Focused output: `evidence/testing/prompted-router-audit-focused-20261121.txt`.
+
 After these cross-module changes, `make verify` ran compileall and the full offline pytest suite: 162 passed in 0.77 seconds with one existing Starlette/httpx deprecation warning. No paid or live provider call was enabled. Full output: `evidence/testing/offline-suite-day8-20261120.txt`.
