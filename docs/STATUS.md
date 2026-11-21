@@ -180,3 +180,5 @@ On 2026-11-21, the routing evaluator was corrected to reserve its exclusive outp
 The v4 prompted-router audit helper now has focused regression coverage for split/version identity, duplicate prompt IDs, task summaries, token accounting, and joins to saved outcomes. Both helper tests pass; raw output: `evidence/testing/prompted-router-audit-focused-20261121.txt`.
 
 After D6-06/D6-07, `make verify` compiled all project Python paths and passed 165 offline tests in 0.82 seconds, with the same Starlette/httpx deprecation warning. No live model/provider was contacted. Output: `evidence/testing/offline-suite-day9-20261121.txt`.
+
+D6-09 adds offline structural checks for the NVIDIA notebook. Both tests pass: code cells compile, serving is explicitly loopback-bound, baseline/profile runs are distinguished, and cleanup statements are present. This verifies notebook source only; no Colab cell, GPU, package install, or vLLM server was run. Evidence: `evidence/testing/day6-colab-notebook-focused-20261121.txt`.

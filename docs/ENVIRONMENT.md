@@ -111,3 +111,5 @@ On 2026-11-21, `tests/routing/test_evaluate.py` passed all four focused tests af
 Also on 2026-11-21, the v4 audit helper's focused tests passed (2 tests) without model/provider access. Output: `evidence/testing/prompted-router-audit-focused-20261121.txt`.
 
 On 2026-11-21, the full `make verify` after the evaluator output reservation and prompted-audit tests passed compileall plus 165 offline tests in 0.82 seconds. The only warning is the existing Starlette/httpx deprecation. No networked model or provider was used. Output: `evidence/testing/offline-suite-day9-20261121.txt`.
+
+On 2026-11-21, the Day 6 Colab notebook structural tests passed (2 tests) on the Mac Python 3.14 venv. They do not establish Colab/GPU/vLLM compatibility; no runtime was provisioned. Evidence: `evidence/testing/day6-colab-notebook-focused-20261121.txt`.

@@ -211,3 +211,5 @@ Added two tests for the sanitized v4 audit builder: it rejects split/version mis
 After these cross-module changes, `make verify` ran compileall and the full offline pytest suite: 162 passed in 0.77 seconds with one existing Starlette/httpx deprecation warning. No paid or live provider call was enabled. Full output: `evidence/testing/offline-suite-day8-20261120.txt`.
 
 The full offline suite after the 2026-11-21 evaluator and audit-helper changes returned **165 passed**, one existing Starlette deprecation warning, in 0.82 seconds. Compilation covered `src`, `load`, `scripts`, and `tests`. Raw output: `evidence/testing/offline-suite-day9-20261121.txt`.
+
+The Day 6 NVIDIA notebook now has offline static checks for Python syntax, loopback bind, explicit baseline versus diagnostic profile labeling, and cleanup statements. Two tests passed. This is source validation only; the notebook was not executed and there are no GPU performance results. Evidence: `evidence/testing/day6-colab-notebook-focused-20261121.txt`.
