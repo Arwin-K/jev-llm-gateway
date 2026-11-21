@@ -108,3 +108,9 @@ Results recorded under v1 templates have different template fingerprints and are
 ## Evaluation output reservation — 2026-11-21 America/Toronto
 
 - Reserve an evaluation's private output path with exclusive creation before invoking any local or external router. Reject an existing path before model work begins. If collection raises, remove only the newly reserved empty output so a retry can use a fresh path. This avoids expensive, unrecorded decision calls and preserves any pre-existing evidence file.
+
+## Progress figures — 2026-11-21 America/Toronto
+
+- Build repository figures only from committed, sanitized evidence (audits, the metadata-only manifest index, saved pytest output, and `git log`), never from ignored `runs/`, so a clean checkout reproduces them byte-for-byte. Each figure prints its sample counts and source files.
+- Keep matplotlib in a separate optional requirements file and venv rather than a `pyproject` extra: adding an extra would require regenerating `uv.lock`, and `uv` is currently unavailable here. Data loaders are stdlib-only so the normal offline suite can test them.
+- Show missing results (frontier, unrun policies) as explicit "no result" segments and parse/runtime failures as their own outcomes; never impute or drop them to make a chart look complete.
