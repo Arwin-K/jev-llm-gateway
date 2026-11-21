@@ -11,8 +11,8 @@
 - Reproducible validation-only group bootstrap on 476 paired binary outcomes: medium minus small accuracy +14.1 percentage points (95% interval +10.5 to +17.6 pp). This is descriptive local generator evidence; it does not select a routing threshold. Full task breakdown and input hashes are in `evidence/day8/medium-validation-paired-group-bootstrap-20261120.json`.
 - Development manifest loading now validates only the requested split; a malformed held-out prompt record is ignored by validation loads, and the test split remains permission-gated. Focused verification: `evidence/testing/manifest-split-validation-focused-20261120.txt`.
 - Fixed/random validation replay is recorded. Always-medium has 402/500 correct completions; always-small has 324/500. Seeded random selected unavailable frontier for 170 prompts. All charges remain unknown; report: `evidence/day8/medium-validation-fixed-random-baselines-20261120.json`.
-- Prompted-small v1 made 500 validation decisions with 250 selections (all small) and 250 errors. Two exact errors were `JSONDecodeError`. V2 was only piloted on 30 train prompts and still had 11 decode errors, so do not treat it as validation-ready. Full counts and limits: `evidence/day8/prompted-small-audit-20261120.json`.
-- Final offline verification after the D4/D5 changes passed: `make verify`, compileall plus 162 tests, one existing Starlette/httpx deprecation warning. Output: `evidence/testing/offline-suite-day8-20261120.txt`.
+- Prompted-small v4 treats request text as quoted data, explicitly forbids answering it, and uses a JSON schema that limits selections to eligible tiers. A disjoint 30-row train pilot selected a tier on 30/30 prompts; a 500-row validation run selected small on 500/500 prompts. Its matched saved outcomes (324 correct, 157 incorrect, 19 parse errors) exactly match always-small, so format reliability improved but routing did not. Full audit and input hashes: `evidence/day8/prompted-small-v4-audit-20261120.json`; raw decisions remain under ignored `runs/`.
+- Final offline verification after v4 passed: `make verify`, compileall plus 162 tests, one existing Starlette/httpx deprecation warning. Output: `evidence/testing/offline-suite-day8-post-v4-20261120.txt`.
 - The held-out test was not touched. No paid API calls or external compute were used. No threshold was selected.
 
 ## Current validation exception and next research gate
@@ -29,5 +29,11 @@ ollama list
 ```
 
 The math, choice, and code validation prompt IDs have been compared; 494 of 500 medium rows have binary scores, with six parse errors. Router thresholds, Jev probabilities, and cost-aware operating points have not been selected. The freeze audit is not ready for held-out evaluation: freeze fields are absent, tier coverage is incomplete, and frontier has no observations. The held-out test remains locked. Jev decision API access is separate and unconfigured.
+
+## Resume from this checkpoint
+
+The local `main` branch contains the current D4/D5/D6 work; the D4/D5 commit subjects were changed to plain descriptive titles while checkpoint identifiers remain in their bodies. The history is local and has not been pushed. The latest source change is the prompted-small v4 output contract; `make verify` passes.
+
+Do not spend more validation decisions tuning this prompt. The v4 router chose small for every validation prompt and is behaviorally identical to the fixed-small baseline. If testing another prompted version, first use a disjoint train sample and require evidence of tier differentiation plus measured selected-tier quality against saved outcomes before moving to validation. The more important routing comparison still requires Jev credentials/model/rates and positive caps, or a compatible trained DistilBERT artifact. No such live comparison or training run is available yet. Continue with independent offline work, Colab setup/profile readiness checks, and the six medium parse errors as preserved unscored results. Do not open held-out test until the freeze audit has complete eligible tier coverage and required identity/config fields.
 
 Colab GPU/DistilBERT training, NVIDIA/vLLM, configured Jev/frontier comparisons, verification cascade, cache comparison, and sustained real serving/load runs remain outside today's executed work. Paid runs remain disabled.
