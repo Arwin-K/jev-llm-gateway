@@ -701,8 +701,8 @@ z
    <g id="patch_14">
     <path d="M 515.703531 357.12 
 L 542.948457 357.12 
-L 542.948457 238.08 
-L 515.703531 238.08 
+L 542.948457 229.577143 
+L 515.703531 229.577143 
 z
 " clip-path="url(#p80839ff229)" style="fill: #23966b; stroke: #23966b; stroke-linejoin: miter"/>
    </g>
@@ -796,31 +796,10 @@ L 565.717431 357.12
     </g>
    </g>
    <g id="text_30">
-    <!-- 14 -->
-    <g style="fill: #1f2933" transform="translate(523.599744 234.678857) scale(0.09 -0.09)">
-     <defs>
-      <path id="DejaVuSans-17" d="M 2419 4116 
-L 825 1625 
-L 2419 1625 
-L 2419 4116 
-z
-M 2253 4666 
-L 3047 4666 
-L 3047 1625 
-L 3713 1625 
-L 3713 1100 
-L 3047 1100 
-L 3047 0 
-L 2419 0 
-L 2419 1100 
-L 313 1100 
-L 313 1709 
-L 2253 4666 
-z
-" transform="scale(0.015625)"/>
-     </defs>
+    <!-- 15 -->
+    <g style="fill: #1f2933" transform="translate(523.599744 226.176) scale(0.09 -0.09)">
      <use xlink:href="#DejaVuSans-14"/>
-     <use xlink:href="#DejaVuSans-17" transform="translate(63.625 0)"/>
+     <use xlink:href="#DejaVuSans-18" transform="translate(63.625 0)"/>
     </g>
    </g>
    <g id="text_31">
@@ -1821,6 +1800,27 @@ L 1047.6 357.12
    <g id="text_56">
     <!-- 141 -->
     <g style="fill: #1f2933" transform="translate(858.882741 167.07749) scale(0.09 -0.09)">
+     <defs>
+      <path id="DejaVuSans-17" d="M 2419 4116 
+L 825 1625 
+L 2419 1625 
+L 2419 4116 
+z
+M 2253 4666 
+L 3047 4666 
+L 3047 1625 
+L 3713 1625 
+L 3713 1100 
+L 3047 1100 
+L 3047 0 
+L 2419 0 
+L 2419 1100 
+L 313 1100 
+L 313 1709 
+L 2253 4666 
+z
+" transform="scale(0.015625)"/>
+     </defs>
      <use xlink:href="#DejaVuSans-14"/>
      <use xlink:href="#DejaVuSans-17" transform="translate(63.625 0)"/>
      <use xlink:href="#DejaVuSans-14" transform="translate(127.25 0)"/>
@@ -2133,7 +2133,7 @@ z
    </g>
   </g>
   <g id="text_63">
-   <!-- 199 local commits across 12 work days (America/Toronto, counted when generated); full offline suite grew from 15 to 167 passing tests. -->
+   <!-- 200 local commits across 12 work days (America/Toronto, counted when generated); full offline suite grew from 15 to 167 passing tests. -->
    <g style="fill: #66727f" transform="translate(32.4 48.879781) scale(0.115 -0.115)">
     <defs>
      <path id="DejaVuSans-52" d="M 1959 3097 
@@ -2505,9 +2505,9 @@ L 684 794
 z
 " transform="scale(0.015625)"/>
     </defs>
-    <use xlink:href="#DejaVuSans-14"/>
-    <use xlink:href="#DejaVuSans-1c" transform="translate(63.625 0)"/>
-    <use xlink:href="#DejaVuSans-1c" transform="translate(127.25 0)"/>
+    <use xlink:href="#DejaVuSans-15"/>
+    <use xlink:href="#DejaVuSans-13" transform="translate(63.625 0)"/>
+    <use xlink:href="#DejaVuSans-13" transform="translate(127.25 0)"/>
     <use xlink:href="#DejaVuSans-3" transform="translate(190.875 0)"/>
     <use xlink:href="#DejaVuSans-4f" transform="translate(222.65625 0)"/>
     <use xlink:href="#DejaVuSans-52" transform="translate(250.4375 0)"/>

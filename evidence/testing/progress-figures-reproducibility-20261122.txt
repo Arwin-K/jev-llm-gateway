@@ -1,0 +1,10 @@
+Date: 2026-11-22 America/Toronto
+
+Commands:
+make figures
+MPLCONFIGDIR=/private/tmp/mplconfig .venv-figures/bin/python scripts/make_progress_figures.py --out /private/tmp/progress-review2
+.venv/bin/pytest -q tests/test_progress_figures.py
+
+The regenerated SVGs matched a second run byte-for-byte. The committed engineering-progress chart now reports 200 local commits across 12 work days; this includes the two progress-figure commits in the latest history. By design, the figure count can lag the commit that updates it. All nine PNG renders were inspected together for legibility and label/layout issues. Figure-loader tests: 7 passed in 0.02 seconds.
+
+No model, provider, container, GPU, or held-out data was accessed by figure generation or these tests.

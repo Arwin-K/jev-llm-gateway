@@ -204,3 +204,5 @@ D6-18 closes the 2026-11-21 work session at a local handoff, not project complet
 D6-10 follow-up adds `scripts/make_progress_figures.py`, `make setup-figures`/`make figures`, pinned `requirements/figures.txt`, and seven offline tests for its data loaders. The loaders read only committed evidence and reject policy rows that do not account for every prompt. `make verify`: compileall plus 174 tests passed, one existing warning (`evidence/testing/offline-suite-day9-figures-20261121.txt`).
 
 The generated figures are committed under `docs/figures/progress/` with a captioned gallery in `docs/FIGURES.md`, linked from the README. They restate existing evidence only; the commit-count panel reflects history at generation time.
+
+On 2026-11-22, regenerated the engineering-progress chart from current Git history (199 to 200 local commits across 12 Toronto work days). The two independent renders matched byte-for-byte, and all nine PNGs were visually checked for layout. The seven evidence-loader tests pass. The chart is a history snapshot and can lag its own update commit. Evidence: `evidence/testing/progress-figures-reproducibility-20261122.txt`.
