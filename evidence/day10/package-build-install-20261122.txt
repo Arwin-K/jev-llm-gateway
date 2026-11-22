@@ -1,0 +1,19 @@
+Package build and fresh-install check — 2026-11-22 America/Toronto
+
+Source revision: c3eb8c80f7178d01b858eef53363836cdf2e4617
+Build tools: uv 0.13.9 and hatchling 1.33.0, isolated in /private/tmp/jev-build-tools-20261122.
+Build command: uv build --no-build-isolation
+Build environment: VIRTUAL_ENV=/private/tmp/jev-build-tools-20261122; UV_CACHE_DIR=/private/tmp/uv-cache-20261122.
+The default PATH still has no uv. Build tooling was installed into a temporary venv; project dependency and lock files were not changed.
+
+Artifacts (stored outside the repository under /private/tmp/jev-wheels-20261122):
+- jev_gateway-0.1.0.tar.gz, 2.7 MB, SHA-256 e92fbf66a0de4e195a3b97bdf7f5fcd1c3ec83d02a4c2e5d296b252d2e8e1c4f
+- jev_gateway-0.1.0-py3-none-any.whl, 112 KB, SHA-256 9e308dbcd63fdfe5b8e011d51c7faa7f6e681021982f9bb1c82ae28b28512f73
+
+Wheel inspection: 86 members; no CUDA- or Torch-named files; core dependencies are FastAPI, httpx, Pydantic, and Uvicorn; Python metadata requires >=3.11,<3.15; License-Expression is MIT.
+
+Fresh install: installed the wheel and test extra into /private/tmp/jev-install-check-20261122, a separate Python 3.14 environment. `jev --help` succeeded. `pip check` reported no broken requirements. Package import resolved from the fresh environment's site-packages. Torch was not installed and no CUDA modules were loaded.
+
+Full offline suite against the fresh installation: 174 passed, 1 existing Starlette/httpx deprecation warning, 1.15 seconds. No paid provider, model, Colab, GPU, container, held-out test data, or external publication was used.
+
+This verifies the package can build and install with the temporary build environment. `make build` itself was not rerun; its default PATH prerequisite remains absent.
