@@ -51,6 +51,7 @@ class Settings:
     router_training_fingerprint: str = ""
     decision_provider: str = "laya"
     decision_url: str = "http://127.0.0.1:8000"
+    decision_allow_compose_service: bool = False
     jev_model: str = "UNCONFIGURED"
     jev_max_requests: int = 0
     jev_max_tokens: int = 0
@@ -93,8 +94,14 @@ class Settings:
         if (decision_url.scheme not in {"http", "https"} or not decision_url.netloc or
             decision_url.username or decision_url.password):
             raise ConfigError("decision URL must be an absolute HTTP(S) URL without credentials")
-        if self.decision_provider == "laya" and decision_url.hostname not in {"localhost", "127.0.0.1", "::1"}:
-            raise ConfigError("local Laya decision URL must use loopback; remote decision servers are disabled")
+        if self.decision_provider == "laya":
+            loopback = decision_url.hostname in {"localhost", "127.0.0.1", "::1"}
+            compose_service = (self.decision_allow_compose_service and
+                              decision_url.hostname == "laya" and decision_url.port == 8000)
+            if not (loopback or compose_service):
+                raise ConfigError("Laya URL must use loopback; the Compose service name is allowed only with explicit opt-in")
+        elif self.decision_allow_compose_service:
+            raise ConfigError("JEV_DECISION_ALLOW_COMPOSE_SERVICE applies only to the local Laya provider")
         if self.decision_provider == "jev" and decision_url.scheme != "https":
             raise ConfigError("hosted Jev decision URL must use HTTPS")
         if not 0 < self.timeout_seconds <= 300:
@@ -140,7 +147,11 @@ class Settings:
     def decision_enabled(self):
         bounded = self.jev_model != "UNCONFIGURED" and self.jev_max_requests > 0 and self.jev_max_tokens > 0
         if self.decision_provider == "laya":
-            return bool(bounded and urlparse(self.decision_url).hostname in {"localhost", "127.0.0.1", "::1"})
+            parsed = urlparse(self.decision_url)
+            local_target = parsed.hostname in {"localhost", "127.0.0.1", "::1"}
+            compose_target = (self.decision_allow_compose_service and
+                              parsed.hostname == "laya" and parsed.port == 8000)
+            return bool(bounded and (local_target or compose_target))
         return self.jev_enabled
 
     def backend(self, tier):
@@ -186,6 +197,7 @@ def from_env():
         router_training_fingerprint=os.getenv("JEV_ROUTER_TRAINING_FINGERPRINT", ""),
         decision_provider=decision_provider,
         decision_url=decision_url,
+        decision_allow_compose_service=os.getenv("JEV_DECISION_ALLOW_COMPOSE_SERVICE", "false").lower()=="true",
         jev_model=os.getenv("JEV_DECISION_MODEL") or ("typed-decisions" if decision_provider == "laya" else "UNCONFIGURED"),
         jev_max_requests=integer("JEV_DECISION_MAX_REQUESTS", "0"),
         jev_max_tokens=integer("JEV_DECISION_MAX_TOKENS", "0"),

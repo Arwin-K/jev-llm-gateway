@@ -83,6 +83,19 @@ def test_laya_cannot_be_configured_off_loopback():
         replace(from_env(), decision_provider='laya', decision_url='https://example.com')
 
 
+def test_laya_compose_service_requires_explicit_private_service_opt_in():
+    base=from_env()
+    with pytest.raises(ValueError, match='Compose service name'):
+        replace(base, decision_provider='laya', decision_url='http://laya:8000')
+    compose=replace(base, decision_provider='laya', decision_url='http://laya:8000',
+                    decision_allow_compose_service=True, jev_model='typed-decisions',
+                    jev_max_requests=1, jev_max_tokens=1000)
+    assert compose.decision_enabled
+    with pytest.raises(ValueError, match='Compose service name'):
+        replace(base, decision_provider='laya', decision_url='http://other:8000',
+                decision_allow_compose_service=True)
+
+
 def test_expired_jev_deadline_does_not_spend(monkeypatch):
     settings=enabled(monkeypatch)
     client=JevClient(settings)
