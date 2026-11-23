@@ -120,4 +120,11 @@ Results recorded under v1 templates have different template fingerprints and are
 - Keep the gateway core independent of Laya/Torch and install the self-hosted decision service into a separate `.venv-laya`. Use a loopback endpoint on the Mac and require positive process request/token ceilings before decision calls are enabled.
 - Add explicit Make targets for creating (without overwriting) the ignored `.env`, installing Laya, starting the loopback service, starting the gateway with `.env`, and checking required local dependencies. The normal `jev` CLI continues to read shell environment; the Make targets provide the repeatable local path.
 - `jev doctor` may probe Laya's loopback `/health` only when the selected router requires the decision service and positive caps enable it. It must not probe the optional hosted Jev endpoint, which could introduce external traffic or charges.
+
+### Containerized local Laya
+
+- Keep the base Compose profile compatible with native Ollama. Add an opt-in overlay for model=auto that runs pinned Laya on the private Compose network and persists its checkpoint in a named local volume.
+- Permit only the exact `http://laya:8000` service target when `JEV_DECISION_ALLOW_COMPOSE_SERVICE=true`; preserve the default loopback-only Laya policy for every other target. Do not publish the Laya port.
+- Install the official CPU-only PyTorch wheel in the Linux ARM Laya image so container builds do not pull CUDA dependencies. Keep native Mac MPS as the preferred local Laya runtime on this device.
+- Validation on 2026-11-22: image built, both health checks passed, gateway-to-Laya HTTP 200 succeeded, and one capped auto-routing smoke returned a greeting from local Ollama. This validates wiring, not model quality or calibration; see `evidence/testing/laya-compose-smoke-20261122.txt`.
 - A real one-request smoke confirms wire compatibility/connectivity only. Do not treat it as routing accuracy, calibration, or research evidence; collect task-specific train/validation decisions before selecting policies, and keep the held-out split locked.

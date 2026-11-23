@@ -23,6 +23,7 @@ build:
 # Validate deployment configuration without starting services or opening ports.
 compose-config:
 	docker compose config --quiet
+	docker compose -f compose.yaml -f compose.laya.yaml config --quiet
 
 # Optional: regenerate docs/figures/progress from committed evidence (separate venv).
 FIGURES_PYTHON ?= .venv-figures/bin/python

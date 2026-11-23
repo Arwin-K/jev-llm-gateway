@@ -1,0 +1,19 @@
+Run ID: laya-compose-smoke-20261122
+Date: 2026-11-22 America/Toronto
+
+Built the local CPU-only Laya image from Dockerfile.laya using the pinned
+laya[serve]==0.5.2 package and official CPU PyTorch wheel. The first container
+startup downloaded the reviewed Laya checkpoint into the named
+jev-gateway_laya-model-cache volume. Compose reported Laya healthy, then the
+gateway healthy. From inside the gateway container, GET http://laya:8000/health
+returned HTTP 200.
+
+One bounded smoke via the loopback-published gateway returned:
+{"tier":"auto","request_id":"9f2cb3bb3e53469891b71475b9d9bb65","backend_model":"qwen2.5:7b","answer":"Hello!"}
+
+Both containers and their temporary network were stopped with Compose down;
+the named model cache volume was retained. The request was a connectivity
+check only. It did not use paid services or evaluation/held-out prompts and
+does not measure router quality, calibration, latency, or model performance.
+Laya emitted its upstream warning that confidence for choice questions with
+11 or more options is uncalibrated; the gateway router exposes at most three.

@@ -1,0 +1,15 @@
+Run ID: laya-compose-suite-20261122
+Date: 2026-11-22 America/Toronto
+Command: make verify
+
+compileall passed; pytest: 181 passed, 1 warning in 0.97s.
+Warning: upstream Starlette deprecation for httpx in TestClient.
+
+Command: make compose-config
+Base Compose and base-plus-Laya overlay configurations both parsed successfully.
+
+Command: git diff --check
+Passed with no whitespace errors.
+
+This offline suite makes no paid provider calls and does not use held-out
+evaluation records.

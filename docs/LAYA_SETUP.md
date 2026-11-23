@@ -13,6 +13,10 @@ make laya-serve
 
 The default service target binds to `127.0.0.1:8000`, uses Apple MPS, preloads `typed-decisions`, and asks the pinned Laya release to use its reviewed checkpoint revision. Set `LAYA_DEVICE=cpu` in `.env` before `make laya-serve` to use CPU instead.
 
+## Compose deployment
+
+The base Compose stack uses native Ollama and does not start a decision service. For a containerized automatic-routing profile, use `docker compose -f compose.yaml -f compose.laya.yaml up -d --build`. The overlay starts a CPU Laya service on the private Compose network, publishes no Laya port, enables only the exact `laya:8000` service target for the gateway, and stores checkpoint files in a named volume. It downloads the checkpoint on first start. Laya in the container cannot use Apple MPS; the native Mac service above is the lower-overhead option for this machine. To stop the services without deleting named model/monitoring volumes, run `docker compose down`.
+
 Laya downloads its model checkpoint the first time it is loaded. `LAYA_REVISION=reviewed` asks the pinned service release to use its reviewed Hub revisions. Keep this service bound to `127.0.0.1`; do not expose its port publicly. To use CPU instead, set `LAYA_DEVICE=cpu`. Model loading and inference consume local memory and power.
 
 ## Gateway configuration

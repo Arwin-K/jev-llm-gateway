@@ -1,5 +1,6 @@
 .git
 .venv
+.venv-laya
 .uv-cache
 .pytest_cache
 __pycache__

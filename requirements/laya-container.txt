@@ -1,0 +1,6 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Linux ARM PyPI torch defaults to a CUDA-enabled build; the Compose Laya
+# service is CPU-only, so select the official CPU wheel explicitly.
+laya[serve]==0.5.2
+torch==2.14.0+cpu
