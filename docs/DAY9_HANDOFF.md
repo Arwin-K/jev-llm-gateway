@@ -31,4 +31,10 @@ The Nov21 source-tree suite passed 167 tests: `evidence/testing/offline-suite-da
 
 The later Laya adapter source-tree verification passed compileall and 177 tests (`evidence/testing/laya-local-adapter-suite-20261122.txt`). That suite used offline HTTP fixtures; the Laya service was not installed or run. The earlier wheel/install result predates this migration and does not verify packaging of the Laya-updated source.
 
+### 2026-11-22 local functionality follow-up
+
+The pinned Laya 0.5.2 service and reviewed checkpoint were installed/loaded on the M3 Pro Mac in an isolated `.venv-laya`. A new `make mac-config` target created an ignored `.env`; `make doctor-local` reported both Ollama tags installed and Laya health HTTP 200. A real `model=auto` greeting through the gateway selected `qwen2.5:7b` and returned HTTP 200. The gateway and Laya were stopped and Ollama unloaded afterward. New `make verify` result: compileall plus 180 passed, one existing warning; `make compose-config` passed. Details: `evidence/testing/local-laya-gateway-smoke-20261122.txt`.
+
+This only closes local install and one-request connectivity. Laya's routing accuracy and calibration, live verifier/cascade/cache results, missing freeze fields and tier coverage, trained DistilBERT, Colab GPU experiment, sustained load, remote CI, and current wheel build remain open. No paid endpoint or held-out prompt was used.
+
 The previous project handoff remains at [`DAY8_HANDOFF.md`](DAY8_HANDOFF.md). The updated technical report is [`TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md). All release notes are local; nothing was published.

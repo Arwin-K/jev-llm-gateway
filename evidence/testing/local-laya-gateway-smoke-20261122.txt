@@ -1,0 +1,23 @@
+Local Laya gateway verification — 2026-11-22 America/Toronto
+
+Run ID: local-laya-gateway-smoke-20261122
+Purpose: verify the local setup and one real model-routing request; not a benchmark.
+
+Machine: MacBook Pro, Apple M3 Pro, 18 GB unified memory; 47% system memory free before model startup. Python 3.14.5. Disk had 74 GB free after model download.
+
+Setup:
+- `make mac-config` created the ignored `.env` from `config/mac.env.example`; existing `.env` files are left untouched.
+- `make setup-laya` installed `laya[serve]==0.5.2` and its dependencies into ignored `.venv-laya`.
+- Laya model service started with `LAYA_HOST=127.0.0.1`, `LAYA_PORT=8000`, `LAYA_DEVICE=mps`, `LAYA_MODELS=typed-decisions`, `LAYA_PRELOAD=1`, and `LAYA_REVISION=reviewed`.
+- Laya fetched all five checkpoint files and started successfully. Startup emitted an upstream temperature warning for choice questions with 11 or more options; this gateway's route uses at most three choices. This observation does not validate Laya probability calibration.
+- `.venv-laya/bin/python -m pip check`: `No broken requirements found.`
+
+Doctor: `make doctor-local` reported the small and medium Ollama tags installed, frontier unconfigured, and the required Laya health endpoint available with HTTP 200. No generator model was loaded at the time of the doctor check.
+
+Smoke: `.venv/bin/jev smoke --tier auto` returned HTTP 200 through the local gateway. Request ID: `e5476e9796854b73997bd6f316ace699`. Laya selected backend `qwen2.5:7b`, which returned `Hello!` under the CLI's 16-token output cap. This was a manually generated greeting, not a benchmark prompt or quality observation. No paid API was called.
+
+Cleanup: the gateway and Laya service were stopped. `ollama stop qwen2.5:7b` unloaded the model, and a subsequent `ollama ps` showed no resident model.
+
+Full offline verification after the setup/doctor changes: `make verify` passed compileall and 180 tests, with one existing Starlette/httpx deprecation warning. `make compose-config` passed. Neither check starts a container or calls a model.
+
+Limits: the smoke proves one local Laya-compatible decision plus one local generation works on this Mac. It does not establish routing accuracy, calibration, fine-tuning results, verification/cascade quality, sustained load, or held-out performance. The held-out split was not accessed. The hosted Jev and frontier paths remain disabled.

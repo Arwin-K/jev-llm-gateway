@@ -114,3 +114,10 @@ Results recorded under v1 templates have different template fingerprints and are
 - Build repository figures only from committed, sanitized evidence (audits, the metadata-only manifest index, saved pytest output, and `git log`), never from ignored `runs/`, so a clean checkout reproduces them byte-for-byte. Each figure prints its sample counts and source files.
 - Keep matplotlib in a separate optional requirements file and venv rather than a `pyproject` extra: adding an extra would require regenerating `uv.lock`, and `uv` is currently unavailable here. Data loaders are stdlib-only so the normal offline suite can test them.
 - Show missing results (frontier, unrun policies) as explicit "no result" segments and parse/runtime failures as their own outcomes; never impute or drop them to make a chart look complete.
+
+## Local Laya run path — 2026-11-22 America/Toronto
+
+- Keep the gateway core independent of Laya/Torch and install the self-hosted decision service into a separate `.venv-laya`. Use a loopback endpoint on the Mac and require positive process request/token ceilings before decision calls are enabled.
+- Add explicit Make targets for creating (without overwriting) the ignored `.env`, installing Laya, starting the loopback service, starting the gateway with `.env`, and checking required local dependencies. The normal `jev` CLI continues to read shell environment; the Make targets provide the repeatable local path.
+- `jev doctor` may probe Laya's loopback `/health` only when the selected router requires the decision service and positive caps enable it. It must not probe the optional hosted Jev endpoint, which could introduce external traffic or charges.
+- A real one-request smoke confirms wire compatibility/connectivity only. Do not treat it as routing accuracy, calibration, or research evidence; collect task-specific train/validation decisions before selecting policies, and keep the held-out split locked.
