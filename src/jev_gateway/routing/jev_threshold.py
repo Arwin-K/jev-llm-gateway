@@ -46,3 +46,8 @@ class JevThresholdRouter:
                         probabilities=probabilities, usage=reply.usage,
                         question_version=self.question_version, decision_model=reply.model,
                         raw_value=probabilities[tier])
+
+
+class LayaThresholdRouter(JevThresholdRouter):
+    name = 'laya-threshold'
+    question_version = 'laya-generator-success-v1'

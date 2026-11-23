@@ -74,7 +74,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--policy', choices=('always-small','always-medium','always-frontier',
                         'seeded-random','distilbert','prompted-small','jev-choice',
-                        'jev-threshold','strands-decider'), required=True)
+                        'jev-threshold','laya-choice','laya-threshold','strands-decider'), required=True)
     parser.add_argument('--manifest', type=Path, default=Path('runs/day2-manifest.jsonl'))
     parser.add_argument('--split', choices=('train','validation'), default='validation')
     parser.add_argument('--max-prompts', type=int, required=True)
@@ -92,6 +92,10 @@ def main(argv=None):
             parser.error('Jev run requires explicit --paid-enabled, positive --max-usd, key, model, sourced rates and caps')
         settings = replace(settings, jev_max_requests=min(settings.jev_max_requests,args.max_decisions),
                            jev_max_usd=min(settings.jev_max_usd,args.max_usd))
+    elif args.policy.startswith('laya-'):
+        if not settings.decision_enabled or settings.decision_provider != 'laya':
+            parser.error('Laya run requires the local Laya provider, model, and positive request/token caps')
+        settings = replace(settings, jev_max_requests=min(settings.jev_max_requests,args.max_decisions))
     prompts = select_prompts(load(args.manifest,args.split), args.max_prompts, args.prompt_id)
     output = args.output or Path('runs')/f'day3-decisions-{uuid.uuid4().hex}.jsonl'
     if not output.resolve().is_relative_to(Path('runs').resolve()):

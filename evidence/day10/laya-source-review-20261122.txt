@@ -1,0 +1,24 @@
+Laya source and safety review — 2026-11-22 America/Toronto
+
+Requested source: https://github.com/NandhaKishorM/laya
+Release inspected: laya 0.5.2, uploaded to PyPI 2026-11-21.
+
+Findings from the upstream repository and PyPI:
+- Repository license is Apache License 2.0.
+- The project exposes a self-hosted HTTP server at POST /v1/systemone and describes the request/response schema as Jev-compatible.
+- The typed-decision checkpoint is a supported local model. Upstream documents Apple Silicon/MPS support and a reviewed model-revision option (LAYA_REVISION=reviewed).
+- Upstream warns the base checkpoints need task-specific validation/fine-tuning; its documented typed-decision base results are near a random baseline before fine-tuning. No result on this project's routing task is known.
+- PyPI provenance for 0.5.2 names github.com/NandhaKishorM/laya, commit e150aa92a0d4059ac621875b39b620847cf1b88a, published by GitHub Actions trusted publishing. This is provenance evidence, not a security audit.
+- A historical /health disclosure issue against 0.3.21 was closed as fixed in 0.3.23. No test or audit of current package internals was performed here.
+- The upstream security policy page lists 0.3.x as its supported line despite the current 0.5.2 release; review that policy again before any public deployment.
+
+Project decision: default to the self-hosted Laya service bound only to 127.0.0.1, install it in a separate venv, pin laya[serve]==0.5.2, and set LAYA_REVISION=reviewed. The gateway rejects non-loopback Laya URLs and sends no API credential. The core gateway does not depend on Laya, Torch, or CUDA. Hosted Jev remains an optional paid comparison and is disabled by default.
+
+Compatibility limitation: wire format compatibility does not guarantee equivalent behavior. Laya has different choice-confidence semantics, limits choices to 100 options, and its English Noul needs explicit true/false criteria to avoid a documented label issue. The gateway adds descriptive Noul options for Laya. Only offline request fixtures have been checked; the service was not installed or run and no project prompt was sent to Laya.
+
+Sources opened:
+- https://github.com/NandhaKishorM/laya
+- https://github.com/NandhaKishorM/laya/security
+- https://github.com/NandhaKishorM/laya/blob/main/docs/security.md
+- https://github.com/NandhaKishorM/laya/issues/812
+- https://pypi.org/project/laya/0.5.2/

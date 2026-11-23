@@ -29,4 +29,6 @@
 
 The Nov21 source-tree suite passed 167 tests: `evidence/testing/offline-suite-day9-post-cleanup-20261121.txt`. A Nov22 fresh installed-wheel suite passed 174 tests with one existing deprecation warning. The package was built from the current revision with temporary tools and installed into a fresh non-CUDA Python 3.14 environment; CLI, import, and `pip check` passed. Exact hashes and details: `evidence/day10/package-build-install-20261122.txt`. The default PATH still has no `uv`, so `make build` remains unverified as a target. The single local smoke is documented in `evidence/day9/small-gateway-smoke-20261121.txt`; its gateway and Ollama model were stopped/unloaded. No containers remain running.
 
+The later Laya adapter source-tree verification passed compileall and 177 tests (`evidence/testing/laya-local-adapter-suite-20261122.txt`). That suite used offline HTTP fixtures; the Laya service was not installed or run. The earlier wheel/install result predates this migration and does not verify packaging of the Laya-updated source.
+
 The previous project handoff remains at [`DAY8_HANDOFF.md`](DAY8_HANDOFF.md). The updated technical report is [`TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md). All release notes are local; nothing was published.

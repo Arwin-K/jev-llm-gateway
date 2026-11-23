@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "jev-gateway"
 version = "0.1.0"
-description = "Three-tier text chat gateway for the full Jev project"
+description = "Three-tier text chat gateway with a self-hosted Laya decision router"
 license = "MIT"
 license-files = ["LICENSE"]
 readme = "README.md"

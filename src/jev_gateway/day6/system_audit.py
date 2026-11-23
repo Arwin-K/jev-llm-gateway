@@ -8,6 +8,7 @@ from .common import digest, write_new
 
 ROUTER_POLICIES = ('always-small', 'always-medium', 'always-frontier', 'seeded-random-17',
                    'distilbert', 'prompted-small', 'jev-choice', 'jev-threshold',
+                   'laya-choice', 'laya-threshold',
                    'strands-decider', 'observed-hindsight-oracle')
 CACHE_MODES = ('disabled', 'similarity_only', 'verified')
 

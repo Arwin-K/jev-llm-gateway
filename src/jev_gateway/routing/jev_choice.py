@@ -1,4 +1,4 @@
-"""Jev typed choice among the currently eligible generation backends."""
+"""Typed System One choice among the currently eligible generation backends."""
 from .contracts import Decision, RoutingError, RoutingRequest
 
 
@@ -41,3 +41,8 @@ class JevChoiceRouter:
                         probabilities=probabilities, usage=reply.usage,
                         question_version=self.question_version, decision_model=reply.model,
                         raw_value=selected)
+
+
+class LayaChoiceRouter(JevChoiceRouter):
+    name = 'laya-choice'
+    question_version = 'laya-routing-choice-v1'

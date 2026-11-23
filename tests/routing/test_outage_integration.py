@@ -24,7 +24,8 @@ class FixtureTrainedFallback:
 def test_controlled_jev_outage_breaker_fallback_and_recovery(monkeypatch, caplog):
     caplog.set_level("INFO", logger="jev_gateway.trace")
     monkeypatch.setenv("TYPESAFE_API_KEY", "offline-fixture-only")
-    settings = replace(from_env(), jev_model="fixture", jev_max_requests=10,
+    settings = replace(from_env(), decision_provider="jev", decision_url="https://api.typesafe.ai",
+                       jev_model="fixture", jev_max_requests=10,
                        jev_max_tokens=100000, jev_max_usd=1,
                        jev_input_usd_per_million=1, jev_output_usd_per_million=1,
                        jev_rate_source_url="https://example.invalid/fixture",
@@ -65,7 +66,8 @@ def test_controlled_jev_outage_breaker_fallback_and_recovery(monkeypatch, caplog
 
 def test_verifier_outage_does_not_use_tier_classifier_as_answer_verifier(monkeypatch):
     monkeypatch.setenv("TYPESAFE_API_KEY", "offline-fixture-only")
-    settings = replace(from_env(), jev_model="fixture", jev_max_requests=10,
+    settings = replace(from_env(), decision_provider="jev", decision_url="https://api.typesafe.ai",
+                       jev_model="fixture", jev_max_requests=10,
                        jev_max_tokens=100000, jev_max_usd=1,
                        jev_input_usd_per_million=1, jev_output_usd_per_million=1,
                        jev_rate_source_url="https://example.invalid/fixture",

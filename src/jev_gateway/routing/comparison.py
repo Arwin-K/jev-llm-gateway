@@ -152,7 +152,7 @@ def main(argv=None):
     reports = compare(prompts, results, selections, policy_names=[
         'always-small','always-medium','always-frontier',f'seeded-random-{args.seed}',
         'observed-hindsight-oracle','distilbert','prompted-small','jev-choice',
-        'jev-threshold','strands-decider'])
+        'jev-threshold','laya-choice','laya-threshold','strands-decider'])
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open('x') as stream:
         stream.write(json.dumps(reports, indent=2))

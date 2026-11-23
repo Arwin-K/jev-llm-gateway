@@ -53,11 +53,12 @@ class ExecutionBudget:
         usd=0.
         status='self_hosted_capacity_unknown'
         if stage in {'router_jev','verification','cache_verification'}:
-            if not self.settings.jev_enabled:
-                raise ExecutionLimit('Jev disabled')
-            usd=(input_units*self.settings.jev_input_usd_per_million +
-                 output_tokens*self.settings.jev_output_usd_per_million)/1_000_000
-            status='estimated_api_reservation'
+            if not self.settings.decision_enabled:
+                raise ExecutionLimit('decision backend disabled')
+            if self.settings.decision_provider == 'jev':
+                usd=(input_units*self.settings.jev_input_usd_per_million +
+                     output_tokens*self.settings.jev_output_usd_per_million)/1_000_000
+                status='estimated_api_reservation'
         if tier=='frontier':
             if not self.settings.frontier_enabled:
                 raise ExecutionLimit('frontier disabled')

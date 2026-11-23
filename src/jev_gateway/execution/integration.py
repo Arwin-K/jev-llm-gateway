@@ -13,10 +13,12 @@ from .cascade import CascadeEngine, ExecutionRequest
 from .modes import ModeExecutor
 
 
-def _paid_ready(settings):
-    return (settings.execution_paid_enabled and settings.jev_enabled and
-            settings.execution_max_requests > 0 and settings.execution_max_tokens > 0 and
-            settings.execution_max_usd > 0)
+def _execution_ready(settings):
+    bounded = (settings.decision_enabled and settings.execution_max_requests > 0 and
+               settings.execution_max_tokens > 0)
+    if settings.decision_provider == 'laya' and not settings.frontier_enabled:
+        return bounded
+    return (bounded and settings.execution_paid_enabled and settings.execution_max_usd > 0)
 
 
 async def execute(app, request, trace, *, max_tokens: int, deadline: float):
@@ -33,11 +35,11 @@ async def execute(app, request, trace, *, max_tokens: int, deadline: float):
         raise HTTPException(422,'cache execution requires route_first, cascade, or hybrid mode')
     if cache_mode=='similarity_only' and not settings.cache_similarity_only_enabled:
         raise HTTPException(503,'experimental similarity-only reuse is disabled')
-    paid=(mode in {'cascade','hybrid'} or cache_mode=='verified' or
-          mode=='route_first' and settings.jev_enabled and
-          getattr(app.state.router,'name','').startswith('jev-'))
-    if paid and not _paid_ready(settings):
-        raise HTTPException(503,'paid execution requires explicit enablement, Jev configuration, and positive run caps')
+    bounded_execution=(mode in {'cascade','hybrid'} or cache_mode=='verified' or
+                       mode=='route_first' and settings.decision_enabled and
+                       getattr(app.state.router,'name','').endswith('-choice'))
+    if bounded_execution and not _execution_ready(settings):
+        raise HTTPException(503,'execution requires explicit enablement, decision backend configuration, and positive run caps')
     if mode in {'cascade','hybrid'} and settings.verification_threshold is None:
         raise HTTPException(503,'answer verification threshold and source are unconfigured')
     if cache_mode=='verified' and settings.cache_verification_threshold is None:
@@ -47,8 +49,8 @@ async def execute(app, request, trace, *, max_tokens: int, deadline: float):
     if not routing.eligible_tiers:
         raise HTTPException(422,'request exceeds configured backend context limits')
     budget=ExecutionBudget(settings,deadline_at=deadline,
-                           max_requests=settings.execution_max_requests if paid else max(4,settings.execution_max_requests),
-                           max_tokens=settings.execution_max_tokens if paid else max(50000,settings.execution_max_tokens),
+                           max_requests=settings.execution_max_requests if bounded_execution else max(4,settings.execution_max_requests),
+                           max_tokens=settings.execution_max_tokens if bounded_execution else max(50000,settings.execution_max_tokens),
                            max_usd=settings.execution_max_usd,frontier_budget=app.state.budget)
     scope=None
     cache_state='off'

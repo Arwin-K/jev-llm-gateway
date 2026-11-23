@@ -54,7 +54,8 @@ def test_prompted_timeout_and_invalid_choice_are_errors():
 
 def test_jev_budget_and_timeout_fail_closed(monkeypatch):
     monkeypatch.setenv('TYPESAFE_API_KEY','test-only')
-    settings=replace(from_env(),jev_model='jev-latest',jev_max_requests=1,
+    settings=replace(from_env(),decision_provider='jev',decision_url='https://api.typesafe.ai',
+                     jev_model='jev-latest',jev_max_requests=1,
                      jev_max_tokens=1,jev_max_usd=1,jev_input_usd_per_million=1,
                      jev_output_usd_per_million=1, jev_rate_source_url='https://example.com/rates',
                    jev_rate_effective_date='2026-10-29')

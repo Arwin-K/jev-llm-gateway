@@ -1,5 +1,8 @@
 {
-  "default_policy": "jev-choice",
+  "default_policy": "laya-choice",
+  "decision_provider": "laya",
+  "decision_service_url": "http://127.0.0.1:8000",
+  "decision_model": "typed-decisions",
   "fallback_policy": "distilbert_when_compatible_artifact_configured",
   "failure_policy": "return_503_without_eligible_decision",
   "choice_question_version": "routing-choice-v1",
@@ -9,7 +12,7 @@
   "selected_success_thresholds": null,
   "trained_artifact": null,
   "validation_selection": null,
-  "live_jev_model": null,
+  "live_laya_model": null,
   "strands_checkpoint": null,
-  "note": "Null means unavailable or unselected; this file contains no invented validation setting."
+  "note": "Local Laya is the configured decision backend; null means no live run or validation setting has been recorded."
 }

@@ -49,6 +49,8 @@ class Settings:
     frontier_input_usd_per_million: float = 0.0
     frontier_output_usd_per_million: float = 0.0
     router_training_fingerprint: str = ""
+    decision_provider: str = "laya"
+    decision_url: str = "http://127.0.0.1:8000"
     jev_model: str = "UNCONFIGURED"
     jev_max_requests: int = 0
     jev_max_tokens: int = 0
@@ -60,7 +62,7 @@ class Settings:
     jev_breaker_cooldown_seconds: float = 30.
     jev_rate_source_url: str = ""
     jev_rate_effective_date: str = ""
-    router_policy: str = "jev-choice"
+    router_policy: str = "laya-choice"
     router_seed: int = 17
     router_artifact: str = ""
     router_thresholds: str = ""
@@ -85,6 +87,16 @@ class Settings:
     cache_similarity_only_enabled: bool = False
 
     def __post_init__(self):
+        if self.decision_provider not in {"laya", "jev"}:
+            raise ConfigError("JEV_DECISION_PROVIDER must be laya or jev")
+        decision_url = urlparse(self.decision_url)
+        if (decision_url.scheme not in {"http", "https"} or not decision_url.netloc or
+            decision_url.username or decision_url.password):
+            raise ConfigError("decision URL must be an absolute HTTP(S) URL without credentials")
+        if self.decision_provider == "laya" and decision_url.hostname not in {"localhost", "127.0.0.1", "::1"}:
+            raise ConfigError("local Laya decision URL must use loopback; remote decision servers are disabled")
+        if self.decision_provider == "jev" and decision_url.scheme != "https":
+            raise ConfigError("hosted Jev decision URL must use HTTPS")
         if not 0 < self.timeout_seconds <= 300:
             raise ConfigError("timeout_seconds must be between 0 and 300")
         if self.jev_rate_effective_date:
@@ -124,6 +136,13 @@ class Settings:
                     self.jev_input_usd_per_million > 0 and self.jev_output_usd_per_million > 0 and
                     self.jev_rate_source_url.startswith("https://") and self.jev_rate_effective_date)
 
+    @property
+    def decision_enabled(self):
+        bounded = self.jev_model != "UNCONFIGURED" and self.jev_max_requests > 0 and self.jev_max_tokens > 0
+        if self.decision_provider == "laya":
+            return bool(bounded and urlparse(self.decision_url).hostname in {"localhost", "127.0.0.1", "::1"})
+        return self.jev_enabled
+
     def backend(self, tier):
         if tier not in {"small", "medium", "frontier"}:
             raise ConfigError(f"unknown tier: {tier}")
@@ -147,6 +166,8 @@ def from_env():
         except ValueError as exc:
             raise ConfigError(f"{name} must be a number") from exc
 
+    decision_provider=os.getenv("JEV_DECISION_PROVIDER", "laya").lower()
+    decision_url=os.getenv("JEV_DECISION_URL", "http://127.0.0.1:8000" if decision_provider == "laya" else "https://api.typesafe.ai")
     return Settings(
         small=Backend("small", os.getenv("JEV_SMALL_MODEL", "qwen2.5:1.5b"), os.getenv("JEV_SMALL_URL", "http://127.0.0.1:11434/v1"), max_context_tokens=integer("JEV_SMALL_CONTEXT_TOKENS", "4096")),
         medium=Backend("medium", os.getenv("JEV_MEDIUM_MODEL", "qwen2.5:7b"), os.getenv("JEV_MEDIUM_URL", "http://127.0.0.1:11434/v1"), max_context_tokens=integer("JEV_MEDIUM_CONTEXT_TOKENS", "4096")),
@@ -163,7 +184,9 @@ def from_env():
         frontier_input_usd_per_million=number("JEV_FRONTIER_INPUT_USD_PER_MILLION", "0"),
         frontier_output_usd_per_million=number("JEV_FRONTIER_OUTPUT_USD_PER_MILLION", "0"),
         router_training_fingerprint=os.getenv("JEV_ROUTER_TRAINING_FINGERPRINT", ""),
-        jev_model=os.getenv("JEV_DECISION_MODEL") or "UNCONFIGURED",
+        decision_provider=decision_provider,
+        decision_url=decision_url,
+        jev_model=os.getenv("JEV_DECISION_MODEL") or ("typed-decisions" if decision_provider == "laya" else "UNCONFIGURED"),
         jev_max_requests=integer("JEV_DECISION_MAX_REQUESTS", "0"),
         jev_max_tokens=integer("JEV_DECISION_MAX_TOKENS", "0"),
         jev_max_usd=number("JEV_DECISION_MAX_USD", "0"),
@@ -174,7 +197,7 @@ def from_env():
         jev_breaker_cooldown_seconds=number("JEV_BREAKER_COOLDOWN_SECONDS", "30"),
         jev_rate_source_url=os.getenv("JEV_DECISION_RATE_SOURCE_URL", ""),
         jev_rate_effective_date=os.getenv("JEV_DECISION_RATE_EFFECTIVE_DATE", ""),
-        router_policy=os.getenv("JEV_ROUTER_POLICY", "jev-choice"),
+        router_policy=os.getenv("JEV_ROUTER_POLICY", "laya-choice"),
         router_seed=integer("JEV_ROUTER_SEED", "17"),
         router_artifact=os.getenv("JEV_ROUTER_ARTIFACT", ""),
         router_thresholds=os.getenv("JEV_ROUTER_THRESHOLDS", ""),

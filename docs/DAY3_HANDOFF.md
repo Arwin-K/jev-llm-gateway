@@ -71,3 +71,7 @@ For a live Jev validation collection, configure an official HTTPS rate source an
 ```
 
 The calibration CLI also accepts `selected-success` and `oracle-tier`. Its denominator covers selected decisions with the requested probability event; failed decisions remain in the decision file and are not assigned fabricated probabilities. It emits `insufficient_data` and no figure when independently scored coverage is absent; it does not treat a router's own probability as ground truth.
+
+## Laya migration update — 2026-11-22
+
+The historical Day 3 notes above describe the original Jev-first design. The active project configuration now defaults to self-hosted Laya (`laya-choice`) at `http://127.0.0.1:8000`; see [`LAYA_SETUP.md`](LAYA_SETUP.md). Hosted Jev remains an optional paid comparison. No Laya service or model has yet been installed or run.

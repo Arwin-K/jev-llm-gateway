@@ -1,6 +1,6 @@
-# Jev LLM Gateway
+# Local Model Routing Gateway
 
-A reproducible study of three-tier language-model serving, answer quality, cost, and routing. The current application serves explicit `small`, `medium`, and configured `frontier` text-chat tiers. Its evaluation tools prepare a frozen 2,500-prompt benchmark across math, multiple choice, and coding tasks, record bounded attempts, score answers, and report coverage without hiding failures.
+A reproducible study of three-tier language-model serving, answer quality, cost, and routing. The current application uses a self-hosted Laya decision service by default and serves explicit `small`, `medium`, and configured `frontier` text-chat tiers. Its evaluation tools prepare a frozen 2,500-prompt benchmark across math, multiple choice, and coding tasks, record bounded attempts, score answers, and report coverage without hiding failures.
 
 **Architecture:** [Implemented request and evaluation paths](docs/ARCHITECTURE.md) · **Reproduce:** [Evaluation workflow](docs/EVALUATION_WORKFLOW.md) · **Evidence:** [Experiment ledger](docs/EXPERIMENTS.md) · **Status:** [Verified and pending features](docs/FEATURE_STATUS.md)
 
@@ -8,7 +8,7 @@ A reproducible study of three-tier language-model serving, answer quality, cost,
 
 > How much answer quality can a cost-aware gateway retain while using smaller models when possible, and what latency and spending overhead do routing, verification, and caching introduce?
 
-The gateway now supports automatic policy selection, typed Jev choice and success questions, a prompted small-model comparison, fixed and seeded-random baselines, and a local Strands typed-server adapter. The DistilBERT trainer and artifact-gated fallback are implemented but no trained artifact exists because complete compatible three-tier labels are absent. Optional verifier cascades and scoped semantic caching are implemented and offline-tested; their real model and cache performance remains unmeasured. Day 5 adds an ARM container, local Compose monitoring, a bounded load runner, and a tested kind deployment. Sustained real inference load remains pending. The [project plan](docs/PLAN.md) describes the remaining scope.
+The gateway now supports automatic Laya policy selection, optional hosted Jev comparison, a prompted small-model comparison, fixed and seeded-random baselines, and a local Strands typed-server adapter. The DistilBERT trainer and artifact-gated fallback are implemented but no trained artifact exists because complete compatible three-tier labels are absent. Optional verifier cascades and scoped semantic caching are implemented and offline-tested; their real model and cache performance remains unmeasured. Day 5 adds an ARM container, local Compose monitoring, a bounded load runner, and a tested kind deployment. Sustained real inference load remains pending. The [project plan](docs/PLAN.md) describes the remaining scope.
 
 ## Observed evidence
 
@@ -33,12 +33,13 @@ uv run jev doctor
 The configured candidate tags are `qwen2.5:1.5b` and `qwen2.5:7b`. Once Ollama is running and the models are installed, start the gateway and make an explicit-tier request:
 
 ```bash
+# In another terminal, start the local Laya decision service (see docs/LAYA_SETUP.md).
 uv run jev serve
 # In another terminal:
 uv run jev smoke --tier small
 ```
 
-`POST http://127.0.0.1:8080/v1/chat/completions` accepts text messages with `model` set to `small`, `medium`, `frontier`, or `auto`, plus optional `stream`, `max_tokens`, and `temperature`. `model=auto` uses the configured router and returns 503 when neither it nor a compatible trained fallback can decide. Tools, image, and audio inputs are not implemented. `/healthz` checks the process; `/readyz` does not prove a model is loaded. `jev doctor` checks backend availability. The frontier tier stays disabled without a model, key, current rates, and positive request, token, and USD caps. These application-side limits are not provider spending controls.
+`POST http://127.0.0.1:8080/v1/chat/completions` accepts text messages with `model` set to `small`, `medium`, `frontier`, or `auto`, plus optional `stream`, `max_tokens`, and `temperature`. `model=auto` uses the local Laya decision service by default and returns 503 when neither it nor a compatible trained fallback can decide. Tools, image, and audio inputs are not implemented. `/healthz` checks the process; `/readyz` does not prove a model is loaded. `jev doctor` checks backend availability. The frontier tier stays disabled without a model, key, current rates, and positive request, token, and USD caps. Local Laya decision calls are bounded by positive request/token caps and do not require credentials. Hosted Jev remains an optional paid comparison, disabled by default.
 
 Optional `execution_mode` (`route_first`, `cascade`, `hybrid`) and `cache_mode` (`verified`, experimental `similarity_only`) fields enable Day 4 buffered paths. They require explicit configuration; the default remains `standard` with cache `off`. See [Day 4 configuration and failure semantics](docs/DAY4_HANDOFF.md).
 

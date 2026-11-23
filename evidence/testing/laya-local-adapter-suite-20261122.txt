@@ -1,0 +1,10 @@
+Laya local decision-adapter verification — 2026-11-22 America/Toronto
+
+Source parent commit: a5e34bc Refresh technical report verification evidence
+Working tree at run time: contained the uncommitted Laya migration implementation and docs; final commit hash not yet created.
+
+Command: make verify
+Result: compileall passed; 177 tests passed; 1 existing Starlette/httpx deprecation warning; 0.97 seconds.
+Focused routing/execution check before the full suite: 63 passed, 1 same warning, 0.41 seconds.
+
+New offline fixtures verify local Laya loopback transport, no authorization header, zero USD reservation, typed-decision default, explicit Noul criteria, and rejection of non-loopback Laya configuration. No Laya package was installed, no checkpoint was downloaded, and no live Laya request or project prompt was sent. This verifies repository behavior against fixtures only, not upstream runtime compatibility or routing quality.

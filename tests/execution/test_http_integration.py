@@ -27,7 +27,8 @@ class Verifier:
 
 def paid_settings(monkeypatch):
     monkeypatch.setenv('TYPESAFE_API_KEY','offline-test-key')
-    return replace(from_env(),jev_model='fixture-jev',jev_max_requests=10,jev_max_tokens=100000,
+    return replace(from_env(),decision_provider='jev',decision_url='https://api.typesafe.ai',
+                   jev_model='fixture-jev',jev_max_requests=10,jev_max_tokens=100000,
                    jev_max_usd=1,jev_input_usd_per_million=1,jev_output_usd_per_million=1,
                    jev_rate_source_url='https://example.invalid/offline-fixture',
                    jev_rate_effective_date='2026-10-30',execution_paid_enabled=True,
