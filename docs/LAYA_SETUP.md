@@ -4,19 +4,20 @@ The gateway uses Laya as its default System One decision backend. It does not ca
 
 ## Install and run on Apple Silicon
 
-Install the pinned service into its own virtual environment. This keeps its model/runtime dependencies out of the gateway's portable core environment.
+Install the pinned service into its own virtual environment. This keeps its model/runtime dependencies out of the gateway's portable core environment. From the repository root, `make setup-laya` performs this install; review the resulting package install before starting it. The first service startup downloads the pinned model checkpoint.
 
 ```bash
-python3 -m venv .venv-laya
-.venv-laya/bin/python -m pip install -r requirements/laya.txt
-LAYA_HOST=127.0.0.1 LAYA_PORT=8000 LAYA_DEVICE=mps LAYA_MODELS=typed-decisions LAYA_PRELOAD=1 LAYA_REVISION=reviewed .venv-laya/bin/laya-serve
+make setup-laya
+make laya-serve
 ```
+
+The default service target binds to `127.0.0.1:8000`, uses Apple MPS, preloads `typed-decisions`, and asks the pinned Laya release to use its reviewed checkpoint revision. Set `LAYA_DEVICE=cpu` in `.env` before `make laya-serve` to use CPU instead.
 
 Laya downloads its model checkpoint the first time it is loaded. `LAYA_REVISION=reviewed` asks the pinned service release to use its reviewed Hub revisions. Keep this service bound to `127.0.0.1`; do not expose its port publicly. To use CPU instead, set `LAYA_DEVICE=cpu`. Model loading and inference consume local memory and power.
 
 ## Gateway configuration
 
-The Mac example selects the local provider and pins its request to the typed-decision checkpoint:
+`make mac-config` creates `.env` from the Mac example without overwriting an existing file. The profile selects the local provider and pins its request to the typed-decision checkpoint:
 
 ```dotenv
 JEV_DECISION_PROVIDER=laya
