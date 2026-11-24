@@ -1,0 +1,31 @@
+python 3.14.5
+torch 2.14.1
+transformers 4.57.6
+datasets 4.8.5
+accelerate 1.15.0
+mps_available False
+training_module_help=
+usage: python -m laya_gateway.routing.train [-h] --train TRAIN
+                                            --validation VALIDATION
+                                            --output OUTPUT
+                                            --revision REVISION [--seed SEED]
+                                            [--max-length MAX_LENGTH]
+                                            [--epochs EPOCHS]
+                                            [--learning-rate LEARNING_RATE]
+                                            [--batch-size BATCH_SIZE]
+
+Optional DistilBERT fine-tuning from private, pre-labeled development rows.
+
+options:
+  -h, --help            show this help message and exit
+  --train TRAIN
+  --validation VALIDATION
+  --output OUTPUT
+  --revision REVISION
+  --seed SEED
+  --max-length MAX_LENGTH
+  --epochs EPOCHS
+  --learning-rate LEARNING_RATE
+  --batch-size BATCH_SIZE
+
+cli_help_exit_code=0
