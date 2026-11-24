@@ -1,6 +1,6 @@
 import subprocess
-from jev_gateway.evaluation.sandbox import execute
-from jev_gateway.evaluation import sandbox
+from laya_gateway.evaluation.sandbox import execute
+from laya_gateway.evaluation import sandbox
 
 
 def test_docker_command_is_bounded_and_no_host_fallback():

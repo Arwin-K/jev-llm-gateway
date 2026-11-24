@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta, timezone
-from jev_gateway.cache.scope import CacheEntry, eligible, make_scope
+from laya_gateway.cache.scope import CacheEntry, eligible, make_scope
 
 
 def scope(messages=None, **kwargs):
     return make_scope(messages or ({'role':'system','content':'Be brief'},
         {'role':'user','content':'What is 2+2?'}),namespace=kwargs.get('namespace','local'),
-        embedding_identity='minilm@rev',policy_identity='jev-choice@1',
+        embedding_identity='minilm@rev',policy_identity='laya-choice@1',
         model_identity='small=a;medium=b',max_output_tokens=32,temperature=0)
 
 

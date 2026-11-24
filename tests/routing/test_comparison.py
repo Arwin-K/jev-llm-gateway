@@ -1,5 +1,5 @@
-from jev_gateway.routing.comparison import Selection, baselines, compare, write_frontier_svg
-from jev_gateway.evaluation.records import Prompt
+from laya_gateway.routing.comparison import Selection, baselines, compare, write_frontier_svg
+from laya_gateway.evaluation.records import Prompt
 
 
 def prompt(split='validation'):
@@ -24,7 +24,7 @@ def test_seeded_baseline_order_is_stable():
 
 
 def test_saved_decision_replaces_generated_baseline_once():
-    from jev_gateway.routing.comparison import merge_selections
+    from laya_gateway.routing.comparison import merge_selections
     generated=[Selection('p','always-small','small',0.)]
     saved={'status':'selected','selection':{'prompt_id':'p','policy':'always-small','tier':'small',
            'decision_charge_usd':0.,'decision_duration_ms':.1,'execution':'deterministic_local'}}

@@ -4,7 +4,7 @@
   "generation_settings": null,
   "router_artifact": null,
   "router_preprocessing": null,
-  "jev_questions": null,
+  "laya_gateway_questions": null,
   "backend_descriptions": null,
   "thresholds": null,
   "fallback_rules": null,

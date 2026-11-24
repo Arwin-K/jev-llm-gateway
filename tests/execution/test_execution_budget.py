@@ -1,9 +1,9 @@
 import asyncio
 import time
 import pytest
-from jev_gateway.budget import FrontierBudget
-from jev_gateway.config import from_env
-from jev_gateway.execution.budget import ExecutionBudget, ExecutionLimit
+from laya_gateway.budget import FrontierBudget
+from laya_gateway.config import from_env
+from laya_gateway.execution.budget import ExecutionBudget, ExecutionLimit
 
 
 def test_cumulative_requests_and_tokens_do_not_reset():

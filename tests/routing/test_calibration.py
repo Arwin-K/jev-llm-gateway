@@ -1,5 +1,5 @@
 import pytest
-from jev_gateway.routing.calibration import BinaryObservation, binary_report, oracle_label_report, write_reliability_svg
+from laya_gateway.routing.calibration import BinaryObservation, binary_report, oracle_label_report, write_reliability_svg
 
 
 def test_binary_calibration_and_coverage(tmp_path):

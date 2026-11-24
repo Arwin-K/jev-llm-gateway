@@ -4,9 +4,9 @@ import hashlib
 import json
 from pathlib import Path
 
-from jev_gateway.evaluation.manifest import load
-from jev_gateway.evaluation.records import Result
-from jev_gateway.routing.comparison import baselines, compare
+from laya_gateway.evaluation.manifest import load
+from laya_gateway.evaluation.records import Result
+from laya_gateway.routing.comparison import baselines, compare
 
 
 def _sha256(path):
@@ -49,7 +49,7 @@ def build(manifest, small_path, medium_math_choice, medium_code, rescore, *, see
         'input_sources': {str(path): _sha256(path) for path in
                           (manifest, small_path, medium_math_choice, medium_code)},
         'limits': [
-            'Only fixed-tier and seeded-random baselines are replayed; no Jev, prompted-router, or frontier decision was observed.',
+            'Only fixed-tier and seeded-random baselines are replayed; no Laya, prompted-router, or frontier decision was observed.',
             'Missing frontier outputs reduce seeded-random coverage; no missing result is imputed.',
             'Provider charges are unknown, so no cost frontier or cost-quality claim is made.',
             'Validation results are descriptive and do not select a threshold or use the held-out test.'

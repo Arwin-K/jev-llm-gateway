@@ -1,4 +1,4 @@
-from jev_gateway.day6.workload import make
+from laya_gateway.day6.workload import make
 
 
 def test_synthetic_workload_is_repeatable_and_has_defined_lengths():

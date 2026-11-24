@@ -1,6 +1,6 @@
 import pytest
 
-from jev_gateway.day6.uncertainty import paired_difference
+from laya_gateway.day6.uncertainty import paired_difference
 
 
 def test_pairing_retains_group_units():

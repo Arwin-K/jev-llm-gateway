@@ -3,14 +3,14 @@ requires = ["hatchling>=1.27,<2"]
 build-backend = "hatchling.build"
 
 [project]
-name = "jev-gateway"
+name = "laya-gateway"
 version = "0.1.0"
-description = "Three-tier text chat gateway with a self-hosted Laya decision router"
+description = "CLI model routing and local chat using the native Laya Python runtime"
 license = "MIT"
 license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
-dependencies = ["fastapi>=0.115,<1", "httpx>=0.27,<1", "uvicorn>=0.34,<1", "pydantic>=2.10,<3"]
+dependencies = ["httpx>=0.27,<1", "pydantic>=2.10,<3"]
 
 [project.optional-dependencies]
 evaluation = ["duckdb>=1.5,<2"]
@@ -18,12 +18,21 @@ test = ["pytest>=8,<10", "anyio>=4,<5"]
 colab = []
 training = ["transformers>=4.50,<5", "datasets>=3,<5", "accelerate>=1,<2", "torch>=2.6,<3"]
 embeddings = ["sentence-transformers>=3,<6", "faiss-cpu>=1.9,<2"]
+laya = ["laya==0.5.2"]
 
 [project.scripts]
-jev = "jev_gateway.cli:main"
+laya-gateway = "laya_gateway.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/jev_gateway"]
+packages = ["src/laya_gateway"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# Laya 0.5.2 currently requires Transformers 5+, while the documented Colab
+# training extra remains pinned to Transformers 4.x until notebook migration.
+[tool.uv]
+conflicts = [[
+  { package = "laya-gateway", extra = "laya" },
+  { package = "laya-gateway", extra = "training" },
+]]

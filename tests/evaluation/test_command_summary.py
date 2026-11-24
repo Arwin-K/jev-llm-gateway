@@ -3,9 +3,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from jev_gateway.evaluation import commands
-from jev_gateway.evaluation.commands import _run_summary, _select_prompts
-from jev_gateway.evaluation.records import Attempt, Result
+from laya_gateway.evaluation import commands
+from laya_gateway.evaluation.commands import _run_summary, _select_prompts
+from laya_gateway.evaluation.records import Attempt, Result
 
 
 def _result(*, reuse_of=None, response='answer', attempts=1, outcome='correct'):

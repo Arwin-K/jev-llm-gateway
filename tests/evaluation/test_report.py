@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from jev_gateway.evaluation.report import quality_report
+from laya_gateway.evaluation.report import quality_report
 
 
 def test_failures_and_missing_remain_in_denominators():

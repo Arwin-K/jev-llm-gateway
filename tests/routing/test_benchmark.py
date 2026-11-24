@@ -1,8 +1,8 @@
 import asyncio
-from jev_gateway.config import from_env
-from jev_gateway.routing.admission import request_for
-from jev_gateway.routing.baselines import FixedRouter
-from jev_gateway.routing.benchmark import measure
+from laya_gateway.config import from_env
+from laya_gateway.routing.admission import request_for
+from laya_gateway.routing.baselines import FixedRouter
+from laya_gateway.routing.benchmark import measure
 
 
 def test_decision_only_measurement_records_denominator():

@@ -2,10 +2,10 @@ import asyncio
 import json
 from datetime import datetime,timedelta,timezone
 import pytest
-from jev_gateway.cache.check import JevCacheChecker
-from jev_gateway.cache.index import FaissAnswerIndex, IndexUnavailable
-from jev_gateway.cache.retrieval import Candidate
-from jev_gateway.cache.scope import CacheEntry, make_scope
+from laya_gateway.cache.check import LayaCacheChecker
+from laya_gateway.cache.index import FaissAnswerIndex, IndexUnavailable
+from laya_gateway.cache.retrieval import Candidate
+from laya_gateway.cache.scope import CacheEntry, make_scope
 from test_index import FakeFaiss
 
 
@@ -45,6 +45,6 @@ def test_verifier_failure_is_miss_not_reuse():
         (now+timedelta(hours=1)).isoformat(),'small','m','accepted',True,'e@r')
     class Broken:
         async def decide(self,*args,**kwargs): raise TimeoutError()
-    check=asyncio.run(JevCacheChecker(Broken(),threshold=.8,threshold_source='v').check(
+    check=asyncio.run(LayaCacheChecker(Broken(),threshold=.8,threshold_source='v').check(
         Candidate(entry,.95,.9,'v'),({'role':'user','content':'two plus two?'},),current))
     assert check.outcome=='miss' and check.probability is None

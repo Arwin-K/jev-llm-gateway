@@ -1,6 +1,6 @@
 import pytest
 
-from jev_gateway.day6.environment import capture
+from laya_gateway.day6.environment import capture
 
 
 def test_environment_requires_exact_source_revision(tmp_path):

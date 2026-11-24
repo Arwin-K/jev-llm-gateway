@@ -1,47 +1,34 @@
-# Local Laya decision service
+# Native Laya CLI setup
 
-The gateway uses Laya as its default System One decision backend. It does not call Laya's hosted API. The repository's gateway process talks only to the loopback service URL; no API key or per-call billing is needed.
+Laya runs in the `laya-gateway` Python process. There is no separate Laya model server and no decision HTTP endpoint. The CLI uses Laya for `auto` tier selection, then uses local Ollama for text generation.
 
-## Install and run on Apple Silicon
-
-Install the pinned service into its own virtual environment. This keeps its model/runtime dependencies out of the gateway's portable core environment. From the repository root, `make setup-laya` performs this install; review the resulting package install before starting it. The first service startup downloads the pinned model checkpoint.
+## Install and configure
 
 ```bash
+make laya-config
+# Review .env.laya; this command never overwrites an existing file.
 make setup-laya
-make laya-serve
 ```
 
-The default service target binds to `127.0.0.1:8000`, uses Apple MPS, preloads `typed-decisions`, and asks the pinned Laya release to use its reviewed checkpoint revision. Set `LAYA_DEVICE=cpu` in `.env` before `make laya-serve` to use CPU instead.
+`make setup-laya` installs the CLI, tests, and pinned `laya==0.5.2` extra into `.venv-laya` from `uv.lock`. Laya loads `typed-decisions` from its reviewed pinned revision on first use. This extra is intentionally incompatible with the separate `training` extra because Laya currently requires Transformers 5.x while the Colab training path uses 4.x. Use separate virtual environments for those workflows.
 
-## Compose deployment
+The example profile requests MPS. If PyTorch cannot use that accelerator, Laya falls back to CPU. `doctor` reports the requested and observed device. Device capability depends on the installed PyTorch build and host; it is not inferred from the configured value.
 
-The base Compose stack uses native Ollama and does not start a decision service. For a containerized automatic-routing profile, use `docker compose -f compose.yaml -f compose.laya.yaml up -d --build`. The overlay starts a CPU Laya service on the private Compose network, publishes no Laya port, enables only the exact `laya:8000` service target for the gateway, and stores checkpoint files in a named volume. It downloads the checkpoint on first start. Laya in the container cannot use Apple MPS; the native Mac service above is the lower-overhead option for this machine. To stop the services without deleting named model/monitoring volumes, run `docker compose down`.
+## Run local chat
 
-Laya downloads its model checkpoint the first time it is loaded. `LAYA_REVISION=reviewed` asks the pinned service release to use its reviewed Hub revisions. Keep this service bound to `127.0.0.1`; do not expose its port publicly. To use CPU instead, set `LAYA_DEVICE=cpu`. Model loading and inference consume local memory and power.
+Start Ollama locally and ensure the configured `qwen2.5:1.5b` and `qwen2.5:7b` models are installed. Then:
 
-## Gateway configuration
-
-`make mac-config` creates `.env` from the Mac example without overwriting an existing file. The profile selects the local provider and pins its request to the typed-decision checkpoint:
-
-```dotenv
-JEV_DECISION_PROVIDER=laya
-JEV_DECISION_URL=http://127.0.0.1:8000
-JEV_DECISION_MODEL=typed-decisions
-JEV_DECISION_MAX_REQUESTS=100
-JEV_DECISION_MAX_TOKENS=200000
-JEV_ROUTER_POLICY=laya-choice
+```bash
+make doctor-local
+make chat PROMPT='Explain how model routing works' MODEL=auto
 ```
 
-The positive request/token limits are process-local ceilings. The `JEV_DECISION_MAX_USD` and rate fields apply only when `JEV_DECISION_PROVIDER=jev`; keep those unset/zero for the local Laya path. The gateway rejects non-loopback URLs for Laya, and the Laya client sends no authorization token.
+`auto` makes a local in-process Laya decision between `small` and `medium`. `MODEL=small` or `MODEL=medium` bypasses Laya and selects that Ollama model explicitly. The generation call uses Ollama's loopback OpenAI-compatible endpoint; the application does not start or expose an HTTP server. No Laya API key, hosted decision call, or paid usage is required.
 
-## Compatibility and evaluation limits
+Configuration lives in `.env.laya` and uses `LAYA_MODEL`, `LAYA_DEVICE`, `LAYA_REVISION`, `LAYA_MAX_REQUESTS`, `LAYA_MAX_INPUT_UNITS`, plus `LAYA_GATEWAY_*` variables for local generation models and the CLI policy. `config/laya.env.example` contains the defaults. Do not place credentials or private prompts in committed config.
 
-Laya's self-hosted server implements the Jev-compatible `POST /v1/systemone` wire format, but compatibility does not imply identical behavior. Laya caps choice fan-out at 100 options and has different confidence semantics from Jev. This project currently asks it to choose among at most three eligible tiers. Re-select and calibrate every probability threshold against this project's validation data. Do not use a Jev threshold with Laya without validation.
+## Verification limits
 
-Laya upstream reports that its base typed-decision checkpoints need task-specific fine-tuning for strong performance and provides a fine-tuning path. No Laya inference, fine-tuning, or accuracy result has yet been measured on this project's routing prompts. The held-out split remains locked. Treat the integration as an unevaluated local backend until real train/validation evidence is collected.
+The local checkpoint has loaded and answered one synthetic choice prompt on this machine. The doctor run found MPS unavailable and used CPU; Ollama was unreachable at that time. No project-specific routing accuracy, confidence calibration, throughput, or complete generated chat result has been established. Laya emits an upstream calibration warning for one `choice:11+` value; the application's route has two choices, but the model still requires domain-specific evaluation before its probabilities can be treated as calibrated.
 
-## Personal-project safety notes
-
-The upstream code is Apache-2.0. PyPI's provenance for pinned `laya==0.5.2` identifies the upstream GitHub Actions publisher and commit `e150aa92a0d4059ac621875b39b620847cf1b88a`; this is a useful supply-chain signal, not a complete security audit. Keep installation isolated in `.venv-laya`, keep model serving loopback-only, and do not pass secrets or sensitive prompts during evaluation. The upstream project is fast-moving, so review the package/model release and its dependencies before upgrading. The original code integration used fixtures only; a later local install and one-request gateway smoke succeeded on 2026-11-22. See `evidence/testing/local-laya-gateway-smoke-20261122.txt`. This smoke does not measure router quality.
-
-The optional hosted Jev comparison remains available through `JEV_DECISION_PROVIDER=jev`; it requires its own credentials, sourced rates, and explicit positive paid caps. It is disabled by default.
+The pinned package provenance and prior safety review are recorded in `evidence/day10/laya-source-review-20261122.txt`. The decision runtime does not send user text to an external service. The Ollama endpoint is configured to loopback by default; changing that URL can send prompts to the configured host.

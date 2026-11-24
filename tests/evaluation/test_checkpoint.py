@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 import pytest
-from jev_gateway.evaluation.checkpoint import Checkpoints, key
-from jev_gateway.evaluation.datasets import gsm8k
-from jev_gateway.evaluation.records import Result
-from jev_gateway.config import from_env
+from laya_gateway.evaluation.checkpoint import Checkpoints, key
+from laya_gateway.evaluation.datasets import gsm8k
+from laya_gateway.evaluation.records import Result
+from laya_gateway.config import from_env
 
 
 def test_checkpoint_identity_and_partial_resume(tmp_path):

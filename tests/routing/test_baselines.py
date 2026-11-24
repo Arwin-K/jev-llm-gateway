@@ -1,9 +1,9 @@
 import asyncio
 import pytest
-from jev_gateway.config import from_env
-from jev_gateway.routing.admission import request_for
-from jev_gateway.routing.baselines import FixedRouter, SeededRandomRouter
-from jev_gateway.routing.contracts import RoutingError
+from laya_gateway.config import from_env
+from laya_gateway.routing.admission import request_for
+from laya_gateway.routing.baselines import FixedRouter, SeededRandomRouter
+from laya_gateway.routing.contracts import RoutingError
 
 
 def test_fixed_and_random_respect_eligibility():

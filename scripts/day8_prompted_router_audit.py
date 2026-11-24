@@ -110,7 +110,7 @@ def build(index_path, validation_decisions, small_results, validation_diagnostic
             'Two targeted validation failures and 30 disjoint train-pilot decisions reported JSONDecodeError; this does not establish a cause for every initial failure.',
             'Saved generator outcomes are joined only to successful route selections for descriptive analysis; router run made no generation requests.',
             'Prompt version 2 was explored on train prompts only and was not evaluated on validation.',
-            'No Jev, frontier, paid-provider, or held-out test call/result is included.'
+            'No Laya, frontier, paid-provider, or held-out test call/result is included.'
         ]
     }
 

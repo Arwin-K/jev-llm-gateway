@@ -16,7 +16,7 @@ jobs:
         run: |
           make compile
           git diff --check
-          uvx ruff@0.14.0 check --select E4,E9,F src/jev_gateway/admission.py src/jev_gateway/failover.py src/jev_gateway/observability.py src/jev_gateway/routing/breaker.py src/jev_gateway/evaluation/checkpoint.py src/jev_gateway/evaluation/sandbox.py load scripts/kind_replacement.py tests/test_admission.py tests/test_failover.py tests/test_observability.py tests/test_readiness.py tests/test_load_report.py tests/test_load_runner.py tests/test_ci_regression_prompts.py tests/routing/test_breaker.py tests/routing/test_outage_integration.py tests/evaluation/test_checkpoint.py tests/evaluation/test_sandbox.py
+          uvx ruff@0.14.0 check --select E4,E9,F src/laya_gateway tests load scripts
       - name: Offline regression suite
         run: make test
       - name: Build package

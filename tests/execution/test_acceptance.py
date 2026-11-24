@@ -1,9 +1,9 @@
-from jev_gateway.execution.acceptance import AcceptancePolicy
-from jev_gateway.execution.verifier import VerificationDecision, EVENT, QUESTION_VERSION
+from laya_gateway.execution.acceptance import AcceptancePolicy
+from laya_gateway.execution.verifier import VerificationDecision, EVENT, QUESTION_VERSION
 
 
 def decision(probability):
-    return VerificationDecision('r','hash',probability,EVENT,QUESTION_VERSION,'jev',1.,{})
+    return VerificationDecision('r','hash',probability,EVENT,QUESTION_VERSION,'laya',1.,{})
 
 
 def test_threshold_and_failure_modes_are_distinct():

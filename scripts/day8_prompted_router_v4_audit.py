@@ -91,7 +91,7 @@ def build(index_path, train_path, validation_path, small_path, failed_validation
         'limits': [
             'The 30-prompt train pilot is development evidence and has no validation claim.',
             'Saved small-tier scores are joined descriptively; the router made no answer-generation calls.',
-            'This is a local prompted-router comparison, not a Jev, DistilBERT, frontier, paid-provider, or held-out test result.'
+            'This is a local prompted-router comparison, not a Laya, DistilBERT, frontier, paid-provider, or held-out test result.'
         ]
     }
 

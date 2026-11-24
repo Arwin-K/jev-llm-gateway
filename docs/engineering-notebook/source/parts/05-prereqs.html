@@ -4,9 +4,9 @@
 
 <h2 id="python-packaging">Python packages, imports, virtual environments and lockfiles</h2>
 
-<p>A <b>module</b> is one <code>.py</code> file; a <b>package</b> is a directory of modules that can be imported by name. The gateway's code lives in <code>src/jev_gateway/</code>, so <code>from jev_gateway.config import from_env</code> works once the package is installed. The <code>src/</code> layout prevents a common trap: without it, Python can import the code straight from the working directory and tests pass even when the package would fail to install.</p>
+<p>A <b>module</b> is one <code>.py</code> file; a <b>package</b> is a directory of modules that can be imported by name. The gateway's code lives in <code>src/laya_gateway/</code>, so <code>from laya_gateway.config import from_env</code> works once the package is installed. The <code>src/</code> layout prevents a common trap: without it, Python can import the code straight from the working directory and tests pass even when the package would fail to install.</p>
 
-<p>A <b>virtual environment</b> (<code>.venv/</code>) is a private directory of installed packages for one project, so the gateway's FastAPI version cannot collide with another project's. <b>pyproject.toml</b> declares what the project needs: here, four core dependencies (FastAPI, httpx, Uvicorn, Pydantic) with version ranges, plus optional groups — <code>test</code>, <code>training</code> (transformers, datasets, accelerate, torch) and <code>embeddings</code> (sentence-transformers, faiss-cpu) — and a console script that makes <code>jev</code> run <code>jev_gateway.cli:main</code>.</p>
+<p>A <b>virtual environment</b> (<code>.venv/</code>) is a private directory of installed packages for one project, so the gateway's FastAPI version cannot collide with another project's. <b>pyproject.toml</b> declares what the project needs: here, four core dependencies (FastAPI, httpx, Uvicorn, Pydantic) with version ranges, plus optional groups — <code>test</code>, <code>training</code> (transformers, datasets, accelerate, torch) and <code>embeddings</code> (sentence-transformers, faiss-cpu) — and a console script that makes <code>jev</code> run <code>laya_gateway.cli:main</code>.</p>
 
 <p>A <b>lockfile</b> (<code>uv.lock</code>) records the exact version and hash of every package, including indirect ones, that satisfied those ranges when it was created. <code>uv sync --locked</code> installs exactly that set and fails if <code>pyproject.toml</code> and the lock disagree, which is what makes "it worked on my machine" reproducible on a clean checkout.</p>
 
@@ -109,7 +109,7 @@ shasum -a 256 jev-source.zip</code></pre></li>
 <table>
   <thead><tr><th style="width:24%">Path</th><th style="width:12%">State</th><th>Responsibility</th></tr></thead>
   <tbody>
-    <tr><td><code>src/jev_gateway/</code></td><td>exists</td><td>The installable application package: API, configuration, transport, budget, tracing, diagnostics, Ollama discovery, CLI.</td></tr>
+    <tr><td><code>src/laya_gateway/</code></td><td>exists</td><td>The installable application package: API, configuration, transport, budget, tracing, diagnostics, Ollama discovery, CLI.</td></tr>
     <tr><td><code>tests/</code></td><td>exists</td><td>Offline tests (15 at D1-18). Real checks are opt-in and live in <code>scripts/</code>.</td></tr>
     <tr><td><code>config/</code></td><td>exists</td><td>Example environment profiles for Mac and Colab. No secrets.</td></tr>
     <tr><td><code>requirements/</code></td><td>exists</td><td>Environment-specific pins that must not enter the core install (vLLM for Colab).</td></tr>
@@ -118,11 +118,11 @@ shasum -a 256 jev-source.zip</code></pre></li>
     <tr><td><code>docs/</code></td><td>exists</td><td>Plan, commit plan, status, decisions, environments, experiments, runtime profiles — the engineering evidence ledger. This notebook lives in <code>docs/engineering-notebook/</code>.</td></tr>
     <tr><td><code>evidence/day1/</code></td><td>exists</td><td>Raw, timestamped outputs that status claims cite.</td></tr>
     <tr><td><code>prompts/</code></td><td>exists</td><td>Per-day build instructions from the starter.</td></tr>
-    <tr><td><code>src/jev_gateway/eval/</code></td><td><span class="pill plan">Planned</span></td><td>Day 2 record schema, dataset loaders, manifest and split builder, scorers, runner, reports.</td></tr>
+    <tr><td><code>src/laya_gateway/eval/</code></td><td><span class="pill plan">Planned</span></td><td>Day 2 record schema, dataset loaders, manifest and split builder, scorers, runner, reports.</td></tr>
     <tr><td><code>data/manifests/</code></td><td><span class="pill plan">Planned</span></td><td>Frozen manifest files and their hashes (prompt IDs and provenance, not bulk dataset copies).</td></tr>
     <tr><td><code>results/</code></td><td><span class="pill plan">Planned</span></td><td>Run outputs (already in <code>.gitignore</code>); summaries copied into <code>evidence/</code> when cited.</td></tr>
     <tr><td><code>sandbox/</code></td><td><span class="pill plan">Planned</span></td><td>Container definition for isolated code scoring.</td></tr>
   </tbody>
 </table>
 
-<figure data-src="f15-modules" id="fig-modules"><figcaption>Module map of <code>src/jev_gateway</code> at D1-18. Arrows point from a module to what it uses. <code>api.py</code> is the hub for serving; <code>diagnostics.py</code> and <code>ollama.py</code> support the <code>doctor</code> and <code>smoke</code> commands.</figcaption></figure>
+<figure data-src="f15-modules" id="fig-modules"><figcaption>Module map of <code>src/laya_gateway</code> at D1-18. Arrows point from a module to what it uses. <code>api.py</code> is the hub for serving; <code>diagnostics.py</code> and <code>ollama.py</code> support the <code>doctor</code> and <code>smoke</code> commands.</figcaption></figure>

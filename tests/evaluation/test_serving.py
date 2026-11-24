@@ -1,6 +1,6 @@
 import pytest
-from jev_gateway.config import from_env
-from jev_gateway.evaluation.serving import Workload, run
+from laya_gateway.config import from_env
+from laya_gateway.evaluation.serving import Workload, run
 
 
 def test_workload_validation_and_paid_gate():

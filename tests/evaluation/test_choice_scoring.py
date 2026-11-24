@@ -1,4 +1,4 @@
-from jev_gateway.evaluation.scoring import format_compliant, score_choice, score_choice_strict
+from laya_gateway.evaluation.scoring import format_compliant, score_choice, score_choice_strict
 
 
 def test_choice_conservative_extraction():

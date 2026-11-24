@@ -1,38 +1,38 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: jev-gateway
+  name: laya-gateway
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: jev-gateway-config
-  namespace: jev-gateway
+  name: laya-gateway-config
+  namespace: laya-gateway
 data:
-  JEV_BIND_HOST: "0.0.0.0"
-  JEV_SMALL_URL: "http://host.docker.internal:11434/v1"
-  JEV_MEDIUM_URL: "http://host.docker.internal:11434/v1"
-  JEV_ROUTER_POLICY: "always-small"
-  JEV_CACHE_PATH: ""
-  JEV_EXECUTION_PAID_ENABLED: "false"
-  JEV_AVAILABILITY_FAILOVER_ENABLED: "false"
-  JEV_MAX_ACTIVE_REQUESTS: "4"
-  JEV_MAX_QUEUED_REQUESTS: "8"
+  LAYA_GATEWAY_BIND_HOST: "0.0.0.0"
+  LAYA_GATEWAY_SMALL_URL: "http://host.docker.internal:11434/v1"
+  LAYA_GATEWAY_MEDIUM_URL: "http://host.docker.internal:11434/v1"
+  LAYA_GATEWAY_ROUTER_POLICY: "always-small"
+  LAYA_GATEWAY_CACHE_PATH: ""
+  LAYA_GATEWAY_EXECUTION_PAID_ENABLED: "false"
+  LAYA_GATEWAY_AVAILABILITY_FAILOVER_ENABLED: "false"
+  LAYA_GATEWAY_MAX_ACTIVE_REQUESTS: "4"
+  LAYA_GATEWAY_MAX_QUEUED_REQUESTS: "8"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jev-gateway
-  namespace: jev-gateway
+  name: laya-gateway
+  namespace: laya-gateway
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: jev-gateway
+      app: laya-gateway
   template:
     metadata:
       labels:
-        app: jev-gateway
+        app: laya-gateway
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
@@ -41,16 +41,16 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: gateway
-          image: jev-gateway:day5
+          image: laya-gateway:day5
           imagePullPolicy: Never
           ports:
             - name: http
               containerPort: 8080
           envFrom:
             - configMapRef:
-                name: jev-gateway-config
+                name: laya-gateway-config
             - secretRef:
-                name: jev-gateway-credentials
+                name: laya-gateway-credentials
                 optional: true
           resources:
             requests:
@@ -88,12 +88,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: jev-gateway
-  namespace: jev-gateway
+  name: laya-gateway
+  namespace: laya-gateway
 spec:
   type: ClusterIP
   selector:
-    app: jev-gateway
+    app: laya-gateway
   ports:
     - name: http
       port: 8080

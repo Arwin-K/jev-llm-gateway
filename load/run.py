@@ -25,7 +25,7 @@ def main():
     parser.add_argument("--wait-seconds", type=float, default=1.)
     parser.add_argument("--placement", required=True)
     parser.add_argument("--model-condition", choices=("cold", "warm", "unverified"), required=True)
-    parser.add_argument("--gateway-container", default="jev-gateway-gateway-1")
+    parser.add_argument("--gateway-container", default="laya-gateway-gateway-1")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
@@ -39,23 +39,23 @@ def main():
     if args.stream and (args.execution_mode != "standard" or args.cache_mode != "off"):
         parser.error("streaming is supported only for standard execution without cache")
     uses_paid = ("frontier" in mix or args.execution_mode in {"cascade", "hybrid"} or
-                 args.cache_mode == "verified" or "auto" in mix and os.getenv("JEV_ROUTER_POLICY", "jev-choice").startswith("jev-"))
+                 args.cache_mode == "verified" or "auto" in mix and os.getenv("LAYA_GATEWAY_ROUTER_POLICY", "laya-choice").startswith("laya-"))
     if uses_paid and (not args.paid_enabled or args.max_usd <= 0):
         parser.error("paid-capable workloads need explicit enablement and positive USD cap")
     if uses_paid:
         # The gateway remains the spending enforcer. This runner verifies the same
         # process-local caps are explicitly configured before launching traffic.
-        for name in ("JEV_EXECUTION_MAX_REQUESTS", "JEV_EXECUTION_MAX_TOKENS", "JEV_EXECUTION_MAX_USD"):
+        for name in ("LAYA_GATEWAY_EXECUTION_MAX_REQUESTS", "LAYA_GATEWAY_EXECUTION_MAX_TOKENS", "LAYA_GATEWAY_EXECUTION_MAX_USD"):
             if float(os.getenv(name, "0")) <= 0:
                 parser.error(f"{name} must be positive for paid-capable load")
-        if os.getenv("JEV_EXECUTION_PAID_ENABLED", "false").lower() != "true":
-            parser.error("JEV_EXECUTION_PAID_ENABLED must be true for paid-capable load")
+        if os.getenv("LAYA_GATEWAY_EXECUTION_PAID_ENABLED", "false").lower() != "true":
+            parser.error("LAYA_GATEWAY_EXECUTION_PAID_ENABLED must be true for paid-capable load")
         provider_caps = []
-        frontier_configured = bool(os.getenv("JEV_FRONTIER_MODEL") and os.getenv("JEV_FRONTIER_API_KEY"))
+        frontier_configured = bool(os.getenv("LAYA_GATEWAY_FRONTIER_MODEL") and os.getenv("LAYA_GATEWAY_FRONTIER_API_KEY"))
         may_reach_frontier = "frontier" in mix or frontier_configured and (
             "auto" in mix or args.execution_mode in {"cascade", "hybrid"})
-        for name in (("JEV_FRONTIER_MAX_USD",) if may_reach_frontier else ()) + (
-            ("JEV_DECISION_MAX_USD",) if args.execution_mode in {"cascade", "hybrid"} or
+        for name in (("LAYA_GATEWAY_FRONTIER_MAX_USD",) if may_reach_frontier else ()) + (
+            ("LAYA_GATEWAY_DECISION_MAX_USD",) if args.execution_mode in {"cascade", "hybrid"} or
             args.cache_mode == "verified" or "auto" in mix else ()):
             configured = float(os.getenv(name, "0"))
             if configured <= 0:
@@ -87,12 +87,12 @@ def main():
     manifest["started_at"] = datetime.now(timezone.utc).isoformat()
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     env = dict(os.environ)
-    env.update({"JEV_LOAD_SCENARIO": args.scenario, "JEV_LOAD_USERS": str(args.base_users),
-                "JEV_LOAD_MAX_REQUESTS": str(args.max_requests), "JEV_LOAD_MAX_TOKENS": str(args.max_tokens),
-                "JEV_LOAD_OUTPUT_TOKENS": str(args.output_tokens), "JEV_LOAD_MIX": json.dumps(mix),
-                "JEV_LOAD_STREAM": str(args.stream).lower(), "JEV_LOAD_EXECUTION_MODE": args.execution_mode,
-                "JEV_LOAD_CACHE_MODE": args.cache_mode, "JEV_LOAD_WAIT_SECONDS": str(args.wait_seconds),
-                "JEV_LOAD_RAW_EVENTS": str((args.output / "requests.jsonl").resolve())})
+    env.update({"LAYA_GATEWAY_LOAD_SCENARIO": args.scenario, "LAYA_GATEWAY_LOAD_USERS": str(args.base_users),
+                "LAYA_GATEWAY_LOAD_MAX_REQUESTS": str(args.max_requests), "LAYA_GATEWAY_LOAD_MAX_TOKENS": str(args.max_tokens),
+                "LAYA_GATEWAY_LOAD_OUTPUT_TOKENS": str(args.output_tokens), "LAYA_GATEWAY_LOAD_MIX": json.dumps(mix),
+                "LAYA_GATEWAY_LOAD_STREAM": str(args.stream).lower(), "LAYA_GATEWAY_LOAD_EXECUTION_MODE": args.execution_mode,
+                "LAYA_GATEWAY_LOAD_CACHE_MODE": args.cache_mode, "LAYA_GATEWAY_LOAD_WAIT_SECONDS": str(args.wait_seconds),
+                "LAYA_GATEWAY_LOAD_RAW_EVENTS": str((args.output / "requests.jsonl").resolve())})
     command = ["locust", "-f", str(Path(__file__).with_name("locustfile.py")), "--headless",
                "--host", args.host, "--csv", str(args.output / "locust"), "--csv-full-history"]
     from resources import sample

@@ -1,5 +1,9 @@
 # Experiment evidence
 
+## Native Laya direct inference check — 2026-11-23 America/Toronto
+
+During the CLI migration, the installed Laya 0.5.2 runtime loaded the pinned typed-decision checkpoint and returned `small` for one synthetic choice-routing question. Observed decision duration was about 737 ms. A later `laya-gateway doctor` run loaded the checkpoint again, reported CPU fallback because MPS was unavailable, and found both configured Ollama tags unreachable (`ConnectError`). It also surfaced the upstream calibration warning for `choice:11+`. Raw doctor output is `evidence/testing/native-laya-cli-doctor-20261123.txt`; the full compile and 151-test offline result is `evidence/testing/native-laya-migration-offline-20261123.txt`. These are functional checks only; no Ollama generation request or project-prompt quality evaluation ran.
+
 ## Maintenance verification — 2026-11-17 America/Toronto
 
 Run `maintenance-offline-20261117`: `make verify` on the existing project `.venv` (Python 3.14.5) compiled `src`, `load`, `scripts`, and `tests`, then passed **149 offline tests** in 0.82 seconds with one third-party Starlette deprecation warning. Raw output: `evidence/testing/maintenance-offline-20261117.txt`. Focused checks also passed before the final suite: sandbox 3 tests, checkpoint persistence 5 tests, Locust runner 4 tests, and Locust report 6 tests. Ruff/remote CI were not run because the local `uv`/`ruff` tools are unavailable; no live service or experiment was started.
@@ -33,7 +37,7 @@ The existing `runs/day2-run-8debb816c7474f559ab5197df9c1fea6.jsonl` was inspecte
 
 ## Day 3 validation replay — 2026-10-29 America/Toronto
 
-`python -m jev_gateway.routing.comparison --run runs/day2-run-8debb816c7474f559ab5197df9c1fea6.jsonl --output runs/day3-validation-comparison-20261029.json` produced a private JSON report and SVG (`runs/day3-validation-comparison-20261029.svg`). It enumerated ten planned policies but plotted zero cost-quality points. Small and medium fixed baselines each matched one backend-error result and lacked 499 results; frontier lacked all 500. The seeded random baseline matched one backend error and lacked 499 results. No router had saved real selections or scored answers. This is offline replay, not a live request or end-to-end timing result. The empty plot is the correct evidence state, not a quality comparison.
+`python -m laya_gateway.routing.comparison --run runs/day2-run-8debb816c7474f559ab5197df9c1fea6.jsonl --output runs/day3-validation-comparison-20261029.json` produced a private JSON report and SVG (`runs/day3-validation-comparison-20261029.svg`). It enumerated ten planned policies but plotted zero cost-quality points. Small and medium fixed baselines each matched one backend-error result and lacked 499 results; frontier lacked all 500. The seeded random baseline matched one backend error and lacked 499 results. No router had saved real selections or scored answers. This is offline replay, not a live request or end-to-end timing result. The empty plot is the correct evidence state, not a quality comparison.
 
 ## Day 3 local decision-only benchmark — 2026-10-29 America/Toronto
 
@@ -41,7 +45,7 @@ Run `e6f85069cc9d4bd3a5545766cb7dc0a6` is preserved in ignored `runs/day3-routin
 
 Day 3 final offline check: `.venv/bin/pytest -q` returned 69 passed, one Starlette deprecation warning, 0.40 seconds. Sanitized raw output is `evidence/day3/mac-offline-20261029.txt`. `jev doctor` returned both local tiers unavailable with `ConnectError` and frontier unconfigured. No inference or training job is running.
 
-Day 3 post-merge command check (decision only): `.venv/bin/python -m jev_gateway.routing.evaluate --policy always-small --max-prompts 1 --max-decisions 1 --output runs/day3-decisions-fixed-small-20261029.jsonl` recorded one deterministic local selection and zero errors. It did not call Ollama or generate an answer. Calibration reporting against the existing two-error Day 2 run returned `insufficient_data`, count 0, with no SVG; the private report is `runs/day3-calibration-fixed-small-20261029.json`. A comparison replay accepted the saved decision file. No live router was contacted.
+Day 3 post-merge command check (decision only): `.venv/bin/python -m laya_gateway.routing.evaluate --policy always-small --max-prompts 1 --max-decisions 1 --output runs/day3-decisions-fixed-small-20261029.jsonl` recorded one deterministic local selection and zero errors. It did not call Ollama or generate an answer. Calibration reporting against the existing two-error Day 2 run returned `insufficient_data`, count 0, with no SVG; the private report is `runs/day3-calibration-fixed-small-20261029.json`. A comparison replay accepted the saved decision file. No live router was contacted.
 
 The first replay with the saved fixed-policy selection exposed a duplicate-key error: replay had already generated that same baseline prompt. The comparison loader now replaces the generated baseline row with the saved decision for that policy/prompt and rejects duplicate supplied rows. The rerun wrote `runs/day3-validation-comparison-3bea4651658849c281cc93880b2c82e9.json` and still plotted zero points. This was a real workflow bug, not a model-quality finding.
 

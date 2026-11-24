@@ -1,5 +1,5 @@
 {
-  "schema": "jev.day6.serving.v1",
+  "schema": "laya.day6.serving.v1",
   "model": "Qwen/Qwen2.5-1.5B-Instruct",
   "model_revision": "REPLACE_WITH_RESOLVED_COMMIT",
   "tokenizer_revision": "REPLACE_WITH_RESOLVED_COMMIT",

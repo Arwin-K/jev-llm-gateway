@@ -7,8 +7,7 @@ Run commands from the repository root. These steps separate offline preparation,
 ```bash
 uv sync --locked --extra evaluation --extra test
 uv run pytest -q
-uv run jev eval-prepare
-uv run jev doctor
+uv run laya-gateway eval-prepare
 ```
 
 `eval-prepare` downloads revision-specific GSM8K and MMLU Parquet files plus Google Research's sanitized MBPP JSON, then writes `runs/day2-manifest.jsonl`. Its tracked companion, `docs/day2-manifest-index.jsonl`, contains IDs, split labels, group hashes, and revisions only. The initial preparation observed 7,473 GSM8K, 14,042 MMLU, and 427 MBPP rows and selected 1,100/1,000/400 prompts. The project split is 1,500 train, 500 validation, and 500 held-out test. Re-running preparation refuses to replace an existing full manifest with different content. The source pools and protocol differences are described in [dataset notes](DAY2_DATASETS.md).
@@ -17,10 +16,10 @@ The benchmark's source split and the project's split are distinct. The project c
 
 ## Collect a bounded development subset
 
-Start with one prompt per tier. Check `doctor` first. An unavailable backend produces a real error record and no scored answer.
+Start with one prompt per tier. The evaluation runner contacts the configured generation backends directly; an unavailable backend produces a real error record and no scored answer. For interactive CLI prerequisites, use `make setup-laya` followed by `make doctor-local` as described in [native Laya setup](LAYA_SETUP.md).
 
 ```bash
-uv run jev eval-run --split validation --tier small --tier medium --max-prompts 1 --max-requests 2 --max-tokens 10000 --output-tokens 32 --concurrency 1
+uv run laya-gateway eval-run --split validation --tier small --tier medium --max-prompts 1 --max-requests 2 --max-tokens 10000 --output-tokens 32 --concurrency 1
 ```
 
 The command prints a unique ignored `runs/day2-run-*.jsonl` path. Request and token caps apply across tier attempts, including retries. `--retries` is at most 3. `--concurrency` bounds simultaneous calls. Completed compatible results are checkpointed under `runs/day2-checkpoints/`; retries and failures remain visible in the run file. Reuse preserves the original run identity and timestamps. A changed prompt, template, model, backend, or generation setting prevents reuse. A failed evaluation can be retried on a later run.
@@ -28,7 +27,7 @@ The command prints a unique ignored `runs/day2-run-*.jsonl` path. Request and to
 Use `--task math`, `--task choice`, or `--task code` to collect one task type; repeat the option to select more than one. Use `--prompt-id <manifest-id>` to target exact rows for a bounded retry; repeat it for more than one. Both filters run before `--max-prompts`, and manifest order is preserved. For example, when Docker is unavailable, math and choice can be collected without attempting code prompts:
 
 ```bash
-uv run jev eval-run --split train --task math --task choice --tier small --max-prompts 1260 --max-requests 1260 --max-tokens 3000000 --output-tokens 512 --concurrency 1
+uv run laya-gateway eval-run --split train --task math --task choice --tier small --max-prompts 1260 --max-requests 1260 --max-tokens 3000000 --output-tokens 512 --concurrency 1
 ```
 
 The CLI summary distinguishes returned rows, checkpoint-reused rows, backend attempts, and new responses. A resumed row is not a new model call.
@@ -36,16 +35,16 @@ The CLI summary distinguishes returned rows, checkpoint-reused rows, backend att
 To retry one unresolved backend failure after verifying the service is available:
 
 ```bash
-uv run jev eval-run --split train --task code --prompt-id mbpp:573 --tier small --max-prompts 1 --max-requests 1 --max-tokens 5000 --output-tokens 512 --concurrency 1 --retries 0
+uv run laya-gateway eval-run --split train --task code --prompt-id mbpp:573 --tier small --max-prompts 1 --max-requests 1 --max-tokens 5000 --output-tokens 512 --concurrency 1 --retries 0
 ```
 
-For a frontier run, configure `JEV_FRONTIER_MODEL`, `JEV_FRONTIER_API_KEY`, positive `JEV_FRONTIER_MAX_REQUESTS`, `JEV_FRONTIER_MAX_TOKENS`, `JEV_FRONTIER_MAX_USD`, and current input/output rate environment values. Then pass `--tier frontier --paid-enabled --max-usd <positive-cap> --rate-file <private-json>`. The rate file is an array of objects with `model`, `input_usd_per_million`, `output_usd_per_million`, `effective_date` (ISO date), and `source_url`. Use the provider's current published rate page. Do not commit credentials, rate assumptions, raw answers, or private audit exports. Local application guards do not replace provider account spending controls.
+For a frontier run, configure `LAYA_GATEWAY_FRONTIER_MODEL`, `LAYA_GATEWAY_FRONTIER_API_KEY`, positive `LAYA_GATEWAY_FRONTIER_MAX_REQUESTS`, `LAYA_GATEWAY_FRONTIER_MAX_TOKENS`, `LAYA_GATEWAY_FRONTIER_MAX_USD`, and current input/output rate environment values. Then pass `--tier frontier --paid-enabled --max-usd <positive-cap> --rate-file <private-json>`. The rate file is an array of objects with `model`, `input_usd_per_million`, `output_usd_per_million`, `effective_date` (ISO date), and `source_url`. Use the provider's current published rate page. Do not commit credentials, rate assumptions, raw answers, or private audit exports. Local application guards do not replace provider account spending controls.
 
 ## Report and audit an explicit run
 
 ```bash
-uv run jev eval-report --run runs/<printed-day2-run-file>.jsonl --split validation
-uv run jev eval-audit --run runs/<printed-day2-run-file>.jsonl --split validation
+uv run laya-gateway eval-report --run runs/<printed-day2-run-file>.jsonl --split validation
+uv run laya-gateway eval-audit --run runs/<printed-day2-run-file>.jsonl --split validation
 ```
 
 Reports compare observed prompt/tier pairs with the entire selected split. Scored accuracy uses correct/(correct+incorrect), while correct-completion rate uses correct/all expected prompts. Missing rows and failures remain visible. Overall rows weight tasks by selected prompt count. The audit CSV is private, includes reference answers or tests, and labels every exported row `pending_human_review`. Exporting it does not mean anyone reviewed or corrected it. The exporter takes up to 40 observed development rows per task, where available. [Record and metric definitions](DAY2_SCHEMA.md) describe outcomes, costs, and labels.
@@ -53,11 +52,11 @@ Reports compare observed prompt/tier pairs with the entire selected split. Score
 ## Measure serving separately
 
 ```bash
-uv run jev eval-serving --tier small --prompt 'Say hello.' --requests 3 --arrival-interval 1 --concurrency 1 --output-tokens 32 --warmup 1 --cache-state off --placement mac --model-condition unverified
+uv run laya-gateway eval-serving --tier small --prompt 'Say hello.' --requests 3 --arrival-interval 1 --concurrency 1 --output-tokens 32 --warmup 1 --cache-state off --placement mac --model-condition unverified
 ```
 
 This sends streaming traffic and writes an ignored `runs/day2-serving-*.json`. It records scheduled and achieved starts, first visible text, end-to-end latency, errors, and provider output tokens when available. It does not score answer quality. Do not label a run cold or warm without checking model state. No serving baseline has been measured against a live model yet; [serving definitions](DAY2_SERVING.md) give the formulas.
 
 ## Known blockers and next step
 
-As of 2026-11-19, Ollama 0.40.16 is running on loopback, and both installed model digests were recorded. One new small-tier train request succeeded; previous compatible rows were restored from checkpoints. Docker Desktop is not running, so live code scoring and code rows in new runs are blocked. Frontier remains unconfigured. Use task filters to collect non-code observations while Docker is unavailable; complete the code tasks after the sandbox is available. Human audit and complete compatible train/validation observations across tiers are still needed before hindsight labels can support Day 3 routing work. See [the handoff](DAY2_HANDOFF.md) for historical evidence and current [project status](STATUS.md).
+As of 2026-11-23, the active environment's Ollama endpoint was unreachable and frontier remains unconfigured. Docker availability was not checked during the native Laya migration. Use task filters to collect non-code observations while Docker is unavailable; complete the code tasks after the sandbox is available. Human audit and compatible train/validation observations across tiers are still needed before hindsight labels can support routing work. See [the handoff](DAY2_HANDOFF.md) for historical evidence and current [project status](STATUS.md).

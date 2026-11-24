@@ -7,20 +7,20 @@ from datetime import datetime, timezone
 from locust import HttpUser, LoadTestShape, between, events, task
 
 
-SCENARIO = os.environ["JEV_LOAD_SCENARIO"]
-BASE_USERS = int(os.environ["JEV_LOAD_USERS"])
-MAX_REQUESTS = int(os.environ["JEV_LOAD_MAX_REQUESTS"])
-MAX_TOKENS = int(os.environ["JEV_LOAD_MAX_TOKENS"])
-OUTPUT_TOKENS = int(os.environ["JEV_LOAD_OUTPUT_TOKENS"])
-MIX = json.loads(os.environ["JEV_LOAD_MIX"])
-STREAM = os.environ["JEV_LOAD_STREAM"] == "true"
-MODE = os.environ["JEV_LOAD_EXECUTION_MODE"]
-CACHE = os.environ["JEV_LOAD_CACHE_MODE"]
-WAIT = float(os.environ["JEV_LOAD_WAIT_SECONDS"])
+SCENARIO = os.environ["LAYA_GATEWAY_LOAD_SCENARIO"]
+BASE_USERS = int(os.environ["LAYA_GATEWAY_LOAD_USERS"])
+MAX_REQUESTS = int(os.environ["LAYA_GATEWAY_LOAD_MAX_REQUESTS"])
+MAX_TOKENS = int(os.environ["LAYA_GATEWAY_LOAD_MAX_TOKENS"])
+OUTPUT_TOKENS = int(os.environ["LAYA_GATEWAY_LOAD_OUTPUT_TOKENS"])
+MIX = json.loads(os.environ["LAYA_GATEWAY_LOAD_MIX"])
+STREAM = os.environ["LAYA_GATEWAY_LOAD_STREAM"] == "true"
+MODE = os.environ["LAYA_GATEWAY_LOAD_EXECUTION_MODE"]
+CACHE = os.environ["LAYA_GATEWAY_LOAD_CACHE_MODE"]
+WAIT = float(os.environ["LAYA_GATEWAY_LOAD_WAIT_SECONDS"])
 _lock = threading.Lock()
 _requests = 0
 _reserved_tokens = 0
-RAW_EVENTS = os.environ["JEV_LOAD_RAW_EVENTS"]
+RAW_EVENTS = os.environ["LAYA_GATEWAY_LOAD_RAW_EVENTS"]
 
 
 @events.request.add_listener

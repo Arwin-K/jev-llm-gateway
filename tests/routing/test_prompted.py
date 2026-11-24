@@ -2,11 +2,11 @@ import asyncio
 import json
 import httpx
 import pytest
-from jev_gateway.config import from_env
-from jev_gateway.transport import BackendTransport
-from jev_gateway.routing.admission import request_for
-from jev_gateway.routing.prompted import PromptedRouter
-from jev_gateway.routing.contracts import RoutingError
+from laya_gateway.config import from_env
+from laya_gateway.transport import BackendTransport
+from laya_gateway.routing.admission import request_for
+from laya_gateway.routing.prompted import PromptedRouter
+from laya_gateway.routing.contracts import RoutingError
 
 
 def test_prompted_router_parses_only_eligible_json():

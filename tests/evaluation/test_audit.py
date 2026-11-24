@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from jev_gateway.evaluation.audit import export
+from laya_gateway.evaluation.audit import export
 
 
 def test_audit_private_dev_only(tmp_path):

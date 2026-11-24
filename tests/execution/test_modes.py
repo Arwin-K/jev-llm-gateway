@@ -1,9 +1,9 @@
 import asyncio
 import time
-from jev_gateway.execution.acceptance import AcceptancePolicy
-from jev_gateway.execution.cascade import CascadeEngine, ExecutionRequest
-from jev_gateway.execution.modes import ModeExecutor
-from jev_gateway.routing.contracts import Decision, RoutingRequest
+from laya_gateway.execution.acceptance import AcceptancePolicy
+from laya_gateway.execution.cascade import CascadeEngine, ExecutionRequest
+from laya_gateway.execution.modes import ModeExecutor
+from laya_gateway.routing.contracts import Decision, RoutingRequest
 from test_cascade import Generator, Verifier
 
 
@@ -30,7 +30,7 @@ def test_modes_keep_route_and_verification_distinct():
 def test_failed_primary_uses_compatible_trained_fallback_only():
     class Unavailable:
         async def decide(self, request):
-            raise ValueError('Jev unavailable')
+            raise ValueError('Laya unavailable')
     generator=Generator()
     engine=CascadeEngine(generator,Verifier(),AcceptancePolicy(.8,'validation-a'),
                          {'small':'s','medium':'m','frontier':'f'})

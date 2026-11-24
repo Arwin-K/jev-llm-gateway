@@ -26,8 +26,8 @@ Run from the repository root. The current environment has `.venv/bin/python` and
 .venv/bin/jev doctor
 .venv/bin/jev serve
 .venv/bin/jev smoke --tier auto
-.venv/bin/python -m jev_gateway.routing.benchmark --samples 100 --warmup 10
-.venv/bin/python -m jev_gateway.routing.comparison --run runs/day2-run-8debb816c7474f559ab5197df9c1fea6.jsonl
+.venv/bin/python -m laya_gateway.routing.benchmark --samples 100 --warmup 10
+.venv/bin/python -m laya_gateway.routing.comparison --run runs/day2-run-8debb816c7474f559ab5197df9c1fea6.jsonl
 ```
 
 `jev smoke --tier auto` is a live request; it currently returns 503 with the default disabled Jev configuration. For an explicitly configured local baseline, export `JEV_ROUTER_POLICY=always-small`, start Ollama and the gateway, then run it again. No model installation or paid call is automatic.
@@ -35,16 +35,16 @@ Run from the repository root. The current environment has `.venv/bin/python` and
 After collecting complete real train and validation results with known comparable per-tier costs, export private labels separately:
 
 ```bash
-.venv/bin/python -m jev_gateway.routing.prepare --split train --run runs/<train-run>.jsonl --output runs/day3-train-labels.jsonl
-.venv/bin/python -m jev_gateway.routing.prepare --split validation --run runs/<validation-run>.jsonl --output runs/day3-validation-labels.jsonl
+.venv/bin/python -m laya_gateway.routing.prepare --split train --run runs/<train-run>.jsonl --output runs/day3-train-labels.jsonl
+.venv/bin/python -m laya_gateway.routing.prepare --split validation --run runs/<validation-run>.jsonl --output runs/day3-validation-labels.jsonl
 ```
 
 Run the optional training extra in a Colab GPU environment using `notebooks/day3_distilbert.ipynb`, a pinned DistilBERT revision, and the same committed repository source. Its equivalent module command is:
 
 ```bash
-python -m jev_gateway.routing.train --train runs/day3-train-labels.jsonl --validation runs/day3-validation-labels.jsonl --output runs/day3-distilbert --revision <pinned-Hugging-Face-commit>
-python -m jev_gateway.routing.artifact --path runs/day3-distilbert
-python -m jev_gateway.routing.tuning --cases runs/<validation-cases>.jsonl --candidates runs/<candidate-thresholds>.json --min-quality 0.8 --min-coverage 1 --output runs/day3-validation-selection.json
+python -m laya_gateway.routing.train --train runs/day3-train-labels.jsonl --validation runs/day3-validation-labels.jsonl --output runs/day3-distilbert --revision <pinned-Hugging-Face-commit>
+python -m laya_gateway.routing.artifact --path runs/day3-distilbert
+python -m laya_gateway.routing.tuning --cases runs/<validation-cases>.jsonl --candidates runs/<candidate-thresholds>.json --min-quality 0.8 --min-coverage 1 --output runs/day3-validation-selection.json
 ```
 
 The training command refuses empty labels and mismatched backend or generation identities. It saves weights, tokenizer, mapping, split IDs, source revisions, hyperparameters, metrics, and a save/reload prediction check under ignored `runs/`. The tuning command uses validation cases only and refuses a selection without complete coverage, known cost, and the requested quality. The numerical objective above is an example invocation, not an empirically chosen project threshold. There is no current input file for these last commands.
@@ -60,14 +60,14 @@ Official integration references checked 2026-10-29: [TypeSafe OpenAPI schema](ht
 The decision collector writes private JSONL with selected tiers, probability semantics, usage, timing, or explicit error categories. It never generates answers. For a local fixed policy, this exact bounded command was run:
 
 ```bash
-.venv/bin/python -m jev_gateway.routing.evaluate --policy always-small --max-prompts 1 --max-decisions 1
+.venv/bin/python -m laya_gateway.routing.evaluate --policy always-small --max-prompts 1 --max-decisions 1
 ```
 
 For a live Jev validation collection, configure an official HTTPS rate source and ISO effective date in addition to key, model, positive environment caps, and current rate values. Then use `--policy jev-choice` or `--policy jev-threshold` with `--paid-enabled --max-usd <positive-run-cap> --max-decisions <positive-request-cap>`. No such run has occurred. Pass the printed decision file to replay and calibration:
 
 ```bash
-.venv/bin/python -m jev_gateway.routing.comparison --run runs/<validation-run>.jsonl --selections runs/<decision-run>.jsonl
-.venv/bin/python -m jev_gateway.routing.calibration_report --event generator-success --decisions runs/<decision-run>.jsonl --run runs/<validation-run>.jsonl
+.venv/bin/python -m laya_gateway.routing.comparison --run runs/<validation-run>.jsonl --selections runs/<decision-run>.jsonl
+.venv/bin/python -m laya_gateway.routing.calibration_report --event generator-success --decisions runs/<decision-run>.jsonl --run runs/<validation-run>.jsonl
 ```
 
 The calibration CLI also accepts `selected-success` and `oracle-tier`. Its denominator covers selected decisions with the requested probability event; failed decisions remain in the decision file and are not assigned fabricated probabilities. It emits `insufficient_data` and no figure when independently scored coverage is absent; it does not treat a router's own probability as ground truth.

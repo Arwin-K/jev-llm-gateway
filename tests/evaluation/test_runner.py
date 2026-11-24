@@ -1,8 +1,8 @@
 import asyncio
 import pytest
-from jev_gateway.config import from_env
-from jev_gateway.evaluation.datasets import gsm8k
-from jev_gateway.evaluation.runner import RunLimits, RunBudget, evaluate_batch, evaluate_one
+from laya_gateway.config import from_env
+from laya_gateway.evaluation.datasets import gsm8k
+from laya_gateway.evaluation.runner import RunLimits, RunBudget, evaluate_batch, evaluate_one
 
 
 class FakeTransport:
@@ -25,7 +25,7 @@ def test_runner_caps_and_paid_gate():
 
 
 def test_resumption_avoids_second_call(tmp_path):
-    from jev_gateway.evaluation.checkpoint import Checkpoints
+    from laya_gateway.evaluation.checkpoint import Checkpoints
     prompt=gsm8k({'question':'1+1?', 'answer':'#### 2'},0).model_copy(update={'split':'validation'})
     transport=FakeTransport(); store=Checkpoints(tmp_path); limits=RunLimits(2,10000,0)
     first=asyncio.run(evaluate_batch([prompt],['small'],'first',from_env(),transport,limits,checkpoints=store))

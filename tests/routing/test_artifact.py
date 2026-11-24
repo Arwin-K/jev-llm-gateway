@@ -1,6 +1,6 @@
 import json
 import pytest
-from jev_gateway.routing.artifact import ArtifactError, inspect
+from laya_gateway.routing.artifact import ArtifactError, inspect
 
 
 def test_untrained_or_incomplete_artifact_rejected(tmp_path):

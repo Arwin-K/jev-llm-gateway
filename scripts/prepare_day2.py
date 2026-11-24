@@ -2,8 +2,8 @@
 import argparse
 import json
 from pathlib import Path
-from jev_gateway.evaluation.datasets import fetch_parquet, fetch_mbpp, read_jsonl, GSM_REV, MMLU_REV
-from jev_gateway.evaluation.manifest import build, load_all, same_assignment, save
+from laya_gateway.evaluation.datasets import fetch_parquet, fetch_mbpp, read_jsonl, GSM_REV, MMLU_REV
+from laya_gateway.evaluation.manifest import build, load_all, same_assignment, save
 
 # Row counts observed when the pinned snapshots were first downloaded (docs/DAY2_DATASETS.md).
 EXPECTED_ROWS = {'gsm8k-train.jsonl': 7473, 'mmlu-test.jsonl': 14042, 'mbpp-sanitized.jsonl': 427}

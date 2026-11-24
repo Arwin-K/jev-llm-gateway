@@ -214,7 +214,7 @@ def _setup():
         'font.family': 'DejaVu Sans', 'font.size': 11, 'axes.edgecolor': COLORS['grid'],
         'axes.labelcolor': COLORS['ink'], 'xtick.color': COLORS['muted'], 'ytick.color': COLORS['ink'],
         'axes.spines.top': False, 'axes.spines.right': False, 'axes.titleweight': 'bold',
-        'axes.titlesize': 13, 'axes.titlelocation': 'left', 'svg.hashsalt': 'jev-progress-figures',
+        'axes.titlesize': 13, 'axes.titlelocation': 'left', 'svg.hashsalt': 'laya-progress-figures',
         'svg.fonttype': 'path', 'figure.facecolor': 'white',
     })
     return plt
@@ -284,7 +284,7 @@ def fig_system_map(plt, out, png_dir, written, root):
     fig = plt.figure(figsize=(15, 9))
     ax = fig.add_axes([0.02, 0.06, 0.96, 0.80])
     ax.set_xlim(0, 100), ax.set_ylim(0, 62), ax.axis('off')
-    _header(fig, 'Jev gateway: what exists and what has actually run',
+    _header(fig, 'Laya gateway: what exists and what has actually run',
             'Request path (top) and the evaluation, deployment and monitoring stack around it. '
             'Dot colour = strongest evidence for that component.',
             'docs/FEATURE_STATUS.md, evidence/day5, evidence/day8, evidence/day9')
@@ -295,18 +295,18 @@ def fig_system_map(plt, out, png_dir, written, root):
         ('request/token/USD caps', 'offline'), ('circuit breaker', 'offline'), ('live smoke: HTTP 200', 'live')])
     _box(ax, 33.5, 54, 15, 'Semantic cache', [
         ('MiniLM embeddings', 'pending'), ('FAISS index', 'pending'), ('scope + freshness', 'offline'),
-        ('Jev reuse check', 'offline'), ('verified answers only', 'offline')])
+        ('Laya reuse check', 'offline'), ('verified answers only', 'offline')])
     _box(ax, 51.5, 54, 17.5, 'Router (model=auto)', [
-        ('Jev choice/success', 'pending'), ('DistilBERT fallback', 'pending'),
+        ('Laya choice/success', 'pending'), ('DistilBERT fallback', 'pending'),
         (f"prompted-small v4 ({lq['router_decision_ms']['median']:.0f} ms)", 'live'),
         ('Strands decider', 'pending'), ('fixed / random', 'live'), ('JSON-schema output', 'live'),
         ('eligibility gates', 'offline')])
     _box(ax, 72, 54, 12, 'small tier', [('qwen2.5:1.5b', 'live')], status='live')
     _box(ax, 72, 43.5, 12, 'medium tier', [('qwen2.5:7b', 'live')], status='live')
     _box(ax, 72, 33, 12, 'frontier tier', [('paid API, capped', 'pending')], status='pending', dashed=True)
-    _box(ax, 87, 54, 12.5, 'Jev verifier', [
+    _box(ax, 87, 54, 12.5, 'Laya verifier', [
         ('accept / reject', 'offline'), ('escalate: small →', 'offline'), ('medium → frontier', 'offline'),
-        ('accepted → cache', 'offline'), ('live Jev API', 'pending')])
+        ('accepted → cache', 'offline'), ('live Laya API', 'pending')])
 
     _arrow(ax, 11.8, 43, 13.7, 43)
     _arrow(ax, 30.8, 46, 33.2, 46)
@@ -353,7 +353,7 @@ def fig_eval_pipeline(plt, out, png_dir, written, root):
         (split_label('train'), 'live'), (split_label('validation'), 'live'),
         (split_label('test') + ' (locked)', 'pending'), ('seeded 60/20/20, group-aware', 'live')])
     ax.text(26.75, 25.6, 'counts: math / choice / code', ha='center', fontsize=8.5, color=COLORS['muted'])
-    _box(ax, 38, 44, 15, 'jev eval-run', [('request + token caps', 'live'), ('concurrency 1, no retry', 'live'),
+    _box(ax, 38, 44, 15, 'laya eval-run', [('request + token caps', 'live'), ('concurrency 1, no retry', 'live'),
                                           ('resumable checkpoints', 'live'), ('--task / --prompt-id', 'live'),
                                           ('output path reserved', 'live'), ('paid tiers gated', 'offline')])
     _box(ax, 55.5, 44, 15, 'Scorers', [('math: strict final', 'live'), ('number parser', 'live'),

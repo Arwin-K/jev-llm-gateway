@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import pytest
-from jev_gateway.evaluation.records import Result
-from jev_gateway.routing.calibration_report import report, SUCCESS_EVENT
+from laya_gateway.evaluation.records import Result
+from laya_gateway.routing.calibration_report import report, SUCCESS_EVENT
 
 
 def test_success_calibration_uses_scored_result_not_router_opinion():

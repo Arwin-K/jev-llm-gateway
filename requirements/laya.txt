@@ -1,2 +1,2 @@
-# Optional, self-hosted decision service. Install in a separate venv so core stays portable.
-laya[serve]==0.5.2
+# Native, in-process Laya decision runtime; no Laya HTTP server extra is needed.
+laya==0.5.2

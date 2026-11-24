@@ -1,6 +1,6 @@
 import asyncio
 import pytest
-from jev_gateway.cache.embedding import MiniLMEncoder, EmbeddingUnavailable
+from laya_gateway.cache.embedding import MiniLMEncoder, EmbeddingUnavailable
 
 
 class FakeModel:

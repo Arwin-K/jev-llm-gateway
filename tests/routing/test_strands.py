@@ -1,9 +1,9 @@
 import asyncio
 import httpx
 import pytest
-from jev_gateway.config import from_env
-from jev_gateway.routing.admission import request_for
-from jev_gateway.routing.strands import StrandsRouter
+from laya_gateway.config import from_env
+from laya_gateway.routing.admission import request_for
+from laya_gateway.routing.strands import StrandsRouter
 
 
 def test_local_typed_server_contract():

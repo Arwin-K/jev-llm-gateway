@@ -1,7 +1,7 @@
 import asyncio
 import httpx
-from jev_gateway.config import Backend
-from jev_gateway.ollama import loaded_models, model_status
+from laya_gateway.config import Backend
+from laya_gateway.ollama import loaded_models, model_status
 
 
 def test_native_model_identity():

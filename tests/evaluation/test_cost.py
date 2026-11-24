@@ -1,6 +1,6 @@
 from datetime import date
 from types import SimpleNamespace
-from jev_gateway.evaluation.cost import ApiRate, account_attempts, capacity_cost
+from laya_gateway.evaluation.cost import ApiRate, account_attempts, capacity_cost
 
 
 def test_cost_all_attempts_and_idle_capacity():
@@ -14,6 +14,6 @@ def test_cost_all_attempts_and_idle_capacity():
 
 def test_rate_model_must_match():
     import pytest
-    from jev_gateway.evaluation.cost import attach_cost
+    from laya_gateway.evaluation.cost import attach_cost
     with pytest.raises(ValueError):
         attach_cost(SimpleNamespace(model='a'),ApiRate('b',1,1,date(2026,10,28),'https://example.com'))

@@ -1,8 +1,8 @@
 import asyncio
 import time
-from jev_gateway.execution.acceptance import AcceptancePolicy
-from jev_gateway.execution.cascade import CascadeEngine, ExecutionRequest
-from jev_gateway.execution.verifier import VerificationDecision, EVENT, QUESTION_VERSION
+from laya_gateway.execution.acceptance import AcceptancePolicy
+from laya_gateway.execution.cascade import CascadeEngine, ExecutionRequest
+from laya_gateway.execution.verifier import VerificationDecision, EVENT, QUESTION_VERSION
 
 
 class Generator:
@@ -16,7 +16,7 @@ class Verifier:
     async def judge(self,request,*,deadline_seconds=None):
         return VerificationDecision(request.request_id,request.answer_sha256,
                                     .2 if request.tier=='small' else .9,EVENT,
-                                    QUESTION_VERSION,'jev',1.,{})
+                                    QUESTION_VERSION,'laya',1.,{})
 
 
 def test_rejection_escalates_once_and_preserves_attempts():

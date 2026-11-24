@@ -5,7 +5,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from jev_gateway.day6.uncertainty import paired_difference
+from laya_gateway.day6.uncertainty import paired_difference
 
 
 def _read_rows(path):

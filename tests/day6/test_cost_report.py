@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from jev_gateway.day6.cost_report import reconcile
+from laya_gateway.day6.cost_report import reconcile
 
 
 def test_unknown_rejected_attempt_keeps_total_unknown(tmp_path):

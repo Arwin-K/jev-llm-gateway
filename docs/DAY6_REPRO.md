@@ -35,7 +35,7 @@ To prepare the private 2,500-prompt manifest, install the evaluation extra and f
 The available coverage figure is regenerated from its raw audit:
 
 ```bash
-.venv/bin/python -m jev_gateway.day6.figures \
+.venv/bin/python -m laya_gateway.day6.figures \
   --freeze-audit evidence/day6/freeze-audit-20261101.json \
   --output runs/day6-coverage-local.svg
 ```

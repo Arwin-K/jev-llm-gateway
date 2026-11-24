@@ -1,8 +1,8 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
-from jev_gateway.cache.retrieval import CacheRetriever
-from jev_gateway.cache.scope import CacheEntry, make_scope
+from laya_gateway.cache.retrieval import CacheRetriever
+from laya_gateway.cache.scope import CacheEntry, make_scope
 
 
 class Index:

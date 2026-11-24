@@ -2,14 +2,14 @@ import json
 
 import pytest
 
-from jev_gateway.day6.compare import compare
+from laya_gateway.day6.compare import compare
 
 
 def test_comparison_rejects_mismatched_workload(tmp_path):
     paths = []
     for i in range(6):
         label = 'baseline' if i % 2 == 0 else 'candidate'
-        row = {'schema': 'jev.day6.benchmark.v1', 'origin': 'live_client',
+        row = {'schema': 'laya.day6.benchmark.v1', 'origin': 'live_client',
                'label': label, 'run_id': str(i), 'success_count': 2, 'error_count': 0,
                'workload_sha256': 'same', 'config_sha256': label, 'endpoint': 'local',
                'arrival': 'burst', 'interval_seconds': 0, 'concurrency_cap': 2,

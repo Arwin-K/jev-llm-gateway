@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime, timezone
-from jev_gateway.evaluation.records import Prompt, Result
-from jev_gateway.execution.comparison import ExecutionObservation, StageCost, compare
+from laya_gateway.evaluation.records import Prompt, Result
+from laya_gateway.execution.comparison import ExecutionObservation, StageCost, compare
 
 
 def test_real_replay_requires_matching_answer_identity():

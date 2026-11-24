@@ -1,4 +1,4 @@
-from jev_gateway.evaluation.latency import serving_report, percentile
+from laya_gateway.evaluation.latency import serving_report, percentile
 
 
 def test_latency_denominators_and_token_guard():

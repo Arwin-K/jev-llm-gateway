@@ -1,6 +1,6 @@
 import pytest
-from jev_gateway.routing import Decision, RoutingRequest
-from jev_gateway.routing.contracts import RoutingError, require_eligible
+from laya_gateway.routing import Decision, RoutingRequest
+from laya_gateway.routing.contracts import RoutingError, require_eligible
 
 
 def request():

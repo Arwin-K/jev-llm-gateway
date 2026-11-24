@@ -1,5 +1,9 @@
 # Observed environments
 
+## Native Laya CLI migration — 2026-11-23
+
+The active command-line workflow embeds Laya 0.5.2 directly and selects its pinned typed-decision checkpoint. A direct prediction selected `small` for a synthetic choice prompt; this did not call Ollama or establish routing quality. The synced `.venv-laya` now includes the CLI, test extra, and Laya/PyTorch dependencies. Doctor loaded the checkpoint but PyTorch reported MPS unavailable and Laya used CPU; both Ollama tags returned `ConnectError`. No external service was started. Exact console output is `evidence/testing/native-laya-cli-doctor-20261123.txt`.
+
 ## Maintenance verification — 2026-11-17
 
 The existing `.venv` on the Mac used Python 3.14.5. `make verify` passed source compilation and 149 offline tests; its raw output is preserved at `evidence/testing/maintenance-offline-20261117.txt`. The focused Ruff command added to GitHub Actions was not executed locally because `uv` and `ruff` are unavailable on PATH. No external services, model endpoints, containers, or GPU were used for this maintenance check.

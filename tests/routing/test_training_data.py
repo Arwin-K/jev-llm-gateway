@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
-from jev_gateway.evaluation.records import Prompt, Result
-from jev_gateway.routing.training_data import prepare_training
+from laya_gateway.evaluation.records import Prompt, Result
+from laya_gateway.routing.training_data import prepare_training
 
 NOW = datetime.now(timezone.utc)
 

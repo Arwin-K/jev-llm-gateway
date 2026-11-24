@@ -35,7 +35,7 @@
 <dt>Understand</dt><dd><code>pyproject.toml</code>, the <code>src/</code> layout, console scripts, optional extras, and what a lockfile guarantees.</dd>
 <dt>Change</dt><dd>Package <code>jev-gateway</code> 0.1.0 built with hatchling, requiring Python ≥3.11 and &lt;3.15; four core dependencies; <code>test</code>, <code>training</code> and <code>embeddings</code> extras; a <code>jev</code> command with <code>serve</code>, <code>doctor</code> and <code>smoke</code> subcommands; <code>uv.lock</code>.</dd>
 <dt>Why here</dt><dd>Every later module and test imports the package. A lock from the first commit means any later failure can be reproduced exactly.</dd>
-<dt>Evidence</dt><dd>In a fresh environment: <code>uv sync --locked</code>, <code>import jev_gateway</code>, and <code>jev --help</code> all succeed.</dd>
+<dt>Evidence</dt><dd>In a fresh environment: <code>uv sync --locked</code>, <code>import laya_gateway</code>, and <code>jev --help</code> all succeed.</dd>
 <dt class="mis">Common mistake</dt><dd>Adding <code>torch</code> or <code>transformers</code> to the core dependencies "for later". The Mac gateway would then download gigabytes of ML libraries it never uses.</dd>
 <dt class="rec">Recorded</dt><dd>Fresh virtual environment install, import, CLI help, and uv lock.</dd></dl></div>
 

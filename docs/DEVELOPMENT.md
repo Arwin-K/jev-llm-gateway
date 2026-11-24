@@ -7,17 +7,18 @@ make setup-test
 make verify
 ```
 
-`make verify` runs syntax compilation and the full offline suite. `make compose-config` validates the Compose file when Docker Compose is installed without starting containers or opening ports. `make build` builds the distributable package. The locked test extra contains only pytest and anyio; install evaluation, training, and embedding dependencies only for the task that needs them.
+`make verify` runs syntax compilation and the full offline suite. `make build` builds the distributable package. The locked test extra contains only pytest and anyio; install evaluation, training, and embedding dependencies only for the task that needs them. `make setup-laya` installs the pinned native Laya runtime into a separate CLI environment.
 
-Add `--extra evaluation` only when preparing pinned Parquet datasets. Core gateway installation does not include Torch, CUDA, vLLM, or the Parquet reader. The latest local full offline suite passed 141 tests with one third-party Starlette deprecation warning; its raw output is recorded in `evidence/testing/offline-suite-20261116.txt`. Offline tests use controlled transports and fixtures; they do not prove a real model is loaded or that a Colab GPU run succeeded. Live checks are explicit commands in [the evaluation workflow](EVALUATION_WORKFLOW.md).
+Add `--extra evaluation` only when preparing pinned Parquet datasets. Core installation does not include Torch, CUDA, vLLM, or the Parquet reader. The current native CLI source passed compileall and 151 offline tests on 2026-11-23; raw output is `evidence/testing/native-laya-migration-offline-20261123.txt`. Offline tests use controlled transports and fixtures; they do not prove a real model is loaded or that a Colab GPU run succeeded. Live checks are explicit commands in [the evaluation workflow](EVALUATION_WORKFLOW.md).
 
 ## Code layout
 
 | Path | Responsibility |
 | --- | --- |
-| `src/jev_gateway/api.py` | FastAPI chat contract, explicit dispatch, streaming, health endpoints |
-| `config.py`, `budget.py` | Environment validation and frontier admission limits |
-| `transport.py`, `ollama.py`, `tracing.py`, `diagnostics.py` | HTTP forwarding, local model checks, traces, doctor/smoke |
+| `src/laya_gateway/cli.py`, `chat.py` | CLI commands and single-shot local chat orchestration; no gateway server |
+| `routing/laya_runtime.py`, `routing/laya_choice.py` | In-process pinned Laya decisions and local tier choice |
+| `config.py`, `budget.py` | Environment validation and optional frontier admission limits |
+| `transport.py`, `ollama.py`, `tracing.py`, `diagnostics.py` | Local Ollama transport, model checks, traces, doctor/smoke |
 | `evaluation/datasets.py`, `manifest.py`, `records.py` | Pinned sources, frozen splits, immutable observations |
 | `evaluation/scoring.py`, `sandbox.py`, `audit.py` | Task scoring, Docker-only code execution, private review export |
 | `evaluation/runner.py`, `checkpoint.py`, `commands.py` | Bounded collection, compatible resumption, CLI |

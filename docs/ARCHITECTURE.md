@@ -1,24 +1,21 @@
 # Implemented architecture
 
-This guide describes the code present now. Planned routing, verification, caching, and deployment components are tracked separately in [feature status](FEATURE_STATUS.md).
+This describes the current CLI and the separate research/evaluation code. The historical HTTP gateway is no longer the supported interactive application.
 
-## Gateway request path
+## Native CLI chat path
 
 ```mermaid
 flowchart LR
-  C[Client] --> A[FastAPI chat contract]
-  A --> V[Configuration and tier validation]
-  V --> B[Frontier admission guard when applicable]
-  B --> T[Async HTTP transport]
-  T --> S[Small or medium Ollama / frontier API]
-  T --> R[Response or SSE stream]
-  R --> C
-  A --> X[Secret-free request trace]
+  C[CLI prompt] --> V[Configuration and tier validation]
+  V --> L[Laya Python Router in process]
+  L -->|small or medium| O[Local Ollama endpoint]
+  V -->|explicit tier| O
+  O --> R[CLI response]
 ```
 
-`src/jev_gateway/api.py` accepts text-only OpenAI-style chat with an explicit `model` tier or `auto`. The default automatic router calls the self-hosted Laya-compatible System One service on loopback; a compatible trained DistilBERT artifact is its fallback. Image/audio and tools are not implemented. `config.py` reads decision/generation backend URLs, model tags, timeouts, and frontier caps from the environment. `transport.py` owns the bounded `httpx` client and forwards a nonstreaming completion or streaming bytes. `budget.py` reserves a conservative process-local frontier allowance before dispatch. `tracing.py` records request ID, tier, configured model, start time, duration, usage fields when returned, and cost status without storing prompt text. `diagnostics.py` powers `doctor` and `smoke`; `/healthz` checks the process and `/readyz` does not certify a model is loaded.
+`src/laya_gateway/cli.py` exposes `doctor`, `smoke`, `chat`, and bounded evaluation commands. `chat --model auto` loads only the pinned typed-decision checkpoint using Laya's Python API in-process, makes a local tier decision, then calls the selected Ollama model. There is no gateway HTTP listener and no separate Laya process. Explicit `small` or `medium` choices bypass Laya decisions. `config.py` reads local backend endpoints, model tags, caps, and device settings from the environment; `diagnostics.py` checks the installed checkpoint and local Ollama tags. The generation transport uses Ollama's loopback OpenAI-compatible endpoint. This is local backend transport and is not an externally exposed gateway API.
 
-A backend completion body is returned intact for nonstreaming calls. Headers carry request ID and tier metadata. Streaming forwards SSE without assembling a full response. Once streaming headers have been sent, a midstream error cannot be turned into a normal JSON error; the trace records interruption. A local `httpx` mock proves forwarding logic, while a real backend response requires a reachable model service.
+Laya is an optional package extra pinned in `requirements/laya.txt`. The core package remains installable without Laya, but automatic chat and `doctor` require the Laya extra and pinned checkpoint. A direct checkpoint inference was observed during this migration; routing quality on this project's prompts has not been evaluated. The first invocation may download model files.
 
 ## Evaluation data path
 

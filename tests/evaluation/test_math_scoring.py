@@ -1,4 +1,4 @@
-from jev_gateway.evaluation.scoring import format_compliant, score_math, score_math_strict
+from laya_gateway.evaluation.scoring import format_compliant, score_math, score_math_strict
 
 
 def test_strict_v1_formats_and_ambiguity():

@@ -1,5 +1,5 @@
 import pytest
-from jev_gateway.routing.tuning import ValidationCase, select
+from laya_gateway.routing.tuning import ValidationCase, select
 
 
 def case(split='validation'):

@@ -2,6 +2,12 @@
 
 Record actual decisions, context, alternatives, evidence, affected code/configuration, and revisit conditions. The project retains the original full feature scope.
 
+## Active runtime migration — 2026-11-23
+
+- The interactive application is CLI-only. Embed Laya through its Python runtime for local decisions; do not run a separate Laya service or a gateway HTTP server. Keep local Ollama as the generation backend. This supersedes earlier service and Jev-compatible endpoint plans. Historical reports remain as truthful records of earlier runs.
+- The CLI exposes `laya-gateway doctor`, `smoke`, and `chat`. Automatic chat asks the pinned `typed-decisions` model to select between only eligible `small` and `medium` local tiers. Explicit local tiers bypass routing. Paid frontier remains outside the default chat path.
+- The direct Laya smoke proves the pinned model can answer one synthetic decision prompt on this machine. It does not validate routing quality, confidence calibration, sustained CPU/memory use, or full CLI/Ollama integration. Revisit after a capped real prompt evaluation and full local chat smoke.
+
 ## Day 1
 
 - Explicit tier names are the public API for now. `auto` requires the Jev router in Day 3. Backend completion JSON is preserved; routing metadata is in headers.

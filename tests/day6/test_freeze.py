@@ -1,6 +1,6 @@
 import json
 
-from jev_gateway.day6.freeze import audit
+from laya_gateway.day6.freeze import audit
 
 
 def test_freeze_audit_counts_unique_scored_prompts_and_stays_closed(tmp_path):

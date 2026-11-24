@@ -4,14 +4,14 @@ from dataclasses import replace
 import httpx
 import pytest
 
-from jev_gateway.config import from_env
-from jev_gateway.transport import BackendTransport
-from jev_gateway.routing.admission import request_for
-from jev_gateway.routing.baselines import FixedRouter, SeededRandomRouter
-from jev_gateway.routing.contracts import Decision, RoutingError, require_eligible
-from jev_gateway.routing.jev_client import JevClient
-from jev_gateway.routing.prompted import PromptedRouter
-from jev_gateway.routing.strands import StrandsRouter
+from laya_gateway.config import from_env
+from laya_gateway.transport import BackendTransport
+from laya_gateway.routing.admission import request_for
+from laya_gateway.routing.baselines import FixedRouter, SeededRandomRouter
+from laya_gateway.routing.contracts import Decision, RoutingError, require_eligible
+from laya_gateway.routing.laya_runtime import LayaRuntime
+from laya_gateway.routing.prompted import PromptedRouter
+from laya_gateway.routing.strands import StrandsRouter
 
 
 def run(coroutine):
@@ -52,22 +52,11 @@ def test_prompted_timeout_and_invalid_choice_are_errors():
         run(router.decide(request))
 
 
-def test_jev_budget_and_timeout_fail_closed(monkeypatch):
-    monkeypatch.setenv('TYPESAFE_API_KEY','test-only')
-    settings=replace(from_env(),decision_provider='jev',decision_url='https://api.typesafe.ai',
-                     jev_model='jev-latest',jev_max_requests=1,
-                     jev_max_tokens=1,jev_max_usd=1,jev_input_usd_per_million=1,
-                     jev_output_usd_per_million=1, jev_rate_source_url='https://example.com/rates',
-                   jev_rate_effective_date='2026-10-29')
-    seen=[]
-    client=JevClient(settings,httpx.MockTransport(lambda req: seen.append(req) or httpx.Response(200)))
+def test_native_laya_budget_fails_closed_without_loading_model():
+    settings=replace(from_env(),laya_max_requests=0)
+    runtime=LayaRuntime(settings, router=object())
     with pytest.raises(RoutingError):
-        run(client.decide('x',{'x':{'type':'noul','instructions':'yes?'}}))
-    assert not seen
-    settings=replace(settings,jev_max_tokens=100000)
-    client=JevClient(settings,httpx.MockTransport(lambda req: (_ for _ in ()).throw(httpx.ReadTimeout('timeout'))))
-    with pytest.raises(RoutingError):
-        run(client.decide('x',{'x':{'type':'noul','instructions':'yes?'}}))
+        run(runtime.decide('x',{'x':{'type':'noul','instructions':'yes?'}}))
 
 
 def test_strands_model_mismatch_fails():

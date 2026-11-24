@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
-from jev_gateway.evaluation.records import Result, Outcome
+from laya_gateway.evaluation.records import Result, Outcome
 
 
 def test_immutable_record_preserves_unknowns():

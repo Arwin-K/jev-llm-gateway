@@ -1,5 +1,5 @@
-from jev_gateway.cache.benchmark_data import load
-from jev_gateway.cache.evaluation import CacheObservation, report
+from laya_gateway.cache.benchmark_data import load
+from laya_gateway.cache.evaluation import CacheObservation, report
 
 
 def test_harmful_reuse_denominators_and_fixture_origin():

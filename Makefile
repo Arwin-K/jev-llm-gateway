@@ -1,8 +1,8 @@
 UV ?= uv
 PYTHON ?= .venv/bin/python
 
-.PHONY: setup-test verify test compile build compose-config setup-figures figures \
-	mac-config setup-laya laya-serve serve-local doctor-local
+.PHONY: setup-test verify test compile build setup-figures figures \
+	laya-config setup-laya doctor-local chat
 
 # Install the locked, offline test environment without optional model stacks.
 setup-test:
@@ -20,11 +20,6 @@ compile:
 build:
 	$(UV) build
 
-# Validate deployment configuration without starting services or opening ports.
-compose-config:
-	docker compose config --quiet
-	docker compose -f compose.yaml -f compose.laya.yaml config --quiet
-
 # Optional: regenerate docs/figures/progress from committed evidence (separate venv).
 FIGURES_PYTHON ?= .venv-figures/bin/python
 
@@ -35,36 +30,23 @@ setup-figures:
 figures:
 	$(FIGURES_PYTHON) scripts/make_progress_figures.py
 
-# Create a private, shell-compatible Mac profile without overwriting user config.
-mac-config:
-	@if [ -e .env ]; then \
-		echo ".env already exists; leaving it unchanged"; \
+# Create a private, shell-compatible native Laya profile without overwriting user config.
+laya-config:
+	@if [ -e .env.laya ]; then \
+		echo ".env.laya already exists; leaving it unchanged"; \
 	else \
-		cp config/mac.env.example .env && echo "Created .env from config/mac.env.example"; \
+		cp config/laya.env.example .env.laya && echo "Created .env.laya from config/laya.env.example"; \
 	fi
 
-# Keep the optional decision-model stack isolated from the portable gateway venv.
+# Install the CLI and native Laya runtime from the committed lockfile.
 setup-laya:
-	python3 -m venv .venv-laya
-	.venv-laya/bin/python -m pip install -r requirements/laya.txt
-
-# Run Laya on loopback. It downloads its pinned model the first time it starts.
-laya-serve:
-	@test -x .venv-laya/bin/laya-serve || { echo "Run 'make setup-laya' first"; exit 2; }
-	@set -a; if [ -f .env ]; then . ./.env; fi; set +a; \
-	LAYA_HOST="$${LAYA_HOST:-127.0.0.1}" \
-	LAYA_PORT="$${LAYA_PORT:-8000}" \
-	LAYA_DEVICE="$${LAYA_DEVICE:-mps}" \
-	LAYA_MODELS="$${LAYA_MODELS:-typed-decisions}" \
-	LAYA_PRELOAD="$${LAYA_PRELOAD:-1}" \
-	LAYA_REVISION="$${LAYA_REVISION:-reviewed}" \
-	.venv-laya/bin/laya-serve
-
-# The gateway reads its configuration from the private .env in this shell.
-serve-local:
-	@test -f .env || { echo "Run 'make mac-config' and review .env first"; exit 2; }
-	@set -a; . ./.env; set +a; $(PYTHON) -m jev_gateway.cli serve
+	UV_PROJECT_ENVIRONMENT=.venv-laya $(UV) sync --locked --extra test --extra laya
 
 doctor-local:
-	@test -f .env || { echo "Run 'make mac-config' and review .env first"; exit 2; }
-	@set -a; . ./.env; set +a; $(PYTHON) -m jev_gateway.cli doctor
+	@test -f .env.laya || { echo "Run 'make laya-config' and review .env.laya first"; exit 2; }
+	@set -a; . ./.env.laya; set +a; .venv-laya/bin/laya-gateway doctor
+
+chat:
+	@test -f .env.laya || { echo "Run 'make laya-config' and review .env.laya first"; exit 2; }
+	@test -n "$(PROMPT)" || { echo "Usage: make chat PROMPT='your question' [MODEL=auto|small|medium]"; exit 2; }
+	@set -a; . ./.env.laya; set +a; .venv-laya/bin/laya-gateway chat --model '$(if $(MODEL),$(MODEL),auto)' '$(PROMPT)'

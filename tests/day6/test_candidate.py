@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from jev_gateway.day6.candidate import prepare
-from jev_gateway.day6.common import digest
+from laya_gateway.day6.candidate import prepare
+from laya_gateway.day6.common import digest
 
 
 def test_candidate_rejects_empty_or_incompatible_baselines(tmp_path):
@@ -12,7 +12,7 @@ def test_candidate_rejects_empty_or_incompatible_baselines(tmp_path):
     rows = []
     for i in range(3):
         path = tmp_path / f'{i}.json'
-        path.write_text(json.dumps({'schema': 'jev.day6.benchmark.v1', 'origin': 'live_client',
+        path.write_text(json.dumps({'schema': 'laya.day6.benchmark.v1', 'origin': 'live_client',
                                     'success_count': 1, 'config_sha256': digest(config),
                                     'workload_sha256': 'same', 'run_id': str(i)}))
         rows.append(path)

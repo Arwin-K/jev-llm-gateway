@@ -1,5 +1,5 @@
 from collections import Counter
-from jev_gateway.cache.benchmark_data import load
+from laya_gateway.cache.benchmark_data import load
 
 
 def test_hand_authored_groups_preserve_near_miss_answer_changes():

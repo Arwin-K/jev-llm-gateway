@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 import pytest
-from jev_gateway.evaluation.oracle import label
+from laya_gateway.evaluation.oracle import label
 
 
 def test_oracle_missing_failed_tie_and_none():

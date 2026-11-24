@@ -1,5 +1,5 @@
 import pytest
-from jev_gateway.evaluation.datasets import gsm8k, mmlu, mbpp
+from laya_gateway.evaluation.datasets import gsm8k, mmlu, mbpp
 
 
 def test_gsm_final_marker_and_prompt():
@@ -22,7 +22,7 @@ def test_mbpp_keeps_tests_private():
 
 
 def test_v2_templates_put_format_last_and_name_the_function():
-    from jev_gateway.evaluation.datasets import TEMPLATES_BY_VERSION, fingerprint, required_function
+    from laya_gateway.evaluation.datasets import TEMPLATES_BY_VERSION, fingerprint, required_function
     math = gsm8k({'question':'What is 1 + 1?', 'answer':'#### 2'}, 7)
     assert math.prompt.endswith('Answer: <number>') and math.template_fingerprint == fingerprint(TEMPLATES_BY_VERSION['v2']['math'])
     choice = mmlu({'question':'Pick one', 'choices':['red','blue','green','yellow'], 'answer':2, 'subject':'colors'}, 3)
@@ -36,7 +36,7 @@ def test_v2_templates_put_format_last_and_name_the_function():
 
 
 def test_v1_templates_remain_reproducible():
-    from jev_gateway.evaluation.datasets import TEMPLATES_BY_VERSION, fingerprint
+    from laya_gateway.evaluation.datasets import TEMPLATES_BY_VERSION, fingerprint
     p = gsm8k({'question':'Q?', 'answer':'#### 2'}, 0, version='v1')
     assert p.prompt == 'Solve the problem. End with Answer: <number>.\n\nQ?'
     assert p.template_fingerprint == fingerprint(TEMPLATES_BY_VERSION['v1']['math'])

@@ -7,8 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-NAMESPACE = "jev-gateway"
-CLUSTER = "kind-jev-gateway-day5"
+NAMESPACE = "laya-gateway"
+CLUSTER = "kind-laya-gateway-day5"
 
 
 def stamp():
@@ -30,7 +30,7 @@ def main():
     if context != CLUSTER:
         parser.error("kubeconfig does not select the project kind cluster")
     pods = json.loads(subprocess.check_output(base + ["-n", NAMESPACE, "get", "pods",
-                        "-l", "app=jev-gateway", "-o", "json"], text=True))["items"]
+                        "-l", "app=laya-gateway", "-o", "json"], text=True))["items"]
     ready = sorted(pod["metadata"]["name"] for pod in pods
                    if pod["status"].get("phase") == "Running" and
                    any(condition.get("type") == "Ready" and condition.get("status") == "True"
@@ -51,7 +51,7 @@ from datetime import datetime,timezone
 for i in range(REQUESTS):
     started=time.monotonic()
     try:
-        with urllib.request.urlopen('http://jev-gateway.jev-gateway.svc.cluster.local:8080/v1/models',timeout=3) as response:
+        with urllib.request.urlopen('http://laya-gateway.laya-gateway.svc.cluster.local:8080/v1/models',timeout=3) as response:
             item={'index':i,'at':datetime.now(timezone.utc).isoformat(),'status':response.status,'elapsed_ms':(time.monotonic()-started)*1000}
     except Exception as exc:
         item={'index':i,'at':datetime.now(timezone.utc).isoformat(),'error':type(exc).__name__,'elapsed_ms':(time.monotonic()-started)*1000}
@@ -70,7 +70,7 @@ for i in range(REQUESTS):
     timeline = []
     while process.poll() is None and time.monotonic() - started < args.requests * (args.interval + 4) + 20:
         snapshot = json.loads(subprocess.check_output(base + ["-n", NAMESPACE, "get", "pods",
-                             "-l", "app=jev-gateway", "-o", "json"], text=True))
+                             "-l", "app=laya-gateway", "-o", "json"], text=True))
         timeline.append({"at": stamp(), "ready_pods": sorted(pod["metadata"]["name"]
                          for pod in snapshot["items"] if any(
                          condition.get("type") == "Ready" and condition.get("status") == "True"

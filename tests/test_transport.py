@@ -1,7 +1,7 @@
 import asyncio
 import httpx
-from jev_gateway.config import Backend
-from jev_gateway.transport import BackendTransport
+from laya_gateway.config import Backend
+from laya_gateway.transport import BackendTransport
 
 
 def test_forwarding_and_close():

@@ -1,9 +1,9 @@
 import asyncio
 from dataclasses import replace
 import pytest
-from jev_gateway.config import from_env
-from jev_gateway.evaluation.records import Prompt
-from jev_gateway.routing.evaluate import collect, select_prompts
+from laya_gateway.config import from_env
+from laya_gateway.evaluation.records import Prompt
+from laya_gateway.routing.evaluate import collect, select_prompts
 
 
 def test_bounded_fixed_decisions_have_no_generation_cost_claim():
@@ -20,8 +20,8 @@ def test_bounded_fixed_decisions_have_no_generation_cost_claim():
 
 def test_decision_errors_preserve_safe_cause_category(monkeypatch):
     import json
-    from jev_gateway.routing import evaluate
-    from jev_gateway.routing.contracts import RoutingError
+    from laya_gateway.routing import evaluate
+    from laya_gateway.routing.contracts import RoutingError
 
     class BrokenRouter:
         name = 'prompted-small'
@@ -55,7 +55,7 @@ def test_exact_prompt_selection_is_bounded_and_validation_scoped():
 
 
 def test_existing_output_path_is_rejected_before_router_calls(tmp_path, monkeypatch):
-    from jev_gateway.routing import evaluate
+    from laya_gateway.routing import evaluate
 
     runs = tmp_path / 'runs'
     runs.mkdir()

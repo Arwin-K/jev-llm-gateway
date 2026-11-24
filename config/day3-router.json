@@ -1,18 +1,17 @@
 {
   "default_policy": "laya-choice",
-  "decision_provider": "laya",
-  "decision_service_url": "http://127.0.0.1:8000",
+  "decision_runtime": "native-python",
   "decision_model": "typed-decisions",
+  "decision_revision": "reviewed",
+  "device_default": "mps",
+  "local_generation_tiers": ["small", "medium"],
+  "max_decisions_per_process": 100,
+  "max_input_units_per_process": 200000,
   "fallback_policy": "distilbert_when_compatible_artifact_configured",
-  "failure_policy": "return_503_without_eligible_decision",
-  "choice_question_version": "routing-choice-v1",
-  "success_question_version": "generator-success-v1",
-  "seeded_random_seed": 17,
-  "context_ceiling_defaults_tokens": {"small": 4096, "medium": 4096, "frontier": 4096},
+  "failure_policy": "fail_without_eligible_decision",
+  "choice_question_version": "laya-routing-choice-v2",
   "selected_success_thresholds": null,
   "trained_artifact": null,
   "validation_selection": null,
-  "live_laya_model": null,
-  "strands_checkpoint": null,
-  "note": "Local Laya is the configured decision backend; null means no live run or validation setting has been recorded."
+  "note": "Laya is loaded and called in-process; null fields indicate no trained or validation-selected routing policy has been recorded."
 }

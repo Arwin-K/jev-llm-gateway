@@ -1,8 +1,8 @@
 import asyncio
 from datetime import datetime,timedelta,timezone
-from jev_gateway.cache.index import FaissAnswerIndex
-from jev_gateway.cache.lifecycle import CacheLifecycle
-from jev_gateway.cache.scope import CacheEntry
+from laya_gateway.cache.index import FaissAnswerIndex
+from laya_gateway.cache.lifecycle import CacheLifecycle
+from laya_gateway.cache.scope import CacheEntry
 from test_index import FakeFaiss
 
 

@@ -4,7 +4,7 @@
 
 The repository code and documentation are declared under the MIT License in `LICENSE`, `pyproject.toml`, and `CONTRIBUTING.md`. This grant does not cover benchmark datasets, model weights, provider outputs, or external services. Before sharing a model artifact, benchmark snapshot, or result containing prompt/answer text, inspect current upstream terms and account-specific conditions. The committed `docs/day2-manifest-index.jsonl` contains only IDs, hashes, revisions, and split metadata; raw prompts, references, MBPP tests, provider responses, and credentials remain in ignored private directories.
 
-The benchmark sources are [GSM8K](https://huggingface.co/datasets/openai/gsm8k) at `740312add88f781978c0658806c59bc2815b9866`, [MMLU](https://huggingface.co/datasets/cais/mmlu) at `c30699e8356da336a370243923dbaf21066bb9fe`, and [Google Research sanitized MBPP](https://github.com/google-research/google-research/tree/master/mbpp) at `1ae1fded5c616deb6b4652818588577e8fca0f06`. `src/jev_gateway/evaluation/datasets.py` defines the pinned retrieval and projection. These source links identify provenance, not permission to redistribute their contents.
+The benchmark sources are [GSM8K](https://huggingface.co/datasets/openai/gsm8k) at `740312add88f781978c0658806c59bc2815b9866`, [MMLU](https://huggingface.co/datasets/cais/mmlu) at `c30699e8356da336a370243923dbaf21066bb9fe`, and [Google Research sanitized MBPP](https://github.com/google-research/google-research/tree/master/mbpp) at `1ae1fded5c616deb6b4652818588577e8fca0f06`. `src/laya_gateway/evaluation/datasets.py` defines the pinned retrieval and projection. These source links identify provenance, not permission to redistribute their contents.
 
 ## Model and derived-artifact identity
 

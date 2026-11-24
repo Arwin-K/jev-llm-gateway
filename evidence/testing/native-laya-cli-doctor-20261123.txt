@@ -1,0 +1,31 @@
+Fetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]Fetching 5 files: 100%|██████████| 5/5 [00:00<00:00, 1160.06it/s]
+/Users/ArwinKarir/Desktop/Research Project 2/.venv-laya/lib/python3.14/site-packages/laya/agent.py:770: RuntimeWarning: Warning: MPS requested but not available. Falling back to CPU.
+  warnings.warn("Warning: MPS requested but not available. Falling back to CPU.",
+W1123 19:15:37.232000 79026 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+/Users/ArwinKarir/Desktop/Research Project 2/.venv-laya/lib/python3.14/site-packages/laya/agent.py:546: RuntimeWarning: laya: this checkpoint ships invalid temperatures or values outside [0.5, 5]; using choice:11+=0.10058280825614929 -> 0.5. Treat confidence from the affected entries as uncalibrated.
+  return super().__call__(*args, **kwargs)
+{
+  "decision": {
+    "provider": "native-laya",
+    "model": "typed-decisions",
+    "device_requested": "mps",
+    "device_used": "cpu",
+    "accelerator_available": false,
+    "available": true,
+    "loaded": true
+  },
+  "tiers": {
+    "small": {
+      "model": "qwen2.5:1.5b",
+      "installed": false,
+      "reason": "ConnectError"
+    },
+    "medium": {
+      "model": "qwen2.5:7b",
+      "installed": false,
+      "reason": "ConnectError"
+    }
+  }
+}
+
+exit_code=1

@@ -1,10 +1,10 @@
 from pathlib import Path
 import pytest
-from jev_gateway.evaluation.manifest import build, load, save, validate
+from laya_gateway.evaluation.manifest import build, load, save, validate
 
 
 def test_grouped_split_and_test_gate(tmp_path, monkeypatch):
-    from jev_gateway.evaluation import manifest
+    from laya_gateway.evaluation import manifest
     monkeypatch.setattr(manifest, 'TARGETS', {'math':10,'choice':10,'code':10})
     (tmp_path/'gsm8k-train.jsonl').write_text(''.join(__import__('json').dumps({'source_index':i,'question':f'Number {i}?','answer':f'#### {i}'})+'\n' for i in range(20)))
     (tmp_path/'mmlu-test.jsonl').write_text(''.join(__import__('json').dumps({'source_index':i,'question':f'Question {i}?','choices':['a','b','c','d'],'answer':i%4,'subject':'s'})+'\n' for i in range(20)))
@@ -19,8 +19,8 @@ def test_grouped_split_and_test_gate(tmp_path, monkeypatch):
 
 def test_template_revision_keeps_split_assignment(tmp_path, monkeypatch):
     import json
-    from jev_gateway.evaluation import manifest
-    from jev_gateway.evaluation.manifest import same_assignment
+    from laya_gateway.evaluation import manifest
+    from laya_gateway.evaluation.manifest import same_assignment
     monkeypatch.setattr(manifest, 'TARGETS', {'math':10,'choice':10,'code':10})
     (tmp_path/'gsm8k-train.jsonl').write_text(''.join(json.dumps({'source_index':i,'question':f'Number {i}?','answer':f'#### {i}'})+'\n' for i in range(20)))
     (tmp_path/'mmlu-test.jsonl').write_text(''.join(json.dumps({'source_index':i,'question':f'Question {i}?','choices':['a','b','c','d'],'answer':i%4,'subject':'s'})+'\n' for i in range(20)))
