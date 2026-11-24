@@ -1,0 +1,130 @@
+{
+  "audit_id": "distilbert-three-tier-readiness-20261124",
+  "frontier_records_in_runs": 0,
+  "manifest": {
+    "path": "runs/day2-manifest.jsonl",
+    "sha256": "d92b9f0a077da3e04487d2a6bdf43bb443b20eea5c7a06e3f93ee2c849a57474"
+  },
+  "method": "existing three-tier recorded-charge oracle; no labels were written",
+  "paid_calls_made": 0,
+  "readiness": "blocked: frontier outcomes absent; recorded local capacity costs are unknown for all selected observations",
+  "source_files": [
+    {
+      "path": "runs/day2-run-9c5c3a051c9640b98305c10ca00fa475.jsonl",
+      "sha256": "99768f4fd1eb1eba6d03e244d8d0d9a8d698df54fd8658ccecc805e2cbd74c23"
+    },
+    {
+      "path": "runs/day2-run-c20ce8a09e874424ad8fb67132d5ce48.jsonl",
+      "sha256": "946c8756f77f103fd0c541a26210dbe57d0e382e6dd746ec20e59996342822c9"
+    },
+    {
+      "path": "runs/day2-run-263a6f59ec7d493cbdf0dd205cbaaf21.jsonl",
+      "sha256": "db82b00271790dd5a893cad93b664a375fa6571e1074f42ef44ac7957c206ddc"
+    },
+    {
+      "path": "runs/day2-run-9593d68d79c5455b980a2cf83fbe818b.jsonl",
+      "sha256": "bed5da951b9930222dfd2d6ae17e58aa95a2d93c56e5e217ac00b533dc9f8d75"
+    },
+    {
+      "path": "runs/day2-run-62b6c9f0844f40b0a1ed42229104ca22.jsonl",
+      "sha256": "25df1a3ff68c7795fd0ff1230643e36ada3d941f5af73d9f77240cc65016a04f"
+    },
+    {
+      "path": "runs/day2-run-1024c23932c74897a9c95604c7f88836.jsonl",
+      "sha256": "ec2ab8fc49c2f2d41223213cc862f50e1813e44f8cd8de4df36a0f9aac831e13"
+    },
+    {
+      "path": "runs/day2-run-66afe463970d4f04900c50c204c1510f.jsonl",
+      "sha256": "df90e18dcf85c3403375db96f85d2d6577556f0a4303147512611457e34adb33"
+    },
+    {
+      "path": "evidence/day8/medium-validation-code-mbpp401-rescore-20261120.jsonl",
+      "sha256": "9badcae779918b875349748b8373c56c852ec08343be507ac80ce1ce1cb3d3aa",
+      "use": "reclassify original medium blocked result for mbpp:401 as incorrect"
+    }
+  ],
+  "splits": {
+    "train": {
+      "frontier_records_in_selected_runs": 0,
+      "local_pairs": 1500,
+      "local_results_by_tier": {
+        "medium": {
+          "correct": 1224,
+          "incorrect": 263,
+          "parse_error": 13
+        },
+        "small": {
+          "backend_error": 1,
+          "correct": 991,
+          "evaluator_error": 1,
+          "incorrect": 453,
+          "parse_error": 54
+        }
+      },
+      "manifest_prompts": 1500,
+      "model_ids": {
+        "medium": [
+          "qwen2.5:7b"
+        ],
+        "small": [
+          "qwen2.5:1.5b"
+        ]
+      },
+      "recorded_charge_values": 0,
+      "settings_fingerprints": [
+        "da4edb9bc2079db692cae675b7b6a0e7d01574f63c54c7bfc72bbef33a51263b"
+      ],
+      "three_tier_oracle_preparation": {
+        "backend_model_sets": [],
+        "class_weighting": "inverse_frequency_at_training",
+        "expected_prompts": 1500,
+        "label_counts": {},
+        "labeled": 0,
+        "settings_fingerprints": [],
+        "statuses": {
+          "incomplete": 1500
+        }
+      }
+    },
+    "validation": {
+      "frontier_records_in_selected_runs": 0,
+      "local_pairs": 500,
+      "local_results_by_tier": {
+        "medium": {
+          "correct": 402,
+          "incorrect": 92,
+          "parse_error": 6
+        },
+        "small": {
+          "correct": 324,
+          "incorrect": 157,
+          "parse_error": 19
+        }
+      },
+      "manifest_prompts": 500,
+      "model_ids": {
+        "medium": [
+          "qwen2.5:7b"
+        ],
+        "small": [
+          "qwen2.5:1.5b"
+        ]
+      },
+      "recorded_charge_values": 0,
+      "settings_fingerprints": [
+        "da4edb9bc2079db692cae675b7b6a0e7d01574f63c54c7bfc72bbef33a51263b"
+      ],
+      "three_tier_oracle_preparation": {
+        "backend_model_sets": [],
+        "class_weighting": "inverse_frequency_at_training",
+        "expected_prompts": 500,
+        "label_counts": {},
+        "labeled": 0,
+        "settings_fingerprints": [],
+        "statuses": {
+          "incomplete": 500
+        }
+      }
+    }
+  }
+}

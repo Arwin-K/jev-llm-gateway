@@ -1,5 +1,9 @@
 # Experiment evidence
 
+## DistilBERT three-tier data readiness — 2026-11-24 America/Toronto
+
+Re-audited the manifest and immutable real observations using the existing `prepare_training`/three-tier recorded-charge oracle. Small and medium each have all 1,500 train prompt IDs and all 500 validation IDs under one shared settings fingerprint. The medium validation code result for `mbpp:401` uses the saved rescore artifact. The oracle produced 0 train labels and 0 validation labels because no frontier prompt outcomes exist. All 4,000 selected local observations have unknown (`null`) USD charges, so adding frontier results alone would still not make the existing recorded-charge target comparable. No labels were written and no training/download job or paid call was started. Source run IDs, SHA-256 digests, outcome counts, and preparation summaries are in `evidence/day11/distilbert-three-tier-readiness-20261124.json`.
+
 ## Native Laya direct inference check — 2026-11-23 America/Toronto
 
 During the CLI migration, the installed Laya 0.5.2 runtime loaded the pinned typed-decision checkpoint and returned `small` for one synthetic choice-routing question. Observed decision duration was about 737 ms. A later `laya-gateway doctor` run loaded the checkpoint again, reported CPU fallback because MPS was unavailable, and found both configured Ollama tags unreachable (`ConnectError`). It also surfaced the upstream calibration warning for `choice:11+`. Raw doctor output is `evidence/testing/native-laya-cli-doctor-20261123.txt`; the full compile and 151-test offline result is `evidence/testing/native-laya-migration-offline-20261123.txt`. These are functional checks only; no Ollama generation request or project-prompt quality evaluation ran.

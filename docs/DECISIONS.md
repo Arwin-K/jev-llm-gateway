@@ -8,6 +8,10 @@ Record actual decisions, context, alternatives, evidence, affected code/configur
 - The CLI exposes `laya-gateway doctor`, `smoke`, and `chat`. Automatic chat asks the pinned `typed-decisions` model to select between only eligible `small` and `medium` local tiers. Explicit local tiers bypass routing. Paid frontier remains outside the default chat path.
 - The direct Laya smoke proves the pinned model can answer one synthetic decision prompt on this machine. It does not validate routing quality, confidence calibration, sustained CPU/memory use, or full CLI/Ollama integration. Revisit after a capped real prompt evaluation and full local chat smoke.
 
+## DistilBERT training target — 2026-11-24
+
+- Keep the existing three-tier hindsight target based on recorded comparable costs, as confirmed by the user. Do not change it to a local two-tier success proxy or treat local inference as free. Training remains blocked: no frontier results exist, and local Ollama rows record no cost. Before training, acquire complete development-split outcomes for all three tiers and select a documented local-capacity cost basis that yields comparable per-prompt costs. Frontier collection also requires configured credentials/model/rates and an explicitly authorized positive request/token/USD budget. Keep the held-out test locked.
+
 ## Day 1
 
 - Explicit tier names are the public API for now. `auto` requires the Jev router in Day 3. Backend completion JSON is preserved; routing metadata is in headers.
