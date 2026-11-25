@@ -144,3 +144,10 @@ On 2026-11-22, reviewed Laya 0.5.2's upstream repository, published license, loc
 
 
 On 2026-11-22, the optional CPU Compose overlay was built and run on Docker Desktop for Apple Silicon. Laya used `torch==2.14.0+cpu` from the official PyTorch CPU wheel index to avoid pulling a CUDA build on Linux ARM; Laya's reviewed model checkpoint downloaded to a named Docker volume. Both services passed their health checks, and gateway-container DNS reached Laya at `http://laya:8000/health` with HTTP 200. A single bounded auto-routing request through the loopback gateway selected `qwen2.5:7b` and returned `Hello!`. Compose services were stopped; the checkpoint volume remains available for next startup. This is connectivity evidence only. After the Compose/config edits, `make verify` passed compileall and 181 tests (one existing Starlette/httpx deprecation warning); both Compose configs and `git diff --check` passed. Evidence: `evidence/testing/laya-compose-smoke-20261122.txt` and `evidence/testing/laya-compose-suite-20261122.txt`.
+
+
+## Virtual GPU DistilBERT notebook — 2026-11-24 America/Toronto
+
+Prepared `notebooks/day3_distilbert.ipynb` for a user-started Colab or compatible CUDA runtime. It verifies a committed source archive by SHA-256, checks GPU availability, installs training dependencies without requesting a Torch replacement, verifies the Torch build stays unchanged, accepts only private train/validation label files, enforces all three recorded-cost tiers and split separation, pins the base-model repository revision, invokes the existing trainer, checks artifact metadata/reload evidence, and downloads a run-specific artifact archive. The notebook was not executed on a GPU; no checkpoint was downloaded, and no training or evaluation run occurred.
+
+The notebook remains gated on real, comparable three-tier labels. The latest audit still reports zero labeled train and validation rows, with frontier outcomes absent and local recorded charges unknown. Prepare nonempty label files locally only after those prerequisites are met.

@@ -7,6 +7,8 @@ from pathlib import Path
 
 from .contracts import TIERS
 
+BASE_MODEL = 'distilbert/distilbert-base-uncased'
+
 
 def _rows(path: Path, split: str):
     from .training_data import TrainingRow
@@ -41,9 +43,9 @@ def train(train_path: Path, validation_path: Path, output: Path, *, revision: st
     set_seed(seed)
     random.seed(seed)
     label2id = {tier: i for i, tier in enumerate(TIERS)}
-    tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased', revision=revision)
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, revision=revision)
     model = AutoModelForSequenceClassification.from_pretrained(
-        'distilbert-base-uncased', revision=revision, num_labels=3,
+        BASE_MODEL, revision=revision, num_labels=3,
         id2label={i: tier for tier, i in label2id.items()}, label2id=label2id)
 
     class Rows(torch.utils.data.Dataset):
@@ -98,7 +100,7 @@ def train(train_path: Path, validation_path: Path, output: Path, *, revision: st
         before_reload = torch.softmax(model(**sample).logits, dim=-1).cpu().tolist()
     trainer.save_model(str(output/'model'))
     tokenizer.save_pretrained(str(output/'model'))
-    metadata = {'artifact_kind': 'trained_distilbert', 'base_model': 'distilbert-base-uncased',
+    metadata = {'artifact_kind': 'trained_distilbert', 'base_model': BASE_MODEL,
                 'base_revision': revision, 'seed': seed, 'max_length': max_length,
                 'truncation': True, 'padding': 'max_length', 'epochs': epochs,
                 'learning_rate': learning_rate, 'batch_size': batch_size,
