@@ -3,7 +3,7 @@ import argparse
 import hashlib
 import json
 import math
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 
 

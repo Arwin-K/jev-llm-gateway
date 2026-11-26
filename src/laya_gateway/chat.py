@@ -1,14 +1,13 @@
 """Single-shot local chat orchestration for the CLI."""
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 from dataclasses import replace
 import uuid
 
 from .config import Settings
 from .routing.admission import request_for
-from .routing.contracts import RoutingError, require_eligible
+from .routing.contracts import require_eligible
 from .routing.laya_choice import LayaChoiceRouter
 from .routing.laya_runtime import LayaRuntime
 from .transport import BackendTransport

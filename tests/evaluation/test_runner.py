@@ -28,7 +28,7 @@ def test_resumption_avoids_second_call(tmp_path):
     from laya_gateway.evaluation.checkpoint import Checkpoints
     prompt=gsm8k({'question':'1+1?', 'answer':'#### 2'},0).model_copy(update={'split':'validation'})
     transport=FakeTransport(); store=Checkpoints(tmp_path); limits=RunLimits(2,10000,0)
-    first=asyncio.run(evaluate_batch([prompt],['small'],'first',from_env(),transport,limits,checkpoints=store))
+    asyncio.run(evaluate_batch([prompt],['small'],'first',from_env(),transport,limits,checkpoints=store))
     second=asyncio.run(evaluate_batch([prompt],['small'],'second',from_env(),transport,limits,checkpoints=store))
     assert transport.calls==1 and second[0].run_id=='first' and second[0].reuse_of=='first'
 

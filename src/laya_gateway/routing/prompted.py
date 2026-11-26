@@ -2,7 +2,7 @@
 import json
 import time
 
-from .contracts import Decision, RoutingError, RoutingRequest, TIERS
+from .contracts import Decision, RoutingError, RoutingRequest
 
 
 class PromptedRouter:

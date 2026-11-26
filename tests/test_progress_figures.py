@@ -52,7 +52,8 @@ def test_policy_replay_never_imputes_missing_results():
 
 
 def test_policy_replay_rejects_unaccounted_prompts(tmp_path, monkeypatch):
-    import json, shutil
+    import json
+    import shutil
     for key in ('baselines', 'prompted_v4'):
         dest = tmp_path / figs.SOURCES[key]
         dest.parent.mkdir(parents=True, exist_ok=True)

@@ -223,3 +223,7 @@ On 2026-11-22, regenerated the engineering-progress chart from current Git histo
 
 
 2026-11-24 virtual GPU training setup: prepared `notebooks/day3_distilbert.ipynb` with committed-source digest checks, a CUDA-preserving dependency path, strict three-tier recorded-cost label validation, the pinned DistilBERT model repository revision, reproducible training defaults, artifact inspection/reload metadata, and downloadable output. Updated the trainer to use the canonical Hugging Face model ID. Notebook syntax and archive/label flow have not been run in Colab; no GPU was provisioned and no training occurred. The current three-tier label audit remains 0 train and 0 validation labels, so the notebook will stop until genuine complete results and known comparable costs are available.
+
+## Compile and Ruff cleanup — 2026-11-26 America/Toronto
+
+Removed the unused imports and style findings reported in `scripts/`, `src/`, and `tests/`. `make compile` passed (`compileall` over `src load scripts tests`), and `git diff --check` passed. Ruff itself could not be rerun in this checkout because no Ruff executable is installed and `uvx` is unavailable; no test suite was run.

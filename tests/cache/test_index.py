@@ -1,5 +1,4 @@
 import json
-import math
 from pathlib import Path
 from laya_gateway.cache.index import FaissAnswerIndex
 
